@@ -37,14 +37,18 @@ export function useProducts(query: ProductQuery = {}): UseProductsReturn {
     `products-list-${search.value}-${category.value}`,
     async () => {
       if (!query.pageSize) return [];
-      const response = await $fetch<ProductsResponse>("/api/products/list", {
-        query: {
-          page: 1,
-          pageSize: pageSize.value,
-          search: search.value,
-          category: category.value,
+      const response = await $fetch<ProductsResponse>(
+        "/api/public/products/list",
+        {
+          method: "GET",
+          query: {
+            page: 1,
+            pageSize: pageSize.value,
+            search: search.value,
+            category: category.value,
+          },
         },
-      });
+      );
       const total = response.pagination?.total || 0;
       hasMore.value = (response.data?.length || 0) < total;
       return response.data;
@@ -65,15 +69,18 @@ export function useProducts(query: ProductQuery = {}): UseProductsReturn {
     loading.value = true;
     try {
       page.value++;
-      const response = await $fetch<ProductsResponse>("/api/products/list", {
-        query: {
-          page: page.value,
-          pageSize: pageSize.value,
-          search: search.value,
-          category: category.value,
+      const response = await $fetch<ProductsResponse>(
+        "/api/public/products/list",
+        {
+          query: {
+            page: page.value,
+            pageSize: pageSize.value,
+            search: search.value,
+            category: category.value,
+          },
+          method: "GET",
         },
-        method: "GET",
-      });
+      );
 
       if (response.data.length === 0) {
         hasMore.value = false;
@@ -113,7 +120,9 @@ export function useProductDetail() {
     error.value = null;
 
     try {
-      const response = await $fetch<ProductResponse>(`/api/products/${id}`);
+      const response = await $fetch<ProductResponse>(
+        `/api/public/products/${id}`,
+      );
 
       if (response.code === 200) {
         product.value = response.data;

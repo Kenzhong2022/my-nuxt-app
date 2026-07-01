@@ -3,7 +3,7 @@
   <div ref="sentinel" class="py-8 text-center min-h-[60px]">
     <!-- 加载中状态 -->
     <div v-if="loading" class="flex justify-center items-center gap-2">
-      <el-icon class="is-loading text-xl"><Loading /></el-icon>
+      <span class="text-xl animate-spin">⏳</span>
       <span class="text-gray-500">加载中...</span>
     </div>
 
@@ -13,8 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { Loading } from "@element-plus/icons-vue";
-
 // 组件 Props 接口定义
 interface Props {
   loading: boolean; // 是否正在加载

@@ -1,3 +1,5 @@
+import type { ApiResponse } from './common';
+
 export interface Product {
   id: number;
   title: string;
@@ -20,22 +22,11 @@ export interface Rating {
   count: number;
 }
 
-export interface Pagination {
-  current: number;
-  pageSize: number;
-  total: number;
-}
-
-export interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-  pagination?: Pagination;
-}
-
 export interface ProductQuery {
   page?: number;
   pageSize?: number;
   search?: string;
   category?: string;
 }
+
+export type ProductApiResponse<T> = ApiResponse<T>;

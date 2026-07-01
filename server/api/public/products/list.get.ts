@@ -1,4 +1,5 @@
 import type { Product } from "~~/types/product";
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const page = Number(query.page) || 1;

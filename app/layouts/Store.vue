@@ -1,4 +1,3 @@
-<
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- 顶部栏 -->
@@ -19,23 +18,23 @@
         </div>
 
         <!-- 手机菜单按钮 -->
-        <el-button
-          class="md:hidden"
-          circle
-          :icon="Menu"
-          @click="drawerVisible = true"
-        />
+        <el-button class="md:hidden" circle @click="drawerVisible = true">
+          菜单
+        </el-button>
         <div class="flex items-center gap-4">
           <el-badge :value="cart.totalCount" :hidden="cart.isEmpty" :max="99">
             <el-button
               circle
-              :icon="ShoppingCart"
               class="cursor-pointer"
               aria-label="购物车"
               @click="goCart"
-            />
+            >
+              购物车
+            </el-button>
           </el-badge>
-          <el-button circle :icon="User" />
+          <el-button circle class="cursor-pointer" @click="goUser"
+            >用户</el-button
+          >
         </div>
       </div>
     </el-header>
@@ -51,15 +50,16 @@
     </el-drawer>
 
     <!-- 搜索栏 -->
-    <div class="border-b py-4 md:py-6 px-4">
-      <div class="max-w-4xl mx-auto">
-        <el-input v-model="searchQuery" placeholder="搜索商品..." size="large">
-          <template #append>
-            <el-button :icon="Search">搜索</el-button>
-          </template>
-        </el-input>
-      </div>
-    </div>
+    <SearchBar
+      @search="onSearch"
+      @fetchSuggestions="onFetchSuggestions"
+      :options="[
+        { label: '商品', value: 'product' },
+        { label: '店铺', value: 'store' },
+      ]"
+      placeholderTemplate="搜索{type}..."
+      :suggestions="searchSuggestions"
+    />
 
     <!-- 主内容 -->
     <el-main class="flex-1 py-4 md:py-6 px-4">
@@ -112,10 +112,23 @@
 </template>
 
 <script setup lang="ts">
-import { Search, ShoppingCart, User, Menu } from "@element-plus/icons-vue";
+import { ref, watch } from "vue";
+import { navigateTo } from "nuxt/app";
+import { ElInput, ElMessage } from "element-plus";
 
-const searchQuery = ref("");
 const drawerVisible = ref(false);
+
+// 使用InstanceType工具类型获取组件实例类型
+const searchInput = ref<InstanceType<typeof ElInput> | null>(null);
+
+watch(
+  () => searchInput.value?.input?.getBoundingClientRect().top,
+  (newVal) => {
+    if (newVal) {
+      console.log(newVal);
+    }
+  },
+);
 
 // 购物车 store
 const cart = useCartStore();
@@ -128,5 +141,94 @@ function goCart() {
 // 进入首页
 function goHome() {
   navigateTo("/");
+}
+
+// 进入用户中心
+function goUser() {
+  // 前往认证中心，本地开发环境为http://localhost:3001/login
+  const redirect = encodeURIComponent(window.location.href);
+  window.location.href = `http://localhost:3001/login?redirect=${redirect}`;
+}
+
+function onSearch({ query, mode }: { query: string; mode: string }) {
+  console.log(query, mode);
+}
+const searchSuggestions = ref<string[]>([
+  "商品1",
+  "商品2",
+  "商品3",
+  "商品4",
+  "商品5",
+]);
+async function onFetchSuggestions({ query }: { query: string }) {
+  console.log("联想词:", query);
+
+  try {
+    // 调用后端接口
+    const response = await fetch("/api/public/search/suggestions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ keyword: query }),
+    });
+
+    // 获取流读取器和解码器
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error("无法建立流式连接");
+    }
+    // 把content拼接成字符串
+    let content = "";
+
+    // 循环读取流数据
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break; // 流读取完成，退出循环
+
+      // 解码二进制数据为字符串
+      const rawChunk = decoder.decode(value);
+      // 按SSE协议分割数据块
+      const lines = rawChunk.split("\n\n").filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const dataStr = line.slice(6);
+
+          // 收到结束信号
+          if (dataStr === "[DONE]") continue;
+
+          // 解析JSON数据
+          const data = JSON.parse(dataStr);
+
+          // 处理服务端返回的错误
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          // 追加最终答案
+          if (data.content) {
+            content += data.content;
+          }
+          // 字符串分割为数组，根据\n
+          const suggestions = content.split("\n").map((item) => item.trim());
+          searchSuggestions.value = suggestions;
+          // ✅ 关键：强制Vue立即更新DOM，实现逐字打字效果
+          // 解决Vue异步批量更新导致内容一次性显示的问题
+          await nextTick();
+        }
+      }
+    }
+
+    // 如果没有结果，使用查询词作为默认值
+    if (searchSuggestions.value.length === 0) {
+      searchSuggestions.value = [query];
+    }
+  } catch (error) {
+    console.error("获取联想词失败:", error);
+    searchSuggestions.value = [query];
+  }
 }
 </script>

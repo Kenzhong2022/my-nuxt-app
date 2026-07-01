@@ -9,11 +9,8 @@
     </div>
 
     <!-- 空购物车状态 -->
-    <div
-      v-if="cart.isEmpty"
-      class="bg-white rounded-lg p-12 text-center"
-    >
-      <el-icon :size="64" class="text-gray-300 mb-4"><ShoppingCart /></el-icon>
+    <div v-if="cart.isEmpty" class="bg-white rounded-lg p-12 text-center">
+      <div class="text-gray-300 mb-4 text-6xl">🛒</div>
       <p class="text-gray-500 mb-4">购物车空空如也</p>
       <el-button type="primary" @click="goShopping">去逛逛</el-button>
     </div>
@@ -21,20 +18,14 @@
     <!-- 购物车列表 -->
     <template v-else>
       <div class="space-y-3">
-        <CartItemRow
-          v-for="item in cart.items"
-          :key="item.id"
-          :item="item"
-        />
+        <CartItemRow v-for="item in cart.items" :key="item.id" :item="item" />
       </div>
 
       <!-- 底部结算栏（吸底） -->
       <div
         class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-10"
       >
-        <div
-          class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3"
-        >
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <!-- 全选 -->
           <el-checkbox
             :model-value="cart.isAllSelected"
@@ -46,7 +37,9 @@
           <!-- 已选信息 -->
           <div class="flex-1 text-sm text-gray-600">
             <span>已选 </span>
-            <span class="text-primary font-semibold">{{ cart.selectedCount }}</span>
+            <span class="text-primary font-semibold">{{
+              cart.selectedCount
+            }}</span>
             <span> 件</span>
           </div>
 
@@ -75,7 +68,6 @@
 </template>
 
 <script setup lang="ts">
-import { ShoppingCart } from "@element-plus/icons-vue";
 import CartItemRow from "~/components/CartItemRow.vue";
 
 // 使用 store 布局

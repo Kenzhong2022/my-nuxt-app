@@ -11,16 +11,27 @@
   },
   "dependencies": {
     "@element-plus/nuxt": "^1.1.5",
+    "@neondatabase/serverless": "^1.1.0",
     "@pinia/nuxt": "^0.11.3",
     "@upstash/redis": "^1.38.0",
+    "bcrypt": "^6.0.0",
+    "dayjs": "^1.11.21",
     "element-plus": "^2.14.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.4.6",
+    "openai": "^6.42.0",
     "pinia": "^3.0.4",
+    "qrcode": "^1.5.4",
+    "uuid": "^14.0.1",
     "vue": "^3.5.34",
     "vue-router": "^5.0.7"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.14.0"
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.9.2",
+    "sass": "^1.100.0"
   }
 }
