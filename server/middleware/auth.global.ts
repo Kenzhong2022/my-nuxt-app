@@ -23,6 +23,9 @@ const WHITE_LIST = [
   "/register",
   "/CallBack",
   "/qrcode",
+  "/agent",
+  "/testdynamicForm",
+  "/Survey",
   "/",
 ];
 

@@ -15,6 +15,8 @@ export default defineNuxtConfig({
       // 比如你的网站标题、版本号等
       title: "My Nuxt App",
       version: "1.0.0",
+      // Agent API 地址（客户端组件需要访问，放公共配置）
+      agentBaseUrl: process.env.NUXT_AGENT_BASE_URL,
     },
   },
   modules: ["@pinia/nuxt", "@element-plus/nuxt", "@nuxtjs/tailwindcss"],
@@ -23,21 +25,20 @@ export default defineNuxtConfig({
       include: ["dayjs", "dayjs/plugin/*.js"],
     },
   },
-  css: ["~/assets/css/main.css"],
+  css: [
+    "~/assets/css/main.css",
+    "~/assets/iconfont/iconfont.css",
+    "element-plus/theme-chalk/dark/css-vars.css", // 引入element-plus的暗黑主题变量
+  ],
   elementPlus: {
     // 自动导入所有组件
     importStyle: "scss",
   },
+
   nitro: {
     preset: "netlify", // 部署到Netlify核心修改
 
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {},
-    // 关键：为 SSE 接口禁用压缩
-    routeRules: {
-      "/api/chat/stream": {
-        compress: false, // 禁用这个接口的压缩
-      },
-    },
   },
 });

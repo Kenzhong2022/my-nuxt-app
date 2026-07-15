@@ -1,25 +1,8 @@
 <template>
-  <!-- 开场动画遮罩 -->
-  <div class="flex-animation">
-    <div v-for="idx in 50" :key="idx">
-      <div class="inner-bg"></div>
-    </div>
-  </div>
-
   <el-container class="h-screen">
     <el-header class="border-b">
-      <div class="flex items-center justify-between h-full gap-4">
-        <div class="text-xl font-bold flex items-center gap-3">
-          管理后台
-          <!-- 增加v-if避免SSR变量未定义报错 -->
-          <el-switch
-            v-if="isClient"
-            v-model="isDark"
-            @change="toggleDark"
-            active-text="暗黑"
-            inactive-text="明亮"
-          />
-        </div>
+      <div class="flex items-center justify-between h-full">
+        <div class="text-xl font-bold">管理后台</div>
         <div class="desktop-menu">
           <el-menu
             :default-active="activeMenu"
@@ -86,45 +69,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from "vue";
+import { ref, markRaw } from "vue";
 import { ElMessage } from "element-plus";
-import gsap from "gsap";
-import { useDark } from "@vueuse/core";
-
-const isClient = import.meta.client;
-
-let isDark: Ref<boolean> = ref(false);
-let toggleDark: () => void = () => {};
-
-if (isClient) {
-  isDark = useDark({
-    storageKey: "admin-dark-mode",
-    selector: "html",
-    darkClass: "dark",
-  });
-  // 使用内置toggle
-  toggleDark = isDark.toggle;
-}
-
-onMounted(() => {
-  rotateYOpen();
-});
-
-// 方块横向收拢动画
-function rotateYOpen() {
-  const tl = gsap.timeline();
-  tl.to(".inner-bg", {
-    scaleX: 0,
-    transformOrigin: "center center",
-    opacity: 0,
-    duration: 1.3,
-    stagger: 0.015,
-    ease: "power2.out",
-  }).set(".flex-animation", {
-    display: "none",
-    delay: 0.05,
-  });
-}
 
 const activeMenu = ref("1");
 const defaultOpeneds = ref(["1"]);
@@ -231,37 +177,19 @@ const menuConfig = ref([
 ]);
 
 function handleMenuClick(child: { path: string }) {
+  // navigateTo(child.path);
   ElMessage.warning("功能暂未开发");
   showMobileMenu.value = false;
 }
 
 const showMobileMenu = ref(false);
+
 function toggleMobileMenu() {
   showMobileMenu.value = !showMobileMenu.value;
 }
 </script>
 
-<style scoped lang="scss">
-.flex-animation {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  z-index: 9999;
-  pointer-events: none;
-
-  & > div {
-    flex: 1;
-    height: 100vh;
-    .inner-bg {
-      width: 100%;
-      height: 100%;
-      background: #000;
-    }
-  }
-}
-
+<style scoped>
 @media (max-width: 768px) {
   .el-header {
     padding: 0 12px;
@@ -286,8 +214,7 @@ function toggleMobileMenu() {
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    /* ❗重点：删除写死#fff，交给element-plus暗黑变量自动控制 */
-    background: var(--el-bg-color);
+    background: #fff;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   }
   .el-aside.mobile-menu-visible {
@@ -295,6 +222,10 @@ function toggleMobileMenu() {
   }
   .el-main {
     padding: 12px;
+  }
+  .el-main > div {
+    margin: 0;
+    max-width: 100%;
   }
   .mobile-overlay {
     position: fixed;
