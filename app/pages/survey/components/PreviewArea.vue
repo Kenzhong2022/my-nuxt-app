@@ -154,7 +154,7 @@
               />
             </template>
             <template v-else>
-              <span style="color: #999">不支持的类型</span>
+              <span style="color: var(--el-text-color-secondary)">不支持的类型</span>
             </template>
           </el-form-item>
           <el-button
@@ -293,7 +293,7 @@ function removeQuestion(id: string) {
 
 <style scoped lang="scss">
 .preview-area {
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
@@ -308,7 +308,7 @@ function removeQuestion(id: string) {
     .count {
       font-size: 14px;
       font-weight: normal;
-      color: #999;
+      color: var(--el-text-color-secondary);
     }
   }
 
@@ -316,24 +316,24 @@ function removeQuestion(id: string) {
     position: relative;
     padding: 16px 40px 16px 24px;
     margin-bottom: 12px;
-    border: 2px solid #e8e8e8;
+    border: 2px solid var(--el-border-color-light);
     border-radius: 8px;
     cursor: pointer;
-    background: #fafbfc;
+    background: var(--el-fill-color-light);
 
     &.active {
-      border: 2px dashed #409eff;
-      background: #ecf5ff;
+      border: 2px dashed var(--el-color-primary);
+      background: var(--el-color-primary-light-9);
     }
 
     &:hover {
-      border-color: #409eff;
+      border-color: var(--el-color-primary);
     }
 
     &.trial-mode {
       border: none;
       border-radius: 0;
-      background: #fff;
+      background: var(--el-bg-color);
     }
 
     &.trial-mode:hover {
@@ -346,7 +346,7 @@ function removeQuestion(id: string) {
       top: 50%;
       transform: translateY(-50%);
       font-size: 18px;
-      color: #ccc;
+      color: var(--el-text-color-disabled);
       cursor: grab;
       user-select: none;
     }

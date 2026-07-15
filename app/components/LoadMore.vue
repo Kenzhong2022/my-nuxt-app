@@ -3,7 +3,6 @@
   <div ref="sentinel" class="py-8 text-center min-h-[60px]">
     <!-- 加载中状态 -->
     <div v-if="loading" class="flex justify-center items-center gap-2">
-      <span class="text-xl animate-spin">⏳</span>
       <span class="text-gray-500">加载中...</span>
     </div>
 
@@ -13,6 +12,7 @@
 </template>
 
 <script setup lang="ts">
+import gsap from "gsap";
 // 组件 Props 接口定义
 interface Props {
   loading: boolean; // 是否正在加载
@@ -66,6 +66,13 @@ function initObserver() {
   }
 }
 
+watch(
+  () => props.loading,
+  (isLoading) => {
+    console.log(isLoading);
+  },
+);
+
 // 组件挂载后初始化
 onMounted(() => {
   // 使用 nextTick 确保 DOM 完全渲染
@@ -97,3 +104,11 @@ onBeforeUnmount(() => {
   observer?.disconnect();
 });
 </script>
+
+<style scoped lang="scss">
+.loadingBall {
+  width: 50px;
+  height: 50px;
+  background: red;
+}
+</style>

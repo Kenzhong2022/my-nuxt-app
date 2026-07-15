@@ -181,15 +181,15 @@ defineExpose({
 .survey-designer {
   display: flex;
   height: 100vh;
-  background: #f5f7fa;
+  background: var(--el-bg-color-page);
 }
 .mobile-header {
   display: none;
 }
 .left-panel {
   width: 200px;
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  background: var(--el-bg-color);
+  border-right: 1px solid var(--el-border-color-light);
   padding: 16px;
   overflow-y: auto;
 }
@@ -203,8 +203,8 @@ defineExpose({
 }
 .right-panel {
   width: 320px;
-  background: #fff;
-  border-left: 1px solid #e4e7ed;
+  background: var(--el-bg-color);
+  border-left: 1px solid var(--el-border-color-light);
   padding: 16px;
   overflow-y: auto;
 }
@@ -219,8 +219,8 @@ defineExpose({
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: #fff;
-    border-bottom: 1px solid #e4e7ed;
+    background: var(--el-bg-color);
+    border-bottom: 1px solid var(--el-border-color-light);
   }
   .mobile-btn {
     padding: 8px;

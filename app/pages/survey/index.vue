@@ -28,7 +28,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import SurveyDesigner from "./components/SurveyDesigner.vue";
-import { House } from "@element-plus/icons-vue";
 
 definePageMeta({ layout: false });
 const surveyDesignerRef = ref<InstanceType<typeof SurveyDesigner>>();
@@ -107,9 +106,9 @@ function validateSurvey(): boolean {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-light);
+  box-shadow: 0 1px 4px var(--el-box-shadow-lighter);
 }
 .header-left {
   flex-grow: 1;

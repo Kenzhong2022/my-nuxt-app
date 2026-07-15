@@ -69,36 +69,43 @@ function setCardRef(el: HTMLElement, id: string) {
 const cardList: CardConfig[] = [
   {
     id: "shop",
-    title: "商城",
+    title: "商城系统",
     description: "这是一个商城模块，用于展示商品信息、购物车功能和订单管理。",
     buttonText: "去逛逛",
     action: () => navigateTo("/store"),
   },
   {
     id: "survey",
-    title: "问卷",
-    description: "前往问卷模块",
+    title: "问卷工坊",
+    description:
+      "支持拖拽可视化搭建、动态表单配置、题目联动依赖，可实时试答、一键发布分享问卷。",
     buttonText: "进入问卷",
     action: () => navigateTo("/survey"),
   },
   {
     id: "admin",
-    title: "后台管理",
+    title: "后台管理系统",
     description: "前往后台管理模块",
     buttonText: "进入后台",
     action: () => navigateTo("/admin"),
   },
   {
     id: "agent",
-    title: "agent 模块",
-    description: "前往 agent 模块",
+    title: "Chief agent",
+    description:
+      "Python后端构建LangChain智能体，调用千问视觉识别食材，联网搜索食谱，流式输出可暂停的Markdown结果。",
     buttonText: "进入Agent",
     action: () => navigateTo("/agent"),
   },
 ];
 
+const loadingStore = useLoadingStore();
+
 function handleCardClick(card: CardConfig) {
-  card.action();
+  loadingStore.setLoading(true);
+  setTimeout(() => {
+    card.action();
+  }, 300);
 }
 
 function animationCardTitle() {
@@ -143,18 +150,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-.card-title-char {
-  font-size: 3rem;
-  /* 错位阴影模拟3D厚度 + 蓝紫外发光 */
-  text-shadow:
-    1px 1px 2px #7c3aed,
-    2px 2px 4px #6366f1,
-    3px 3px 6px #4f46e5,
-    /* 蓝紫渐变发光层 */ 0 0 6px #3b82f6,
-    0 0 14px #8b5cf6,
-    0 0 24px #a855f7;
-}
-
+// ===================== 顶层容器 =====================
 .index-container {
   min-height: 100vh;
 }
@@ -165,16 +161,36 @@ onUnmounted(() => {
 }
 
 .info {
-  color: #fff;
+  color: var(--el-text-color-secondary);
   margin: 20px 0 50px;
 }
 
-.card-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  line-height: 2;
+// ===================== 标题文字动画字符 =====================
+.card-title-char {
+  font-size: 3rem;
+  color: var(--el-text-color-primary);
 }
 
+// scoped样式中访问html根类，必须使用:global()
+.dark {
+  .card-title > .card-title-char {
+    // 3D模拟阴影 + 蓝紫霓虹发光
+    text-shadow:
+      1px 1px 2px #7c3aed,
+      2px 2px 4px #6366f1,
+      3px 3px 6px #4f46e5,
+      0 0 6px #3b82f6,
+      0 0 14px #8b5cf6,
+      0 0 24px #a855f7;
+  }
+}
+
+.project-desc-char {
+  font-size: 1rem;
+  color: var(--el-text-color-secondary);
+}
+
+// ===================== 卡片布局容器 =====================
 .project-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -182,77 +198,94 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+// ===================== 卡片主体 =====================
 .project-card {
+  --card-radius: 20px; // 统一抽取圆角变量，方便修改
+  --card-inset: 3px;
   position: relative;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
+  border-radius: var(--card-radius);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   height: 300px;
   overflow: hidden;
+  background: rgba(0, 0, 0, 0.6);
 
+  // 内层底色容器
   .inner {
     position: absolute;
     z-index: 3;
+    inset: var(--card-inset);
     display: flex;
     flex-direction: column;
     padding: 20px;
-    border-radius: inherit;
-    background: #222;
-    inset: 5px;
-    color: #fff;
+    border-radius: calc(var(--card-radius) - var(--card-inset));
+    background: var(--el-bg-color);
+    color: var(--el-text-color-primary);
   }
 
+  // 鼠标跟随径向渐变光效
   &::before {
     content: "";
     position: absolute;
+    z-index: 2;
     top: var(--y, -1000px);
     left: var(--x, -1000px);
     width: 100%;
     height: 100%;
+    border-radius: 50%;
     background: radial-gradient(
       closest-side circle,
-      rgba(255, 255, 255, 0.6) 0%,
+      var(--el-border-color-darker) 0%,
       transparent 100%
     );
-    z-index: 2;
-    border-radius: inherit;
     transform: translate(-50%, -50%);
-  }
-}
-
-.card-footer {
-  margin-top: auto;
-  padding-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  position: relative;
-  transition: color 0.3s ease-in-out;
-  // 底部下划线伪元素
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -6px;
-    width: 0;
-    height: 1px;
-    background-color: #fff;
-    transition: width 0.3s ease-in; // 下划线宽度过渡
+    pointer-events: none;
   }
 
-  &:hover {
-    color: #fff;
+  // 卡片标题
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 2;
+  }
+
+  // 卡片描述文本
+  .card-desc {
+    font-size: 1rem;
+    color: var(--el-text-color-secondary);
+    margin-bottom: auto;
+  }
+
+  // 底部跳转按钮区域
+  .card-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
+    position: relative;
+    color: var(--el-text-color-secondary);
+    transition: color 0.3s ease-in-out;
+
+    // 底部下滑线
     &::after {
-      width: 100%;
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 0;
+      height: 1px;
+      background-color: var(--el-text-color-primary);
+      transition: width 0.3s ease-in;
+    }
+
+    &:hover {
+      color: var(--el-text-color-primary);
+
+      &::after {
+        width: 100%;
+      }
     }
   }
-}
-
-.card-desc {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
 }
 </style>

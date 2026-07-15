@@ -27,6 +27,4 @@ definePageMeta({
 const { products, loading, hasMore, loadMore } = useProducts({
   pageSize: 5,
 });
-
-onMounted(() => {});
 </script>

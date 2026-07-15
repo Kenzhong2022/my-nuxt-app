@@ -197,12 +197,12 @@ function handlePaste(e: ClipboardEvent) {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .chat-input-container {
   width: 70%;
-  background: white;
+  background: var(--el-bg-color);
   border-radius: 16px;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--el-border-color-light);
   padding: 16px;
   margin: 0 auto;
   .image-slot {
@@ -214,7 +214,7 @@ function handlePaste(e: ClipboardEvent) {
       right: 4px;
       width: 20px;
       height: 20px;
-      color: white;
+      color: var(--el-bg-color);
       background: rgba(0, 0, 0, 0.6);
       border-radius: 50%;
       display: flex;
@@ -238,12 +238,12 @@ function handlePaste(e: ClipboardEvent) {
   min-height: 80px;
   resize: none;
   outline: none;
-  color: var(--color-gray-700);
+  color: var(--el-text-color-primary);
   font-size: 18px;
   border: none;
   background: transparent;
   &::placeholder {
-    color: var(--color-gray-300);
+    color: var(--el-text-color-placeholder);
   }
 }
 
@@ -263,10 +263,10 @@ function handlePaste(e: ClipboardEvent) {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #2563eb;
-  color: white;
+  background: var(--el-color-primary);
+  color: var(--el-bg-color);
   border: none;
-  font-size: 24px;
+  font-size: 36px;
   transition: background-color 0.2s;
   &:hover {
     background: rgba(174, 187, 243, 0.8);

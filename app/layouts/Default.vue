@@ -12,13 +12,14 @@
         <div class="text-xl font-bold flex items-center gap-3">
           管理后台
           <!-- 增加v-if避免SSR变量未定义报错 -->
-          <el-switch
-            v-if="isClient"
-            v-model="isDark"
-            @change="toggleDark"
-            active-text="暗黑"
-            inactive-text="明亮"
-          />
+          <ClientOnly>
+            <el-switch
+              :model-value="isDark"
+              @update:model-value="(newVal) => (isDark = newVal as boolean)"
+              active-text="暗黑"
+              inactive-text="明亮"
+            />
+          </ClientOnly>
         </div>
         <div class="desktop-menu">
           <el-menu
@@ -94,42 +95,45 @@ import { useDark } from "@vueuse/core";
 const isClient = import.meta.client;
 
 let isDark: Ref<boolean> = ref(false);
-let toggleDark: () => void = () => {};
 
 if (isClient) {
   isDark = useDark({
     storageKey: "admin-dark-mode",
     selector: "html",
-    darkClass: "dark",
+    valueDark: "dark",
   });
-  // 使用内置toggle
-  toggleDark = isDark.toggle;
 }
 
 onMounted(() => {
   rotateYOpen();
 });
 
+onUnmounted(() => {
+  console.log("组件卸载时执行");
+});
+
 // 方块横向收拢动画
 function rotateYOpen() {
   const tl = gsap.timeline();
-  tl.to(".inner-bg", {
-    scaleX: 0,
-    transformOrigin: "center center",
-    opacity: 0,
-    duration: 1.3,
-    stagger: 0.015,
-    ease: "power2.out",
-  }).set(".flex-animation", {
-    display: "none",
-    delay: 0.05,
-  });
+  tl.set(".flex-animation", {
+    display: "flex",
+  })
+    .to(".inner-bg", {
+      scaleX: 0,
+      transformOrigin: "center center",
+      opacity: 0,
+      duration: 1.3,
+      stagger: 0.015,
+      ease: "power2.out",
+    })
+    .set(".flex-animation", {
+      display: "none",
+    });
 }
 
 const activeMenu = ref("1");
 const defaultOpeneds = ref(["1"]);
 
-// 菜单配置数据
 const menuConfig = ref([
   {
     id: 1,
@@ -164,12 +168,12 @@ const menuConfig = ref([
   {
     id: 3,
     parentId: 0,
-    name: "用户会员",
+    name: "商城会员",
     icon: "member",
     path: "/member",
     children: [
-      { id: 31, parentId: 3, name: "用户列表", path: "/member/list" },
-      { id: 32, parentId: 3, name: "用户标签", path: "/member/tag" },
+      { id: 31, parentId: 3, name: "会员列表", path: "/member/list" },
+      { id: 32, parentId: 3, name: "会员标签", path: "/member/tag" },
       { id: 33, parentId: 3, name: "会员等级配置", path: "/member/level" },
       { id: 34, parentId: 3, name: "账户流水明细", path: "/member/account" },
     ],
@@ -217,15 +221,40 @@ const menuConfig = ref([
   {
     id: 7,
     parentId: 0,
-    name: "系统设置",
+    name: "系统权限",
     icon: "setting",
     path: "/system",
     children: [
       { id: 71, parentId: 7, name: "管理员账号", path: "/system/admin" },
-      { id: 72, parentId: 7, name: "角色权限管理", path: "/system/role" },
+      { id: 72, parentId: 7, name: "角色管理", path: "/system/role" },
       { id: 73, parentId: 7, name: "站点基础配置", path: "/system/config" },
       { id: 74, parentId: 7, name: "数据字典", path: "/system/dict" },
       { id: 75, parentId: 7, name: "系统日志", path: "/system/log" },
+    ],
+  },
+  // 新增 问卷工坊 独立一级菜单
+  {
+    id: 8,
+    parentId: 0,
+    name: "问卷工坊",
+    icon: "document",
+    path: "/survey",
+    children: [
+      { id: 81, parentId: 8, name: "问卷列表", path: "/survey/list" },
+      { id: 82, parentId: 8, name: "创建问卷", path: "/survey/create" },
+      { id: 83, parentId: 8, name: "答卷数据", path: "/survey/record" },
+    ],
+  },
+  // 新增 Chief Agent 独立一级菜单
+  {
+    id: 9,
+    parentId: 0,
+    name: "Chief Agent",
+    icon: "magic-stick",
+    path: "/agent",
+    children: [
+      { id: 91, parentId: 9, name: "智能对话", path: "/agent/chat" },
+      { id: 92, parentId: 9, name: "会话记录", path: "/agent/history" },
     ],
   },
 ]);

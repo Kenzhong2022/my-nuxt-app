@@ -47,9 +47,10 @@ defineEmits<{
 .history-sidebar {
   width: 100%;
   height: 100%;
-  background: var(--color-bg-card);
+  background: var(--el-bg-color);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px var(--el-box-shadow);
 
   .sidebar-header {
     display: flex;
@@ -58,7 +59,7 @@ defineEmits<{
     padding: 16px;
     font-weight: bold;
     font-size: 16px;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--el-border-color-light);
   }
 
   .sidebar-content {
@@ -77,19 +78,19 @@ defineEmits<{
     transition: background-color 0.2s;
 
     &:hover {
-      background-color: var(--color-bg-muted);
+      background-color: var(--el-fill-color-light);
     }
 
     &.active {
-      background-color: #dbeafe;
+      background-color: var(--el-color-primary-light-9);
     }
 
     .session-avatar {
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background-color: #3b82f6;
-      color: white;
+      background-color: var(--el-color-primary);
+      color: var(--el-text-color-primary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -108,7 +109,7 @@ defineEmits<{
 
       .session-preview {
         font-size: 12px;
-        color: var(--color-gray-500);
+        color: var(--el-text-color-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

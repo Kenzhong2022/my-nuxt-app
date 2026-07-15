@@ -205,13 +205,13 @@ onBeforeUnmount(() => {
   padding-left: 1.2em;
 }
 .chat-area .markdown-content code {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--el-fill-color-light);
   padding: 0.2em 0.4em;
   border-radius: 4px;
   font-family: monospace;
 }
 .chat-area .markdown-content pre {
-  background: #f6f8fa;
+  background: var(--el-bg-color);
   padding: 10px;
   border-radius: 6px;
   overflow-x: auto;
@@ -226,13 +226,13 @@ onBeforeUnmount(() => {
 }
 .chat-area .markdown-content table th,
 .chat-area .markdown-content table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--el-border-color-light);
   padding: 6px 10px;
 }
 .chat-area .markdown-content blockquote {
-  border-left: 3px solid #ddd;
+  border-left: 3px solid var(--el-border-color-light);
   padding-left: 10px;
-  color: #666;
+  color: var(--el-text-color-secondary);
 }
 </style>
 
@@ -240,7 +240,7 @@ onBeforeUnmount(() => {
 .chat-area {
   width: 100%;
   height: 100%;
-  background: #ffffff;
+  background: var(--el-bg-color-overlay);
   display: flex;
   flex-direction: column;
 
@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: space-between;
     padding: 20px 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px var(--el-box-shadow-lighter);
 
     .header-title {
       font-weight: bold;
@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
       font-weight: bold;
       margin-bottom: 4px;
       font-size: 13px;
-      color: #666;
+      color: var(--el-text-color-secondary);
     }
 
     .message-content {
@@ -289,7 +289,7 @@ onBeforeUnmount(() => {
       align-self: flex-end;
 
       .message-content {
-        background-color: #dbeafe;
+        background-color: var(--el-color-primary-light-9);
         max-width: 80%;
         margin-left: auto;
       }
@@ -299,7 +299,7 @@ onBeforeUnmount(() => {
       align-self: flex-start;
 
       .message-content {
-        background-color: #f3f4f6;
+        background-color: var(--el-fill-color-light);
       }
     }
 

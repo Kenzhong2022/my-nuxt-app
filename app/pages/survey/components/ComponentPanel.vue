@@ -31,12 +31,12 @@ const emit = defineEmits<{
 <style scoped>
 .component-panel h3 {
   margin-top: 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   padding-bottom: 8px;
 }
 .tip {
   font-size: 12px;
-  color: #999;
+  color: var(--el-text-color-secondary);
   margin: 8px 0 16px;
 }
 .panel-item {
@@ -48,11 +48,11 @@ const emit = defineEmits<{
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: var(--el-bg-color);
 }
 .panel-item:hover {
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 .panel-item .el-icon {
   font-size: 18px;
