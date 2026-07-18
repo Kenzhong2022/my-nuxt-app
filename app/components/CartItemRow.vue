@@ -1,5 +1,7 @@
 <template>
-  <div class="bg-white rounded-lg p-3 md:p-4 flex gap-3 md:gap-4 items-center">
+  <div
+    class="cart-item-row rounded-lg p-3 md:p-4 flex gap-3 md:gap-4 items-center"
+  >
     <!-- 勾选 -->
     <el-checkbox
       :model-value="isSelected"
@@ -8,7 +10,7 @@
 
     <!-- 商品图片 -->
     <div
-      class="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded overflow-hidden flex-shrink-0"
+      class="cart-image-wrapper w-20 h-20 md:w-24 md:h-24 rounded overflow-hidden flex-shrink-0"
     >
       <img
         :src="item.image"
@@ -29,7 +31,7 @@
         <span
           v-for="tag in item.tags"
           :key="tag"
-          class="px-1.5 py-0.5 bg-red-50 text-red-500 text-xs rounded"
+          class="cart-tag px-1.5 py-0.5 text-xs rounded"
         >
           {{ tag }}
         </span>
@@ -39,13 +41,13 @@
       <div class="flex items-end justify-between gap-2 flex-wrap">
         <div class="flex items-baseline gap-2 flex-shrink-0">
           <span
-            class="text-base md:text-lg font-bold text-primary tabular-nums whitespace-nowrap min-w-[72px] text-right inline-block"
+            class="cart-price text-base md:text-lg font-bold tabular-nums whitespace-nowrap min-w-[72px] text-right inline-block"
           >
             ¥{{ item.price.toFixed(2) }}
           </span>
           <span
             v-if="item.originalPrice"
-            class="text-xs text-gray-400 line-through tabular-nums whitespace-nowrap"
+            class="cart-original-price text-xs line-through tabular-nums whitespace-nowrap"
           >
             ¥{{ item.originalPrice.toFixed(2) }}
           </span>
@@ -65,7 +67,7 @@
     <!-- 操作区：删除按钮（移动端放下面，桌面端放右侧） -->
     <div class="flex flex-col items-end gap-2 w-24 flex-shrink-0">
       <span
-        class="text-sm md:text-base font-semibold text-primary tabular-nums whitespace-nowrap w-full text-right"
+        class="cart-subtotal text-sm md:text-base font-semibold tabular-nums whitespace-nowrap w-full text-right"
       >
         ¥{{ (item.qty * item.price).toFixed(2) }}
       </span>
@@ -100,3 +102,25 @@ function handleRemove() {
     .catch(() => {});
 }
 </script>
+
+<style scoped>
+.cart-item-row {
+  background: var(--el-bg-color);
+}
+.cart-image-wrapper {
+  background: var(--el-fill-color-light);
+}
+.cart-tag {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+.cart-price {
+  color: var(--el-color-primary);
+}
+.cart-original-price {
+  color: var(--el-text-color-placeholder);
+}
+.cart-subtotal {
+  color: var(--el-color-primary);
+}
+</style>

@@ -1,7 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+import { visualizer } from "rollup-plugin-visualizer";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   runtimeConfig: {
     // 私有配置：只有服务端能访问，客户端永远看不到
     deepseek: {
@@ -21,9 +23,52 @@ export default defineNuxtConfig({
   },
   modules: ["@pinia/nuxt", "@element-plus/nuxt", "@nuxtjs/tailwindcss"],
   vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            // 只处理 node_modules
+            if (!id.includes("node_modules")) return;
+
+            // 1. 超大库：单独拆（>100KB）
+            if (id.includes("element-plus") && !id.includes("icons-vue")) {
+              return "vendor-element-plus";
+            }
+            if (id.includes("@element-plus/icons-vue")) {
+              return "vendor-element-icons";
+            }
+            if (id.includes("gsap")) {
+              return "vendor-gsap";
+            }
+
+            // 2. Vue 生态：合并
+            if (
+              id.includes("vue") ||
+              id.includes("vue-router") ||
+              id.includes("pinia") ||
+              id.includes("@pinia/nuxt") ||
+              id.includes("@vueuse/core")
+            ) {
+              return "vendor-vue";
+            }
+
+            // 3. 其他第三方库：合并
+            return "vendor-others";
+          },
+        },
+      },
+    },
     optimizeDeps: {
       include: ["dayjs", "dayjs/plugin/*.js"],
     },
+    plugins: [
+      visualizer({
+        filename: ".nuxt/stats.html", // 输出位置
+        open: true, // 构建后自动打开浏览器
+        gzipSize: true,
+        brotliSize: true,
+      }),
+    ],
   },
   css: [
     "~/assets/css/main.css",

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="product-card">
     <div class="mb-6 md:mb-8">
       <h1 class="text-xl md:text-2xl font-bold">热门商品</h1>
     </div>

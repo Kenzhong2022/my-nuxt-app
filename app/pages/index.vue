@@ -171,20 +171,6 @@ onUnmounted(() => {
   color: var(--el-text-color-primary);
 }
 
-// scoped样式中访问html根类，必须使用:global()
-.dark {
-  .card-title > .card-title-char {
-    // 3D模拟阴影 + 蓝紫霓虹发光
-    text-shadow:
-      1px 1px 2px #7c3aed,
-      2px 2px 4px #6366f1,
-      3px 3px 6px #4f46e5,
-      0 0 6px #3b82f6,
-      0 0 14px #8b5cf6,
-      0 0 24px #a855f7;
-  }
-}
-
 .project-desc-char {
   font-size: 1rem;
   color: var(--el-text-color-secondary);

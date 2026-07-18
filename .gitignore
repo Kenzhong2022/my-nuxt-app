@@ -7,6 +7,8 @@
 dist
 .netlify
 docs
+*.md
+*.zip
 
 # Node dependencies
 node_modules

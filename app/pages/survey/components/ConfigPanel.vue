@@ -89,6 +89,7 @@
                 v-else-if="questionModel.type === 'radio'"
                 :model-value="questionModel.defaultValue"
                 @update:model-value="updateField('defaultValue', $event)"
+                fill="#409eff"
               >
                 <el-radio
                   v-for="opt in questionModel.options"
@@ -125,7 +126,9 @@
                 :model-value="questionModel.defaultValue"
                 @update:model-value="updateField('defaultValue', $event)"
               />
-              <span v-else style="color: #999">暂不支持默认值配置</span>
+              <span v-else style="color: var(--el-text-color-secondary)"
+                >暂不支持默认值配置</span
+              >
             </el-form-item>
 
             <!-- 其他特殊属性 -->
@@ -200,8 +203,8 @@
                       )
                     "
                   >
-                    <el-radio :value="true">已答</el-radio>
-                    <el-radio :value="false">未答</el-radio>
+                    <el-radio-button :value="true">已答</el-radio-button>
+                    <el-radio-button :value="false">未答</el-radio-button>
                   </el-radio-group>
                 </el-form-item>
                 <el-form-item label="执行动作">
@@ -215,8 +218,8 @@
                       )
                     "
                   >
-                    <el-radio :value="true">显示</el-radio>
-                    <el-radio :value="false">隐藏</el-radio>
+                    <el-radio-button :value="true">显示</el-radio-button>
+                    <el-radio-button :value="false">隐藏</el-radio-button>
                   </el-radio-group>
                 </el-form-item>
               </el-form>
@@ -360,7 +363,7 @@ function updateDependencyRule<K extends keyof DependencyRule>(
 <style scoped>
 .config-panel h3 {
   margin-top: 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   padding-bottom: 8px;
 }
 .option-item {
@@ -383,9 +386,9 @@ function updateDependencyRule<K extends keyof DependencyRule>(
 }
 .dependency-rule {
   padding: 16px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   margin-bottom: 12px;
-  background: #fafbfc;
+  background: var(--el-fill-color-light);
 }
 </style>

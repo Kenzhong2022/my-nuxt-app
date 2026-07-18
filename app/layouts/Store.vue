@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col bg-[var(--el-bg-color-overlay)]">
     <HomeButton />
     <!-- 顶部栏 -->
     <el-header class="border-b !h-16">
@@ -12,7 +12,9 @@
 
         <!-- 电脑导航 -->
         <div class="hidden md:flex items-center gap-8">
-          <span class="cursor-pointer hover:text-blue-500">首页</span>
+          <span class="cursor-pointer hover:text-blue-500" @click="goHome"
+            >首页</span
+          >
           <span class="cursor-pointer hover:text-blue-500">商品分类</span>
           <span class="cursor-pointer hover:text-blue-500">新品上市</span>
           <span class="cursor-pointer hover:text-blue-500">优惠活动</span>
@@ -20,7 +22,7 @@
 
         <!-- 手机菜单按钮 -->
         <el-button class="md:hidden" circle @click="drawerVisible = true">
-          菜单
+          <el-icon><Menu /></el-icon>
         </el-button>
         <div class="flex items-center gap-4">
           <el-badge :value="cart.totalCount" :hidden="cart.isEmpty" :max="99">
@@ -30,12 +32,12 @@
               aria-label="购物车"
               @click="goCart"
             >
-              购物车
+              <div class="iconfont icon-cart-empty"></div>
             </el-button>
           </el-badge>
-          <el-button circle class="cursor-pointer" @click="goUser"
-            >用户</el-button
-          >
+          <el-button circle class="cursor-pointer" @click="goUser">
+            <div class="iconfont icon-yonghu"></div>
+          </el-button>
         </div>
       </div>
     </el-header>
@@ -61,7 +63,7 @@
     />
 
     <!-- 主内容 -->
-    <el-main class="flex-1 py-4 md:py-6 px-4">
+    <el-main class="flex-1">
       <div class="max-w-5xl mx-auto">
         <slot />
       </div>
@@ -120,11 +122,11 @@ const drawerVisible = ref(false);
 const cart = useCartStore();
 
 function goCart() {
-  navigateTo("/cart");
+  navigateTo("/store/cart");
 }
 
 function goHome() {
-  navigateTo("/");
+  navigateTo("/store");
 }
 
 function goUser() {
@@ -134,5 +136,6 @@ function goUser() {
 
 function onSearch({ query, mode }: { query: string; mode: string }) {
   console.log(query, mode);
+  ElMessage.warning("功能暂未开放");
 }
 </script>

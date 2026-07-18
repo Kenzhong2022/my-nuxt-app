@@ -81,6 +81,7 @@ function goHome() {
 
 function publishSurvey() {
   const valid = validateSurvey();
+  ElMessage.warning("功能暂未开放");
   if (!valid) {
     return;
   }

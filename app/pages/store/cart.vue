@@ -3,15 +3,15 @@
     <!-- 标题 -->
     <div class="mb-4 md:mb-6">
       <h1 class="text-xl md:text-2xl font-bold">我的购物车</h1>
-      <p v-if="!cart.isEmpty" class="text-sm text-gray-500 mt-1">
+      <p v-if="!cart.isEmpty" class="cart-count text-sm mt-1">
         共 {{ cart.totalCount }} 件商品
       </p>
     </div>
 
     <!-- 空购物车状态 -->
-    <div v-if="cart.isEmpty" class="bg-white rounded-lg p-12 text-center">
-      <div class="text-gray-300 mb-4 text-6xl">🛒</div>
-      <p class="text-gray-500 mb-4">购物车空空如也</p>
+    <div v-if="cart.isEmpty" class="cart-empty rounded-lg p-12 text-center">
+      <div class="cart-empty-icon mb-4 text-6xl">🛒</div>
+      <p class="cart-empty-text mb-4">购物车空空如也</p>
       <el-button type="primary" @click="goShopping">去逛逛</el-button>
     </div>
 
@@ -23,7 +23,7 @@
 
       <!-- 底部结算栏（吸底） -->
       <div
-        class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-10"
+        class="cart-footer fixed bottom-0 left-0 right-0 border-t shadow-lg z-10"
       >
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <!-- 全选 -->
@@ -35,9 +35,9 @@
           </el-checkbox>
 
           <!-- 已选信息 -->
-          <div class="flex-1 text-sm text-gray-600">
+          <div class="cart-selected-info flex-1 text-sm">
             <span>已选 </span>
-            <span class="text-primary font-semibold">{{
+            <span class="cart-selected-count font-semibold">{{
               cart.selectedCount
             }}</span>
             <span> 件</span>
@@ -45,9 +45,9 @@
 
           <!-- 合计 -->
           <div class="text-right">
-            <div class="text-xs text-gray-500">合计</div>
+            <div class="cart-total-label text-xs">合计</div>
             <div
-              class="text-lg md:text-xl font-bold text-primary tabular-nums whitespace-nowrap min-w-[100px] inline-block"
+              class="cart-total-price text-lg md:text-xl font-bold tabular-nums whitespace-nowrap min-w-[100px] inline-block"
             >
               ¥{{ cart.selectedPrice.toFixed(2) }}
             </div>
@@ -96,3 +96,34 @@ function handleCheckout() {
   );
 }
 </script>
+
+<style scoped>
+.cart-count {
+  color: var(--el-text-color-secondary);
+}
+.cart-empty {
+  background: var(--el-bg-color);
+}
+.cart-empty-icon {
+  color: var(--el-text-color-disabled);
+}
+.cart-empty-text {
+  color: var(--el-text-color-secondary);
+}
+.cart-footer {
+  background: var(--el-bg-color);
+  border-color: var(--el-border-color-light);
+}
+.cart-selected-info {
+  color: var(--el-text-color-regular);
+}
+.cart-selected-count {
+  color: var(--el-color-primary);
+}
+.cart-total-label {
+  color: var(--el-text-color-secondary);
+}
+.cart-total-price {
+  color: var(--el-color-primary);
+}
+</style>

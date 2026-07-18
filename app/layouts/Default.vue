@@ -11,7 +11,6 @@
       <div class="flex items-center justify-between h-full gap-4">
         <div class="text-xl font-bold flex items-center gap-3">
           管理后台
-          <!-- 增加v-if避免SSR变量未定义报错 -->
           <ClientOnly>
             <el-switch
               :model-value="isDark"
@@ -27,14 +26,29 @@
             mode="horizontal"
             class="border-none"
           >
-            <el-menu-item
-              v-for="menu in menuConfig"
-              :key="menu.id"
-              :index="String(menu.id)"
-              @click="activeMenu = String(menu.id)"
-            >
-              {{ menu.name }}
-            </el-menu-item>
+            <template v-for="menu in menuConfig" :key="menu.id">
+              <el-sub-menu
+                v-if="menu.children?.length"
+                :index="String(menu.id)"
+              >
+                <template #title>{{ menu.name }}</template>
+                <el-menu-item
+                  v-for="child in menu.children"
+                  :key="child.id"
+                  :index="String(child.id)"
+                  @click="handleMenuClick(child)"
+                >
+                  {{ child.name }}
+                </el-menu-item>
+              </el-sub-menu>
+              <el-menu-item
+                v-else
+                :index="String(menu.id)"
+                @click="handleMenuClick(menu)"
+              >
+                {{ menu.name }}
+              </el-menu-item>
+            </template>
           </el-menu>
         </div>
         <el-button
@@ -61,7 +75,7 @@
           mode="vertical"
         >
           <template v-for="menu in menuConfig" :key="menu.id">
-            <el-sub-menu :index="String(menu.id)">
+            <el-sub-menu v-if="menu.children?.length" :index="String(menu.id)">
               <template #title>
                 <span>{{ menu.name }}</span>
               </template>
@@ -74,6 +88,13 @@
                 {{ child.name }}
               </el-menu-item>
             </el-sub-menu>
+            <el-menu-item
+              v-else
+              :index="String(menu.id)"
+              @click="handleMenuClick(menu)"
+            >
+              {{ menu.name }}
+            </el-menu-item>
           </template>
         </el-menu>
       </el-aside>
@@ -135,6 +156,13 @@ const activeMenu = ref("1");
 const defaultOpeneds = ref(["1"]);
 
 const menuConfig = ref([
+  {
+    id: 0,
+    parentId: 0,
+    name: "Dashboard",
+    icon: "dashboard",
+    path: "/dashboard",
+  },
   {
     id: 1,
     parentId: 0,
@@ -259,9 +287,10 @@ const menuConfig = ref([
   },
 ]);
 
-function handleMenuClick(child: { path: string }) {
+function handleMenuClick(item: { path: string }) {
+  // 功能未开放
   ElMessage.warning("功能暂未开发");
-  showMobileMenu.value = false;
+  return;
 }
 
 const showMobileMenu = ref(false);
