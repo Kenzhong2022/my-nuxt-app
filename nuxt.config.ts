@@ -37,9 +37,9 @@ export default defineNuxtConfig({
             if (id.includes("@element-plus/icons-vue")) {
               return "vendor-element-icons";
             }
-            if (id.includes("gsap")) {
-              return "vendor-gsap";
-            }
+            // if (id.includes("gsap")) {
+            //   return "vendor-gsap";
+            // }
 
             // 2. Vue 生态：合并
             if (
