@@ -35,28 +35,12 @@ export default defineNuxtConfig({
           manualChunks(id: string) {
             if (!id.includes("node_modules")) return;
 
-            // 1. Element Plus 及其直接依赖
-            if (
-              id.includes("element-plus") ||
-              id.includes("@element-plus/icons-vue") ||
-              id.includes("dayjs") // dayjs 被 element-plus 内部使用
-            ) {
-              return "vendor-element";
-            }
+            // 1. 超大独立库：单独拆分（>500KB），这些库不依赖 Element Plus
+            if (id.includes("gsap")) return "vendor-gsap";
+            if (id.includes("openai")) return "vendor-openai";
 
-            // 2. Vue 生态
-            if (
-              id.includes("vue") ||
-              id.includes("vue-router") ||
-              id.includes("pinia") ||
-              id.includes("@pinia/nuxt") ||
-              id.includes("@vueuse/core")
-            ) {
-              return "vendor-vue";
-            }
-
-            // 3. 其他库
-            return "vendor-others";
+            // 2. 其他所有第三方库：合并到一个 chunk，避免循环依赖
+            return "vendor";
           },
         },
       },
@@ -84,7 +68,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // preset: "netlify", // 部署到Netlify时取消注释
+    preset: "netlify", // 部署到Netlify时取消注释
 
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {},
