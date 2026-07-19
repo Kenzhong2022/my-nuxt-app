@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 import { visualizer } from "rollup-plugin-visualizer";
+import viteCompression from "vite-plugin-compression";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
@@ -72,6 +73,13 @@ export default defineNuxtConfig({
         open: true, // 构建后自动打开浏览器
         gzipSize: true,
         brotliSize: true,
+      }),
+      // Brotli 压缩（压缩率更高，现代浏览器支持）
+      viteCompression({
+        algorithm: "brotliCompress",
+        ext: ".br",
+        threshold: 10240,
+        deleteOriginFile: false,
       }),
     ],
   },
