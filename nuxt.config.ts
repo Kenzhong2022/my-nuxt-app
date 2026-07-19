@@ -26,20 +26,38 @@ export default defineNuxtConfig({
     build: {
       rollupOptions: {
         output: {
-          // manualChunks(id: string) {
-          //   if (!id.includes("node_modules")) return;
-
-          //   // 将所有第三方库合并到一个 chunk，避免循环依赖
-          //   return "vendor";
-          // },
           manualChunks(id: string) {
             if (!id.includes("node_modules")) return;
 
-            // 1. 超大独立库：单独拆分（>500KB），这些库不依赖 Element Plus
-            if (id.includes("gsap")) return "vendor-gsap";
-            if (id.includes("openai")) return "vendor-openai";
+            // 🛑 服务端专用库：绝对不要打包进客户端
+            if (
+              id.includes("bcrypt") ||
+              id.includes("jsonwebtoken") ||
+              id.includes("@neondatabase") ||
+              id.includes("@upstash") ||
+              id.includes("node:")
+            ) {
+              return undefined;
+            }
 
-            // 2. 其他所有第三方库：合并到一个 chunk，避免循环依赖
+            // ⚠️ Vue 核心必须保留在主入口（不拆分）
+            if (
+              id.includes("/vue/") ||
+              id.includes("/vue-router/") ||
+              id.includes("/pinia/") ||
+              id.includes("/@vueuse/")
+            ) {
+              return undefined;
+            }
+
+            // 🟢 只拆分绝对独立、无内部交叉依赖的巨型纯客户端库
+            // 这些库通常只被你的业务代码直接 import，不与其他第三方库纠缠
+            if (id.includes("gsap")) return "vendor.gsap";
+            if (id.includes("openai")) return "vendor.openai";
+            if (id.includes("qrcode")) return "vendor.qrcode";
+
+            // 🔥 其他所有依赖（包括 element-plus）统一进入默认 vendor
+            // 由于 element-plus 已通过模块实现按需导入，这里即使全部进 vendor，体积也完全可控
             return "vendor";
           },
         },
