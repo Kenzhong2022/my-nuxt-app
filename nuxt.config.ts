@@ -41,19 +41,19 @@ export default defineNuxtConfig({
             //   return "vendor-gsap";
             // }
 
-            // 2. Vue 生态：合并
-            if (
-              id.includes("vue") ||
-              id.includes("vue-router") ||
-              id.includes("pinia") ||
-              id.includes("@pinia/nuxt") ||
-              id.includes("@vueuse/core")
-            ) {
-              return "vendor-vue";
-            }
+            // // 2. Vue 生态：合并
+            // if (
+            //   id.includes("vue") ||
+            //   id.includes("vue-router") ||
+            //   id.includes("pinia") ||
+            //   id.includes("@pinia/nuxt") ||
+            //   id.includes("@vueuse/core")
+            // ) {
+            //   return "vendor-vue";
+            // }
 
-            // 3. 其他第三方库：合并
-            return "vendor-others";
+            // // 3. 其他第三方库：合并
+            // return "vendor-others";
           },
         },
       },
