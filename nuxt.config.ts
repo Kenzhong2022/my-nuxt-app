@@ -65,7 +65,12 @@ export default defineNuxtConfig({
       },
     },
     optimizeDeps: {
-      include: ["dayjs", "dayjs/plugin/*.js"],
+      include: [
+        "@element-plus/icons-vue",
+        "dayjs", // CJS
+        "dayjs/plugin/*.js",
+        "gsap",
+      ],
     },
     plugins: [
       visualizer({
