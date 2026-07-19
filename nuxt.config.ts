@@ -29,27 +29,8 @@ export default defineNuxtConfig({
           manualChunks(id: string) {
             if (!id.includes("node_modules")) return;
 
-            // 1. Element Plus + 图标库：合并到一起，避免循环依赖
-            if (
-              id.includes("element-plus") ||
-              id.includes("@element-plus/icons-vue")
-            ) {
-              return "vendor-element";
-            }
-
-            // 2. Vue 生态：合并
-            if (
-              id.includes("vue") ||
-              id.includes("vue-router") ||
-              id.includes("pinia") ||
-              id.includes("@pinia/nuxt") ||
-              id.includes("@vueuse/core")
-            ) {
-              return "vendor-vue";
-            }
-
-            // 3. 其他第三方库：合并
-            return "vendor-others";
+            // 将所有第三方库合并到一个 chunk，避免循环依赖
+            return "vendor";
           },
         },
       },
