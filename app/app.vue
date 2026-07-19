@@ -55,6 +55,10 @@ nuxtApp.hook("page:finish", () => {
 
 onMounted(() => {
   loadingStore.setLoading(true);
+
+  setTimeout(() => {
+    loadingStore.setLoading(false);
+  }, 2000);
 });
 </script>
 
