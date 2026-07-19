@@ -43,7 +43,7 @@
               </el-sub-menu>
               <el-menu-item
                 v-else
-                :index="String(menu.id)"
+                :index="'item-' + menu.id"
                 @click="handleMenuClick(menu)"
               >
                 {{ menu.name }}
@@ -90,7 +90,7 @@
             </el-sub-menu>
             <el-menu-item
               v-else
-              :index="String(menu.id)"
+              :index="'item-' + menu.id"
               @click="handleMenuClick(menu)"
             >
               {{ menu.name }}

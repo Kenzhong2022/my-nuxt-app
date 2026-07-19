@@ -27,33 +27,29 @@ export default defineNuxtConfig({
       rollupOptions: {
         output: {
           manualChunks(id: string) {
-            // 只处理 node_modules
             if (!id.includes("node_modules")) return;
 
-            // 1. 超大库：单独拆（>100KB）
-            if (id.includes("element-plus") && !id.includes("icons-vue")) {
-              return "vendor-element-plus";
+            // 1. Element Plus + 图标库：合并到一起，避免循环依赖
+            if (
+              id.includes("element-plus") ||
+              id.includes("@element-plus/icons-vue")
+            ) {
+              return "vendor-element";
             }
-            if (id.includes("@element-plus/icons-vue")) {
-              return "vendor-element-icons";
+
+            // 2. Vue 生态：合并
+            if (
+              id.includes("vue") ||
+              id.includes("vue-router") ||
+              id.includes("pinia") ||
+              id.includes("@pinia/nuxt") ||
+              id.includes("@vueuse/core")
+            ) {
+              return "vendor-vue";
             }
-            // if (id.includes("gsap")) {
-            //   return "vendor-gsap";
-            // }
 
-            // // 2. Vue 生态：合并
-            // if (
-            //   id.includes("vue") ||
-            //   id.includes("vue-router") ||
-            //   id.includes("pinia") ||
-            //   id.includes("@pinia/nuxt") ||
-            //   id.includes("@vueuse/core")
-            // ) {
-            //   return "vendor-vue";
-            // }
-
-            // // 3. 其他第三方库：合并
-            // return "vendor-others";
+            // 3. 其他第三方库：合并
+            return "vendor-others";
           },
         },
       },
@@ -81,7 +77,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: "netlify", // 部署到Netlify核心修改
+    // preset: "netlify", // 部署到Netlify时取消注释
 
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {},
