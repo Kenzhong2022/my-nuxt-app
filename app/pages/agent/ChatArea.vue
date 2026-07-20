@@ -1,6 +1,11 @@
 <template>
   <div class="chat-area">
     <div class="chat-header">
+      <clientOnly>
+        <el-button text v-if="!drawerVisible">
+          <el-icon size="24" @click="toggleDrawer"><Expand /></el-icon>
+        </el-button>
+      </clientOnly>
       <div class="header-title">智能客服</div>
       <div
         v-if="streamStatus === ConnectionStatus.Connecting"
@@ -21,9 +26,7 @@
         ❌ 连接失败，请重试
       </div>
       <div class="header-actions">
-        <el-button size="small" text @click="$emit('clear')"
-          >清空记录</el-button
-        >
+        <el-button text @click="$emit('clear')">清空记录</el-button>
       </div>
     </div>
     <div ref="messagesContainer" class="chat-content">
@@ -71,11 +74,18 @@ import { ConnectionStatus } from "@/composables/useAgentApi";
 
 // 1. 使用 defineModel 替代 props
 const messages = defineModel<ChatMessage[]>("messages", { required: true });
-
-defineEmits<{
+const props = defineProps<{
+  drawerVisible: boolean;
+}>();
+const emit = defineEmits<{
   clear: [];
+  "update:drawerVisible": [visible: boolean];
 }>();
 
+const toggleDrawer = () => {
+  // 提交抽屉状态变化到父组件处理
+  emit("update:drawerVisible", !props.drawerVisible);
+};
 marked.setOptions({
   breaks: true,
   gfm: true,
@@ -243,17 +253,23 @@ onBeforeUnmount(() => {
   background: var(--el-bg-color-overlay);
   display: flex;
   flex-direction: column;
-
+  border-radius: 20px;
+  overflow: hidden;
   .chat-header {
+    width: 100%;
     display: flex;
+    gap: 10px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 20px 10px;
     box-shadow: 0 2px 4px var(--el-box-shadow-lighter);
 
     .header-title {
       font-weight: bold;
       font-size: 16px;
+    }
+    .header-actions {
+      margin-left: auto;
     }
   }
 

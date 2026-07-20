@@ -199,12 +199,12 @@ function handlePaste(e: ClipboardEvent) {
 
 <style lang="scss" scoped>
 .chat-input-container {
-  width: 70%;
+  min-width: 70%;
   background: var(--el-bg-color);
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
   padding: 16px;
-  margin: 0 auto;
+  margin: 10px auto;
   .image-slot {
     position: relative;
 

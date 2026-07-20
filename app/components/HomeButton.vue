@@ -25,6 +25,7 @@ function handleClick() {
   border-radius: 50%;
   border: 2px solid var(--el-color-primary);
   cursor: pointer;
+  background: var(--el-bg-color-page);
 }
 
 .home-button-icon {

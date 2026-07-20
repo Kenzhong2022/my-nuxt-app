@@ -8,7 +8,7 @@
           :style="{ fontSize: '36px', color: 'var(--el-color-primary)' }"
         />
       </div>
-      <el-icon size="24"><Expand /></el-icon>
+      <el-icon size="24" @click="toggleDrawer"><Expand /></el-icon>
       <!-- <Fold /> -->
     </div>
     <div class="sidebar-content">
@@ -29,25 +29,31 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   sessions: Array<{
     id: string;
     name: string;
     preview: string;
   }>;
   currentThreadId: string;
+  visible: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
+  "update:visible": [visible: boolean];
   select: [threadId: string];
 }>();
+
+const toggleDrawer = () => {
+  // 提交抽屉状态变化到父组件处理
+  emit("update:visible", !props.visible);
+};
 </script>
 
 <style scoped lang="scss">
 .history-sidebar {
   width: 100%;
   height: 100%;
-  background: var(--el-bg-color);
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 4px var(--el-box-shadow);
@@ -63,9 +69,9 @@ defineEmits<{
   }
 
   .sidebar-content {
+    padding: 8px;
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
   }
 
   .session-item {

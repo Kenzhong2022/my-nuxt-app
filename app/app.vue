@@ -14,6 +14,10 @@
           <div class="slide-block" style="background: #ef4444" />
           <div class="slide-block" style="background: #10b981" />
           <div class="slide-block" style="background: #f59e0b" />
+          <!-- 加载 -->
+          <div class="loading-block">
+            <div class="loading-block-after"></div>
+          </div>
         </div>
       </div>
     </Transition>
@@ -40,13 +44,27 @@ watch(isPlaying, async (playing) => {
   }
   await nextTick();
   gsap.set(".slide-block", { y: 0 });
-  currentAnim = gsap.timeline({ repeat: -1, yoyo: true });
+  currentAnim = gsap.timeline(); // 不再需要 repeat:-1
   currentAnim.to(".slide-block", {
     y: -100,
     stagger: 0.12,
     duration: 0.6,
-    ease: "power2.inOut",
+    ease: "power2.out",
+    yoyo: true,
+    repeat: -1, // 每个元素独立无限往复
   });
+  currentAnim.to(
+    ".loading-block-after",
+    {
+      left: "calc(100% - 50px)",
+      width: "100px",
+      duration: 0.6,
+      ease: "power2.inOut",
+      yoyo: true,
+      repeat: -1,
+    },
+    "+=0",
+  );
 });
 
 nuxtApp.hook("page:finish", () => {
@@ -88,7 +106,7 @@ onMounted(() => {
   inset: 0;
   z-index: 9999;
   overflow: hidden;
-  background: #fff;
+  background: var(--el-bg-color-overlay);
 }
 .slide-container {
   position: absolute;
@@ -96,12 +114,36 @@ onMounted(() => {
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  flex-wrap: wrap;
   gap: 20px;
+  .loading-block {
+    position: absolute;
+    bottom: -10px;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--el-bg-color-page);
+    .loading-block-after {
+      position: absolute;
+      top: 0;
+      left: -50px;
+      width: 100px;
+      height: inherit;
+      border-radius: inherit;
+      background: var(--el-color-primary);
+    }
+  }
 }
 .slide-block {
   height: 100px;
   width: 100px;
+}
+
+@media (max-width: 768px) {
+  .slide-block {
+    height: 50px;
+    width: 50px;
+  }
 }
 
 /* 覆盖层本身的淡入淡出（让出现/消失更柔和） */

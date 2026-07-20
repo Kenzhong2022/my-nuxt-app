@@ -320,6 +320,11 @@ function toggleMobileMenu() {
   }
 }
 
+.el-menu-item.is-active {
+  color: var(--el-menu-active-color);
+  background: var(--el-color-primary-light-7);
+}
+
 @media (max-width: 768px) {
   .el-header {
     padding: 0 12px;

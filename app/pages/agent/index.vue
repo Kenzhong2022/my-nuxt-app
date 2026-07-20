@@ -1,15 +1,27 @@
 <template>
-  <div class="agent-dialog">
-    <div class="dialog-content-inner">
-      <div class="left-history">
-        <HistorySidebar
-          :sessions="sessions"
-          :current-thread-id="currentThreadId"
-          @select="handleSelectSession"
+  <div class="agent-container">
+    <div class="agent-content-inner">
+      <clientOnly>
+        <div
+          class="left-history"
+          :style="{ width: leftWidth }"
+          v-if="drawerVisible"
+        >
+          <!-- 历史会话按钮（放置在左上角） -->
+          <HistorySidebar
+            :sessions="sessions"
+            :current-thread-id="currentThreadId"
+            @select="handleSelectSession"
+            v-model:visible="drawerVisible"
+          />
+        </div>
+      </clientOnly>
+      <div class="right-chat" :style="rightPanelStyle">
+        <ChatArea
+          v-model:messages="messages"
+          @clear="handleClearMessages"
+          v-model:drawerVisible="drawerVisible"
         />
-      </div>
-      <div class="right-chat">
-        <ChatArea v-model:messages="messages" @clear="handleClearMessages" />
       </div>
     </div>
   </div>
@@ -24,12 +36,49 @@ import HistorySidebar from "./HistorySidebar.vue";
 import ChatArea from "./ChatArea.vue";
 definePageMeta({ layout: false });
 
-const isMobile = useMediaQuery("(max-width:767px)");
 const { getMessages, clearMessages } = useAgentApi();
 
 const emit = defineEmits(["close"]);
-const dialogVisible = ref(true);
 const currentThreadId = ref("1");
+
+// 判断是否为移动设备（宽度 <= 768px）
+const isMobile = useMediaQuery("(max-width: 768px)");
+
+// 计算左侧宽度
+const leftWidth = computed(() => (isMobile.value ? "80%" : "20%"));
+
+const drawerVisible = ref(!isMobile.value);
+
+// 计算右侧宽度
+const rightPanelStyle = computed(() => {
+  // 移动端
+  // 左侧历史记录是否客家你
+  if (drawerVisible.value) {
+    if (isMobile.value) {
+      return {
+        left: "80%",
+        width: "100%",
+      };
+    } else {
+      return {
+        left: "20%",
+        width: "80%",
+      };
+    }
+  } else {
+    if (isMobile.value) {
+      return {
+        left: 0,
+        width: "100%",
+      };
+    } else {
+      return {
+        left: 0,
+        width: "100%",
+      };
+    }
+  }
+});
 
 const sessions = ref([
   { id: "1", name: "智能客服", preview: "图片内容是什么..." },
@@ -60,17 +109,6 @@ function handleClearMessages(): void {
   messages.value = [];
 }
 
-function openDialog(): void {
-  console.log("打开代理商服务弹窗");
-  dialogVisible.value = true;
-}
-
-function closeDialog(): void {
-  dialogVisible.value = false;
-  console.log("关闭代理商服务弹窗");
-  emit("close");
-}
-
 onActivated(() => {
   console.log("===========代理商服务组件激活===========");
   fetchMessages(currentThreadId.value);
@@ -84,39 +122,33 @@ onMounted(() => {
 onUnmounted(() => {
   console.log("===========代理商服务组件卸载完成===========");
 });
-
-defineExpose({
-  openDialog,
-  closeDialog,
-});
 </script>
 
 <style lang="scss">
-.agent-dialog {
+.agent-container {
   display: flex;
   flex-direction: column;
   height: 100vh !important;
-  .el-dialog__body {
-    padding: 0;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-  }
-  &:not(.is-fullscreen) .el-dialog__body {
-    min-height: 600px;
-  }
-  .dialog-content-inner {
+  background: var(--el-bg-color-page);
+
+  .agent-content-inner {
+    position: relative;
     width: 100%;
-    display: flex;
     height: inherit;
-  }
-  .left-history {
-    width: 10%;
-    height: 100%;
-  }
-  .right-chat {
-    width: 90%;
-    height: 100%;
+    .left-history {
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .right-chat {
+      flex: 1;
+      height: 100%;
+      padding: 10px;
+      position: absolute;
+      top: 0;
+      left: 20%;
+    }
   }
 }
 </style>

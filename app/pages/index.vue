@@ -3,7 +3,7 @@
   <div class="index-container">
     <div class="main px-4 py-8">
       <div class="info mb-12">
-        <div class="card-title font-bold flex items-center gap-[1px]">
+        <div class="card-title font-bold flex flex-wrap items-center gap-[1px]">
           <div
             v-for="(char, i) in '欢迎来到我的项目首页'"
             :key="i"
@@ -12,7 +12,7 @@
             {{ char }}
           </div>
         </div>
-        <div class="card-desc project-desc flex items-center">
+        <div class="card-desc project-desc flex flex-wrap items-center">
           <div
             v-for="(
               char, i
@@ -28,19 +28,21 @@
         <div
           v-for="card in cardList"
           :key="card.id"
-          class="project-card"
+          @click="handleCardClick(card)"
+          class="project-card cursor-pointer"
           :ref="(el) => setCardRef(el as HTMLElement, card.id)"
         >
           <div class="inner">
             <div class="card-title">{{ card.title }}</div>
             <div class="card-desc">{{ card.description }}</div>
-            <div class="card-footer" @click="handleCardClick(card)">
+            <div class="card-footer">
               <div>{{ card.buttonText }}</div>
               <el-icon><ArrowRightBold /></el-icon>
             </div>
           </div>
         </div>
       </div>
+      <ProductMenu :cardList="cardList" />
     </div>
   </div>
 </template>
@@ -108,7 +110,10 @@ function handleCardClick(card: CardConfig) {
   }, 300);
 }
 
-function animationCardTitle() {
+/**
+ * 卡片标题动画
+ */
+function animationCardTitle(): void {
   const tl = gsap.timeline();
   tl.from(".card-title-char", {
     opacity: 0,
@@ -125,27 +130,28 @@ function animationCardTitle() {
     ease: "none",
   });
 }
-
-// 监听鼠标移动事件，更新卡片位置
-onMounted(() => {
-  document.addEventListener("mousemove", (e) => {
-    // 遍历所有卡片，更新其位置
-    cardRefs.forEach((card) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty("--x", `${x}px`);
-      card.style.setProperty("--y", `${y}px`);
-    });
+// 提取事件处理函数，便于添加和移除
+function handleMouseMove(e: MouseEvent) {
+  cardRefs.forEach((card) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty("--x", `${x}px`);
+    card.style.setProperty("--y", `${y}px`);
   });
+}
+
+const { isDesktop } = useDevice(); // 监听鼠标移动事件，更新卡片位置
+
+onMounted(() => {
+  if (isDesktop.value) {
+    document.addEventListener("mousemove", handleMouseMove);
+  }
   animationCardTitle();
 });
 
 onUnmounted(() => {
-  document.removeEventListener("mousemove", (e) => {
-    document.documentElement.style.setProperty("--x", `${e.clientX}px`);
-    document.documentElement.style.setProperty("--y", `${e.clientY}px`);
-  });
+  document.removeEventListener("mousemove", handleMouseMove);
 });
 </script>
 
@@ -248,7 +254,6 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    cursor: pointer;
     position: relative;
     color: var(--el-text-color-secondary);
     transition: color 0.3s ease-in-out;
@@ -266,11 +271,56 @@ onUnmounted(() => {
     }
 
     &:hover {
-      color: var(--el-text-color-primary);
+      color: var(--el-color-primary);
 
       &::after {
         width: 100%;
       }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 0.5rem 1rem; // 缩小左右边距，充分利用屏幕
+  }
+
+  .info {
+    margin: 12px 0 30px; // 减少间距
+  }
+
+  .card-title-char {
+    font-size: 2rem; // 标题缩小
+  }
+
+  .project-desc-char {
+    font-size: 0.875rem; // 描述文字缩小
+  }
+
+  .project-container {
+    grid-template-columns: 1fr; // 改为单列
+    gap: 16px;
+  }
+
+  .project-card {
+    height: 220px; // 卡片高度降低，更适合手机竖屏
+
+    .inner {
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+    }
+
+    .card-footer {
+      font-size: 0.875rem;
+      padding-top: 8px;
     }
   }
 }

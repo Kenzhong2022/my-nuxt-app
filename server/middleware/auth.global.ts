@@ -32,7 +32,7 @@ const WHITE_LIST = [
 // 框架内部错误页面（自动放行）
 const INTERNAL_ERROR_PREFIXES = ["/_nuxt_error", "/__nuxt_error"];
 
-const LOGIN_BASE = process.env.LOGIN_URL || "http://localhost:3001/login";
+const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001/login";
 
 /**
  * 判断是否白名单路径
@@ -55,7 +55,7 @@ function handleUnauthorized(event: any, redirectPath?: string) {
   if (isApi) {
     throw createError({ statusCode: 401, message: redirectPath || "请先登录" });
   }
-  const loginUrl = `${LOGIN_BASE}?redirect=${encodeURIComponent(event.path)}`;
+  const loginUrl = `${LOGIN_BASE}/login?redirect=${encodeURIComponent(event.path)}`;
   // sendRedirect 内部会 throw，但为了类型安全，显式 return
   return sendRedirect(event, loginUrl, 302); // 重定向到登录页
 }
