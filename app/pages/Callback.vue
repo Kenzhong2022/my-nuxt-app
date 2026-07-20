@@ -28,6 +28,7 @@ const fetchToken = async (code) => {
 };
 
 onMounted(async () => {
+  console.log("开始处理登录凭证...");
   const code = route.query.code || "123456";
   const backPath = route.query.back || "/cart";
 

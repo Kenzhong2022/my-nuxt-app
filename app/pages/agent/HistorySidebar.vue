@@ -18,7 +18,6 @@
         :class="['session-item', { active: currentThreadId === session.id }]"
         @click="$emit('select', session.id)"
       >
-        <div class="session-avatar">{{ session.name.charAt(0) }}</div>
         <div class="session-info">
           <div class="session-name">{{ session.name }}</div>
           <div class="session-preview">{{ session.preview }}</div>
@@ -88,19 +87,7 @@ const toggleDrawer = () => {
     }
 
     &.active {
-      background-color: var(--el-color-primary-light-9);
-    }
-
-    .session-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background-color: var(--el-color-primary);
-      color: var(--el-text-color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
+      background-color: var(--el-color-primary-light-7);
     }
 
     .session-info {
@@ -108,7 +95,8 @@ const toggleDrawer = () => {
       min-width: 0;
 
       .session-name {
-        font-weight: 500;
+        color: var(--el-color-primary);
+        font-weight: 700;
         font-size: 14px;
         margin-bottom: 2px;
       }

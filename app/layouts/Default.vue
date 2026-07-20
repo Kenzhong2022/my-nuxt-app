@@ -7,7 +7,7 @@
   </div>
 
   <el-container class="h-screen">
-    <el-header class="border-b">
+    <el-header>
       <div class="flex items-center justify-between h-full gap-4">
         <div class="text-xl font-bold flex items-center gap-3">
           管理后台
@@ -98,7 +98,7 @@
           </template>
         </el-menu>
       </el-aside>
-      <el-main class="py-6">
+      <el-main>
         <div class="mx-auto">
           <slot />
         </div>
@@ -290,6 +290,10 @@ const menuConfig = ref([
 function handleMenuClick(item: { path: string }) {
   // 功能未开放
   ElMessage.warning("功能暂未开发");
+  // 跳转到仪表盘
+  if (item.path === "/dashboard") {
+    navigateTo("/dashboard");
+  }
   return;
 }
 
@@ -349,7 +353,6 @@ function toggleMobileMenu() {
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    /* ❗重点：删除写死#fff，交给element-plus暗黑变量自动控制 */
     background: var(--el-bg-color);
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   }

@@ -1,5 +1,8 @@
 <template>
-  <div class="chat-input-container" :style="{ boxShadow: shadowStyle }">
+  <div
+    class="chat-input-container"
+    :style="[{ boxShadow: shadowStyle }, { width: isMobile ? '100%' : '70%' }]"
+  >
     <div
       class="flex items-center justify-start mb-[8px] overflow-hidden"
       :style="{ height: 'fit-content' }"
@@ -64,7 +67,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { useMediaQuery } from "@vueuse/core";
+
+const isMobile = useMediaQuery("(max-width: 768px)");
+
 // 新增：缓存粘贴的原始图片File对象（上传必需）
 const pendingImageFiles = ref<File[]>([]);
 // 新增：上传加载状态，防止重复点击发送
@@ -80,7 +86,8 @@ const shadowStyle = computed(() => {
   const color = isFocused.value
     ? "rgba(59, 130, 246, 0.5)"
     : "rgba(0, 0, 0, 0.3)";
-  return `0 0px 4px ${color}`;
+  // 第一个参数是水平偏移，第二个参数是垂直偏移，第三个参数是模糊半径，第四个参数是阴影颜色
+  return `0 4px 8px ${color}`;
 });
 
 function handleFocus() {
@@ -199,7 +206,6 @@ function handlePaste(e: ClipboardEvent) {
 
 <style lang="scss" scoped>
 .chat-input-container {
-  min-width: 70%;
   background: var(--el-bg-color);
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
@@ -269,7 +275,8 @@ function handlePaste(e: ClipboardEvent) {
   font-size: 36px;
   transition: background-color 0.2s;
   &:hover {
-    background: rgba(174, 187, 243, 0.8);
+    background: var(--el-color-primary-light-7);
+    cursor: pointer;
   }
 }
 </style>

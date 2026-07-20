@@ -19,8 +19,6 @@ export default defineNuxtPlugin((nuxtApp) => {
       );
 
       options.headers = headers;
-
-      console.log(`[请求开始] ${options.method || "GET"} ${request}`);
     },
 
     // 2️⃣ 请求发送失败（网络断连、DNS 解析失败等，非 HTTP 状态码错误）
@@ -35,8 +33,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     // 3️⃣ 响应成功返回（HTTP 状态码 2xx）
     onResponse({ request, options, response }) {
-      console.log(`[响应成功] ${request}`, response.status);
-
       // 统一解构后端数据（例如后端返回格式为 { code: 0, data: {...} }）
       if (response._data?.code === 0) {
         // 直接返回 data 字段，后续调用者拿到的就是业务数据

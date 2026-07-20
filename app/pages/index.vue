@@ -42,7 +42,6 @@
           </div>
         </div>
       </div>
-      <ProductMenu :cardList="cardList" />
     </div>
   </div>
 </template>
@@ -93,7 +92,7 @@ const cardList: CardConfig[] = [
   },
   {
     id: "agent",
-    title: "Chief agent",
+    title: "Chief Agent",
     description:
       "Python后端构建LangChain智能体，调用千问视觉识别食材，联网搜索食谱，流式输出可暂停的Markdown结果。",
     buttonText: "进入Agent",
@@ -107,7 +106,8 @@ function handleCardClick(card: CardConfig) {
   loadingStore.setLoading(true);
   setTimeout(() => {
     card.action();
-  }, 300);
+    loadingStore.setLoading(false);
+  }, 3000);
 }
 
 /**
@@ -188,6 +188,7 @@ onUnmounted(() => {
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   overflow: hidden;
+  margin-bottom: 50px;
 }
 
 // ===================== 卡片主体 =====================

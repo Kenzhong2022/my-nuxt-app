@@ -32,7 +32,8 @@ const WHITE_LIST = [
 // 框架内部错误页面（自动放行）
 const INTERNAL_ERROR_PREFIXES = ["/_nuxt_error", "/__nuxt_error"];
 
-const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001/login";
+// const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001/login";
+const LOGIN_BASE = "http://localhost:3001/Login"; // 本地登录页
 
 /**
  * 判断是否白名单路径
@@ -64,10 +65,11 @@ function handleUnauthorized(event: any, redirectPath?: string) {
 // 3. 主中间件（清晰的三步走）
 // ============================================
 export default defineEventHandler(async (event) => {
-  const path = event.path;
-
+  const url = getRequestURL(event);
+  const pathname = url.pathname; // 例如：/callback
+  console.log(pathname);
   // Step 1: 白名单放行
-  if (isWhitelisted(path)) {
+  if (isWhitelisted(pathname)) {
     return;
   }
 

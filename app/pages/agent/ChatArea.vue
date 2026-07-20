@@ -61,7 +61,11 @@
         </div>
       </div>
     </div>
-    <AIChatInput @send="handleSend" @pauseSend="stopGeneration" />
+    <AIChatInput
+      @send="handleSend"
+      @pauseSend="stopGeneration"
+      :drawerVisible="drawerVisible"
+    />
   </div>
 </template>
 

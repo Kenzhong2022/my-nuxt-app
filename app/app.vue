@@ -32,28 +32,29 @@ const loadingStore = useLoadingStore();
 const isPlaying = computed(() => loadingStore.isFullLoading);
 const nuxtApp = useNuxtApp();
 
-let currentAnim = null;
+let tl = null;
 
 watch(isPlaying, async (playing) => {
   if (!playing) {
-    if (currentAnim) {
-      currentAnim.kill();
-      currentAnim = null;
+    if (tl) {
+      tl.kill();
+      tl = null;
     }
     return;
   }
   await nextTick();
   gsap.set(".slide-block", { y: 0 });
-  currentAnim = gsap.timeline(); // 不再需要 repeat:-1
-  currentAnim.to(".slide-block", {
+  tl = gsap.timeline(); // 不再需要 repeat:-1
+  tl.to(".slide-block", {
     y: -100,
     stagger: 0.12,
     duration: 0.6,
+    opacity: 1,
     ease: "power2.out",
     yoyo: true,
     repeat: -1, // 每个元素独立无限往复
   });
-  currentAnim.to(
+  tl.to(
     ".loading-block-after",
     {
       left: "calc(100% - 50px)",
@@ -67,7 +68,9 @@ watch(isPlaying, async (playing) => {
   );
 });
 
+// 页面加载完成后，关闭加载状态
 nuxtApp.hook("page:finish", () => {
+  console.log("页面加载完成");
   loadingStore.setLoading(false);
 });
 
@@ -137,6 +140,7 @@ onMounted(() => {
 .slide-block {
   height: 100px;
   width: 100px;
+  opacity: 0;
 }
 
 @media (max-width: 768px) {
