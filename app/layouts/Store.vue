@@ -130,8 +130,8 @@ function goHome() {
 }
 
 function goUser() {
-  const redirect = encodeURIComponent(window.location.href);
-  window.location.href = `http://localhost:3001/login?redirect=${redirect}`;
+  const redirect = encodeURIComponent(window.location.href); // 编码当前页面URL，防止特殊字符导致的错误
+  window.location.href = `${process.env.LOGIN_URL}?redirect=${redirect}`;
 }
 
 function onSearch({ query, mode }: { query: string; mode: string }) {
