@@ -1,17 +1,22 @@
 :root {
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  /* ========== 字号层级（从大到小）========== */
+  --text-hero: 2.5rem; /* 40px - 大标题/英雄区 */
+  --text-h1: 2rem; /* 32px - 页面主标题 */
+  --text-h2: 1.5rem; /* 24px - 区块标题 */
+  --text-h3: 1.25rem; /* 20px - 卡片标题 */
+  --text-body: 1rem; /* 16px - 正文（基准）*/
+  --text-small: 0.875rem; /* 14px - 次要文本 */
+  --text-xs: 0.75rem; /* 12px - 标签/辅助文字 */
+  --text-micro: 0.625rem; /* 10px - 极小标签 */
 
-  --color-bg-subtle: var(--color-gray-50);
-  --color-bg-muted: var(--color-gray-100);
-  --color-bg-card: var(--color-gray-50);
-  --color-border-light: var(--color-gray-200);
+  /* ========== 字重 ========== */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ========== 行高 ========== */
+  --leading-tight: 1.25; /* 标题 */
+  --leading-normal: 1.5; /* 正文 */
+  --leading-relaxed: 1.75; /* 宽松排版 */
 }

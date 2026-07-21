@@ -7,7 +7,7 @@
   </div>
 
   <el-container class="h-screen">
-    <el-header>
+    <el-header class="border-b">
       <div class="flex items-center justify-between h-full gap-4">
         <div class="text-xl font-bold flex items-center gap-3">
           管理后台

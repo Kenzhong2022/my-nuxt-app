@@ -27,13 +27,14 @@ const WHITE_LIST = [
   "/testdynamicForm",
   "/Survey",
   "/",
+  "/dashboard", //看板放行
 ];
 
 // 框架内部错误页面（自动放行）
 const INTERNAL_ERROR_PREFIXES = ["/_nuxt_error", "/__nuxt_error"];
 
-const LOGIN_URL = process.env.LOGIN_URL || "http://localhost:3001/login";
-// const LOGIN_URL = "http://localhost:3001/Login"; // 本地登录页
+const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001";
+// const LOGIN_BASE = "http://localhost:3001"; // 本地登录页
 
 /**
  * 判断是否白名单路径
@@ -59,7 +60,7 @@ function handleUnauthorized(event: any, redirectPath?: string) {
       message: redirectPath || "无权限访问接口，请先登录",
     });
   }
-  const loginUrl = `${LOGIN_URL}?redirect=${encodeURIComponent(event.path)}`;
+  const loginUrl = `${LOGIN_BASE}/login?redirect=${encodeURIComponent(event.path)}`;
   // sendRedirect 内部会 throw，但为了类型安全，显式 return
   return sendRedirect(event, loginUrl, 302); // 重定向到登录页
 }

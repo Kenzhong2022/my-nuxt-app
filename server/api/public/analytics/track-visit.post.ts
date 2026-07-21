@@ -35,6 +35,7 @@ export default defineEventHandler(
       return <ApiResponse<never>>{
         code: 200,
         message: "访问记录已保存",
+        data: record,
       };
     } catch (error: any) {
       console.error("埋点写入失败:", error.message);

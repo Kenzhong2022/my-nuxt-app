@@ -63,7 +63,8 @@ export default defineNuxtPlugin((nuxtApp) => {
           // 使用 nuxtApp 实例跳转（注意在插件中导入 navigateTo）
           //   nuxtApp.$router?.push("/login");
           // 或者直接使用 window.location（但会刷新页面）
-          window.location.href = "http://localhost:3001/login";
+          const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001";
+          window.location.href = LOGIN_BASE + "/login";
         }
       }
 

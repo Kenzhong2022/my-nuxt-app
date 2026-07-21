@@ -56,6 +56,13 @@ export type DailyVisits = [
 
 /**
  * 仪表盘聚合数据（API 返回给前端）
+ * @description 包含今日每小时访问量、近 7 天每日访问量、昨日总访问量、今日总访问量、本周总访问量、最后更新时间等
+ * @property {HourlyVisits} hourlyVisits - 今日每小时访问量
+ * @property {DailyVisits} dailyVisits - 近 7 天每日访问量
+ * @property {number} yesterdayTotal - 昨日总访问量
+ * @property {number} todayTotal - 今日总访问量
+ * @property {number} weekTotal - 本周总访问量
+ * @property {string} updatedAt - 最后更新时间，ISO 8601 格式
  */
 export interface DashboardOverview {
   hourlyVisits: HourlyVisits;

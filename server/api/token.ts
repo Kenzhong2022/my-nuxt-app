@@ -5,8 +5,9 @@ export default defineEventHandler(async (event) => {
   const { code, client_id, redirect_uri } = body;
 
   try {
+    const LOGIN_BASE = process.env.LOGIN_BASE;
     // 请求认证中心 localhost:3001 兑换令牌
-    const tokenInfo = await $fetch("http://localhost:3001/api/auth/token", {
+    const tokenInfo = await $fetch(LOGIN_BASE + "/api/auth/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded", // 表单数据编码格式
