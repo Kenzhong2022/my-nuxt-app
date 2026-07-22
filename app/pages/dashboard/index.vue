@@ -31,10 +31,24 @@
     <!-- 图表行 -->
     <div class="charts-row">
       <el-card class="chart-card">
+        <!-- 操作行 -->
+        <AnalyticsFilterBar
+          ref="filterBarRef"
+          :timeRange="timeRange"
+          @update:timeRange="onTimeRangeChange"
+          @export="handleExport"
+        >
+        </AnalyticsFilterBar>
         <div class="chart-title">今日每小时访问分布</div>
         <div ref="hourChartRef" class="chart-container"></div>
       </el-card>
       <el-card class="chart-card">
+        <!-- 操作行 -->
+        <AnalyticsFilterBar
+          :timeRange="timeRange"
+          @update:timeRange="onTimeRangeChange"
+          @export="handleExport"
+        />
         <div class="chart-title">近7天每日访问趋势</div>
         <div ref="dayChartRef" class="chart-container"></div>
       </el-card>
@@ -55,12 +69,27 @@ import { useResizeObserver, useDebounceFn } from "@vueuse/core";
 import * as echarts from "echarts";
 import type { DashboardOverview } from "~~/types/analytics";
 import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
+import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
+
 // ============ 响应式数据 ============
 const dashboardData = ref<DashboardOverview | null>(null);
 const hourChartRef = ref<HTMLDivElement | null>(null);
 const dayChartRef = ref<HTMLDivElement | null>(null);
 const todayValueRef = ref<HTMLDivElement | null>(null);
+const filterBarRef = ref<InstanceType<typeof AnalyticsFilterBar> | null>(null);
+const timeRange = ref("30d");
+const customDateRange = ref<[Date, Date] | null>(null);
 
+function onTimeRangeChange(newVal: string) {
+  if (newVal) {
+    console.log("获取数据", { timeRange: newVal });
+  }
+}
+
+function handleExport() {
+  // 导出逻辑
+  console.log("导出数据", { timeRange: timeRange.value });
+}
 let hourChart: echarts.ECharts | null = null;
 let dayChart: echarts.ECharts | null = null;
 const chartTheme = useChartTheme();
@@ -510,6 +539,17 @@ onBeforeUnmount(() => {
     }
 
     .chart-card {
+      .custom-date-picker {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 280px;
+
+        .el-date-editor {
+          width: 100%;
+        }
+      }
+
       .chart-title {
         font-size: 0.82rem;
         font-weight: 700;

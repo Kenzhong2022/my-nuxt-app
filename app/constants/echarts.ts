@@ -227,6 +227,5 @@ export function getChartTheme(): ChartTheme {
   }
 
   const isDark = document.documentElement.classList.contains("dark");
-  console.log(isDark ? CHART_COLORS.dark : CHART_COLORS.light);
   return isDark ? CHART_COLORS.dark : CHART_COLORS.light;
 }
