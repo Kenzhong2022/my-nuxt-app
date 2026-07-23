@@ -29,24 +29,27 @@
     </div>
 
     <!-- 图表行 -->
-    <div class="charts-row">
+    <div class="charts-row" ref="chartsRowRef">
       <el-card class="chart-card">
         <!-- 操作行 -->
         <AnalyticsFilterBar
-          ref="filterBarRef"
-          :timeRange="timeRange"
-          @update:timeRange="onTimeRangeChange"
+          key="hourChartFilterBar"
+          v-model:timeRange="hourChartTimeRange"
+          v-model:customDate="customDate"
+          :timeRangeOptions="hourChartTimeRangeOptions"
           @export="handleExport"
-        >
-        </AnalyticsFilterBar>
+        />
         <div class="chart-title">今日每小时访问分布</div>
         <div ref="hourChartRef" class="chart-container"></div>
       </el-card>
+
       <el-card class="chart-card">
         <!-- 操作行 -->
         <AnalyticsFilterBar
-          :timeRange="timeRange"
-          @update:timeRange="onTimeRangeChange"
+          key="dayChartFilterBar"
+          ref="filterBarRef"
+          v-model:timeRange="timeRange"
+          v-model:customDateRange="customDateRange"
           @export="handleExport"
         />
         <div class="chart-title">近7天每日访问趋势</div>
@@ -77,14 +80,22 @@ const hourChartRef = ref<HTMLDivElement | null>(null);
 const dayChartRef = ref<HTMLDivElement | null>(null);
 const todayValueRef = ref<HTMLDivElement | null>(null);
 const filterBarRef = ref<InstanceType<typeof AnalyticsFilterBar> | null>(null);
-const timeRange = ref("30d");
-const customDateRange = ref<[Date, Date] | null>(null);
+/** 图表行容器引用，用于监听尺寸变化统一更新图表 */
+const chartsRowRef = ref<HTMLDivElement | null>(null);
+/** 时间范围 */
+const timeRange = ref<string>("30d");
+/** 小时图表时间范围 */
+const hourChartTimeRange = ref<string>("30d");
+/** 小时图表自定义日期 */
+const customDate = ref<Date | null>(null);
 
-function onTimeRangeChange(newVal: string) {
-  if (newVal) {
-    console.log("获取数据", { timeRange: newVal });
-  }
-}
+/** 小时图表时间范围选项 */
+const hourChartTimeRangeOptions = ref([
+  { label: "今天", value: "today" },
+  { label: "昨日", value: "yesterday" },
+  { label: "自定义范围", value: "custom" },
+]);
+const customDateRange = ref<[Date, Date] | null>(null);
 
 function handleExport() {
   // 导出逻辑
@@ -105,7 +116,7 @@ const todayDiffText = computed(() => {
   const diff =
     dashboardData.value.todayTotal - dashboardData.value.yesterdayTotal;
   if (diff > 0) return `较昨日 ▲ +${diff}`;
-  if (diff < 0) return `较昨日 ▼ -${diff}`;
+  if (diff < 0) return `较昨日 ▼ ${diff}`;
   return "与昨日持平";
 });
 
@@ -143,7 +154,13 @@ function getCssVar(name: string): string {
 }
 
 /**
- * 创建柱状图的线性渐变
+ * @description 创建线性渐变
+ * @param x0 渐变起始点 x 坐标
+ * @param y0 渐变起始点 y 坐标
+ * @param x1 渐变结束点 x 坐标
+ * @param y1 渐变结束点 y 坐标
+ * @param stops 渐变停止点数组，每个元素为 [offset, color] 格式
+ * @returns 线性渐变对象
  */
 function createLinearGradient(
   x0: number,
@@ -151,7 +168,7 @@ function createLinearGradient(
   x1: number,
   y1: number,
   stops: [number, string][],
-) {
+): echarts.graphic.LinearGradient {
   return new echarts.graphic.LinearGradient(
     x0,
     y0,
@@ -209,7 +226,7 @@ function buildHourOption(hourlyData: number[]): echarts.EChartsOption {
         fontWeight: 550,
       },
       splitLine: { show: false },
-      max: roundedMax + 10,
+      max: roundedMax,
     },
     series: [
       {
@@ -469,9 +486,7 @@ const debouncedResize = useDebounceFn(() => {
   dayChart?.resize();
 }, 500);
 
-// 监听两个容器
-useResizeObserver(hourChartRef, debouncedResize);
-useResizeObserver(dayChartRef, debouncedResize);
+useResizeObserver(chartsRowRef, debouncedResize);
 
 onBeforeUnmount(() => {
   hourChart?.dispose();
