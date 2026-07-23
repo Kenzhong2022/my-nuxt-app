@@ -5,6 +5,9 @@ import viteCompression from "vite-plugin-compression";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  routeRules: {
+    "/": { redirect: "/dashboard" },
+  },
   runtimeConfig: {
     // 私有配置：只有服务端能访问，客户端永远看不到
     deepseek: {
@@ -21,6 +24,9 @@ export default defineNuxtConfig({
       // Agent API 地址（客户端组件需要访问，放公共配置）
       agentBaseUrl: process.env.NUXT_AGENT_BASE_URL,
     },
+  },
+  app: {
+    keepalive: true, // 或配置 include/exclude
   },
   modules: ["@pinia/nuxt", "@element-plus/nuxt", "@nuxtjs/tailwindcss"],
   vite: {

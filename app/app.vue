@@ -3,24 +3,25 @@
   <div>
     <!-- 页面内容 -->
     <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-
-    <!-- 过场动画覆盖层 -->
-    <Transition name="overlay-fade">
-      <div v-if="isPlaying" class="transition-overlay">
-        <div class="slide-container">
-          <div class="slide-block" style="background: #3b82f6" />
-          <div class="slide-block" style="background: #ef4444" />
-          <div class="slide-block" style="background: #10b981" />
-          <div class="slide-block" style="background: #f59e0b" />
-          <!-- 加载 -->
-          <div class="loading-block">
-            <div class="loading-block-after"></div>
+      <KeepAlive>
+        <NuxtPage />
+      </KeepAlive>
+      <!-- 过场动画覆盖层 -->
+      <Transition name="overlay-fade">
+        <div v-if="isPlaying" class="transition-overlay">
+          <div class="slide-container">
+            <div class="slide-block" style="background: #3b82f6" />
+            <div class="slide-block" style="background: #ef4444" />
+            <div class="slide-block" style="background: #10b981" />
+            <div class="slide-block" style="background: #f59e0b" />
+            <!-- 加载 -->
+            <div class="loading-block">
+              <div class="loading-block-after"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </NuxtLayout>
   </div>
 </template>
 
@@ -29,7 +30,17 @@ import gsap from "gsap";
 import { computed } from "vue";
 
 const loadingStore = useLoadingStore();
-const isPlaying = computed(() => loadingStore.isFullLoading);
+const isPlaying = computed({
+  get: () => {
+    if (loadingStore.isRouteChanging) {
+      console.log("加载动画中");
+    } else {
+      console.log("加载动画结束");
+    }
+    return loadingStore.isRouteChanging;
+  },
+  set: (val) => (loadingStore.isRouteChanging = val),
+});
 const nuxtApp = useNuxtApp();
 
 let tl = null;

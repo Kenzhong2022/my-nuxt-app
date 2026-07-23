@@ -17,52 +17,6 @@ interface CartResponse {
   };
 }
 
-// 模拟数据：从产品库中取前 3 个商品作为初始购物车内容
-// 实际项目里这段代码会从 /api/cart 拉取
-const MOCK_CART_ITEMS: CartItem[] = [
-  {
-    id: 1,
-    name: "无线蓝牙耳机",
-    price: 199,
-    originalPrice: 299,
-    image: "https://picsum.photos/400/400?random=1",
-    rating: 4.5,
-    sales: 2580,
-    tags: ["热销"],
-    category: "数码",
-    stock: 100,
-    qty: 1,
-    addedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 分钟前
-  },
-  {
-    id: 2,
-    name: "智能手表 Pro",
-    price: 1299,
-    originalPrice: 1599,
-    image: "https://picsum.photos/400/400?random=2",
-    rating: 4.8,
-    sales: 1560,
-    tags: ["新品"],
-    category: "数码",
-    stock: 50,
-    qty: 1,
-    addedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 小时前
-  },
-  {
-    id: 9,
-    name: "运动水杯 800ml",
-    price: 59,
-    originalPrice: 89,
-    image: "https://picsum.photos/400/400?random=9",
-    rating: 4.1,
-    sales: 4500,
-    category: "运动",
-    stock: 500,
-    qty: 2,
-    addedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 天前
-  },
-];
-
 export const useCartStore = defineStore("cart", () => {
   // ---------- state ----------
   const items = ref<CartItem[]>([]);
@@ -113,18 +67,6 @@ export const useCartStore = defineStore("cart", () => {
   );
 
   // ---------- actions ----------
-
-  /**
-   * 初始化模拟数据
-   * 适用场景：首次进入购物车、无后端接口时使用
-   */
-  function initMockData() {
-    if (items.value.length > 0) return; // 已有数据则不重复初始化
-    items.value = JSON.parse(JSON.stringify(MOCK_CART_ITEMS));
-    // 默认全部勾选
-    selectedIds.value = items.value.map((i) => i.id);
-  }
-
   /**
    * 从后端拉取购物车
    * 适用场景：页面初始化、登录后、刷新
@@ -136,8 +78,6 @@ export const useCartStore = defineStore("cart", () => {
       items.value = res.data.items;
     } catch (err) {
       console.error("获取购物车失败:", err);
-      // 接口失败时使用 mock 数据兜底
-      initMockData();
     } finally {
       loading.value = false;
     }
@@ -234,7 +174,6 @@ export const useCartStore = defineStore("cart", () => {
     selectedPrice,
     isAllSelected,
     // actions
-    initMockData,
     fetchCart,
     addToCart,
     updateQty,

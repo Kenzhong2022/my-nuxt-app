@@ -7,9 +7,14 @@
   </div>
 
   <el-container class="h-screen">
+    <!-- 头部导航：文字不能换行 -->
     <el-header class="border-b">
-      <div class="flex items-center justify-between h-full gap-4">
-        <div class="text-xl font-bold flex items-center gap-3">
+      <div
+        class="flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden"
+      >
+        <div
+          class="text-xl font-bold flex items-center gap-3 whitespace-nowrap"
+        >
           管理后台
           <ClientOnly>
             <el-switch
@@ -18,38 +23,27 @@
               active-text="暗黑"
               inactive-text="明亮"
             />
+            <el-switch
+              :model-value="isSidebarMenu"
+              @update:model-value="
+                (newVal) => (isSidebarMenu = newVal as boolean)
+              "
+              active-text="侧边栏"
+              inactive-text="头部"
+            />
           </ClientOnly>
         </div>
-        <div class="desktop-menu">
-          <el-menu
+        <div class="desktop-menu" v-show="isClient && !isSidebarMenu">
+          <AppMenu
+            :menu-data="menuConfig"
             :default-active="activeMenu"
             mode="horizontal"
-            class="border-none"
+            @menu-click="handleMenuClick"
           >
-            <template v-for="menu in menuConfig" :key="menu.id">
-              <el-sub-menu
-                v-if="menu.children?.length"
-                :index="String(menu.id)"
-              >
-                <template #title>{{ menu.name }}</template>
-                <el-menu-item
-                  v-for="child in menu.children"
-                  :key="child.id"
-                  :index="String(child.id)"
-                  @click="handleMenuClick(child)"
-                >
-                  {{ child.name }}
-                </el-menu-item>
-              </el-sub-menu>
-              <el-menu-item
-                v-else
-                :index="'item-' + menu.id"
-                @click="handleMenuClick(menu)"
-              >
-                {{ menu.name }}
-              </el-menu-item>
+            <template #submenu-title="{ menu }">
+              {{ menu.name }}
             </template>
-          </el-menu>
+          </AppMenu>
         </div>
         <el-button
           class="mobile-menu-btn"
@@ -65,38 +59,20 @@
         @click="showMobileMenu = false"
       ></div>
       <el-aside
+        v-show="isClient && !isSidebarMenu"
         width="240px"
         class="border-r"
-        :class="{ 'mobile-menu-visible': showMobileMenu }"
+        :class="{
+          'mobile-menu-visible': showMobileMenu,
+        }"
       >
-        <el-menu
+        <AppMenu
+          :menu-data="menuConfig"
+          :default-active="activeMenu"
           :default-openeds="defaultOpeneds"
-          class="border-none"
           mode="vertical"
-        >
-          <template v-for="menu in menuConfig" :key="menu.id">
-            <el-sub-menu v-if="menu.children?.length" :index="String(menu.id)">
-              <template #title>
-                <span>{{ menu.name }}</span>
-              </template>
-              <el-menu-item
-                v-for="child in menu.children"
-                :key="child.id"
-                :index="String(child.id)"
-                @click="handleMenuClick(child)"
-              >
-                {{ child.name }}
-              </el-menu-item>
-            </el-sub-menu>
-            <el-menu-item
-              v-else
-              :index="'item-' + menu.id"
-              @click="handleMenuClick(menu)"
-            >
-              {{ menu.name }}
-            </el-menu-item>
-          </template>
-        </el-menu>
+          @menu-click="handleMenuClick"
+        />
       </el-aside>
       <el-main>
         <div class="mx-auto">
@@ -108,14 +84,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from "vue";
+import { ref, computed, onMounted, type Ref } from "vue";
 import { ElMessage } from "element-plus";
 import gsap from "gsap";
-import { useDark } from "@vueuse/core";
+import { useDark, useStorage } from "@vueuse/core";
+import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
 const isClient = import.meta.client;
 
 let isDark: Ref<boolean> = ref(false);
+let isSidebarMenu: Ref<boolean | undefined> = ref();
 
 if (isClient) {
   isDark = useDark({
@@ -123,6 +101,7 @@ if (isClient) {
     selector: "html",
     valueDark: "dark",
   });
+  isSidebarMenu = useStorage("admin-menu-mode", true);
 }
 
 onMounted(() => {
@@ -152,10 +131,26 @@ function rotateYOpen() {
     });
 }
 
-const activeMenu = ref("1");
-const defaultOpeneds = ref(["1"]);
+const route = useRoute();
+const activeMenu = ref(route.path);
+watch(
+  () => route.path,
+  (newVal) => {
+    activeMenu.value = newVal;
+  },
+);
+/**
+ * 计算默认打开的菜单
+ * @returns {string[]} 包含父菜单路径的数组，如果当前路由是子菜单则返回父菜单路径，否则返回空数组
+ */
+const defaultOpeneds = computed(() => {
+  const parent = menuConfig.value.find((m) =>
+    m.children?.some((c) => c.path === route.path),
+  );
+  return parent ? [parent.path] : [];
+});
 
-const menuConfig = ref([
+const menuConfig = ref<MenuItem[]>([
   {
     id: 0,
     parentId: 0,
@@ -163,137 +158,154 @@ const menuConfig = ref([
     icon: "dashboard",
     path: "/dashboard",
   },
+  // 新增：项目展示页（第二位）
   {
     id: 1,
+    parentId: 0,
+    name: "项目展示",
+    icon: "grid",
+    path: "/projectShowcase",
+  },
+  // 原商品管理，id 顺延
+  {
+    id: 2,
     parentId: 0,
     name: "商品管理",
     icon: "goods",
     path: "/goods",
     children: [
-      { id: 11, parentId: 1, name: "商品列表", path: "/goods/list" },
-      { id: 12, parentId: 1, name: "商品分类", path: "/goods/category" },
-      { id: 13, parentId: 1, name: "品牌管理", path: "/goods/brand" },
-      { id: 14, parentId: 1, name: "规格属性管理", path: "/goods/attr" },
-      { id: 15, parentId: 1, name: "库存管理", path: "/goods/stock" },
-      { id: 16, parentId: 1, name: "素材图库", path: "/goods/image" },
-    ],
-  },
-  {
-    id: 2,
-    parentId: 0,
-    name: "订单管理",
-    icon: "order",
-    path: "/order",
-    children: [
-      { id: 21, parentId: 2, name: "全部订单", path: "/order/all" },
-      { id: 22, parentId: 2, name: "待付款订单", path: "/order/unpay" },
-      { id: 23, parentId: 2, name: "待发货订单", path: "/order/unship" },
-      { id: 24, parentId: 2, name: "已完成/已取消订单", path: "/order/finish" },
-      { id: 25, parentId: 2, name: "售后管理", path: "/order/aftersale" },
-      { id: 26, parentId: 2, name: "物流运费配置", path: "/order/express" },
+      { id: 21, parentId: 2, name: "商品列表", path: "/goods/list" },
+      { id: 22, parentId: 2, name: "商品分类", path: "/goods/category" },
+      { id: 23, parentId: 2, name: "品牌管理", path: "/goods/brand" },
+      { id: 24, parentId: 2, name: "规格属性管理", path: "/goods/attr" },
+      { id: 25, parentId: 2, name: "库存管理", path: "/goods/stock" },
+      { id: 26, parentId: 2, name: "素材图库", path: "/goods/image" },
     ],
   },
   {
     id: 3,
     parentId: 0,
-    name: "商城会员",
-    icon: "member",
-    path: "/member",
+    name: "订单管理",
+    icon: "order",
+    path: "/order",
     children: [
-      { id: 31, parentId: 3, name: "会员列表", path: "/member/list" },
-      { id: 32, parentId: 3, name: "会员标签", path: "/member/tag" },
-      { id: 33, parentId: 3, name: "会员等级配置", path: "/member/level" },
-      { id: 34, parentId: 3, name: "账户流水明细", path: "/member/account" },
+      { id: 31, parentId: 3, name: "全部订单", path: "/order/all" },
+      { id: 32, parentId: 3, name: "待付款订单", path: "/order/unpay" },
+      { id: 33, parentId: 3, name: "待发货订单", path: "/order/unship" },
+      { id: 34, parentId: 3, name: "已完成/已取消订单", path: "/order/finish" },
+      { id: 35, parentId: 3, name: "售后管理", path: "/order/aftersale" },
+      { id: 36, parentId: 3, name: "物流运费配置", path: "/order/express" },
     ],
   },
   {
     id: 4,
     parentId: 0,
-    name: "营销活动",
-    icon: "marketing",
-    path: "/promo",
+    name: "商城会员",
+    icon: "member",
+    path: "/member",
     children: [
-      { id: 41, parentId: 4, name: "优惠券管理", path: "/promo/coupon" },
-      { id: 42, parentId: 4, name: "限时秒杀", path: "/promo/seckill" },
-      { id: 43, parentId: 4, name: "拼团活动", path: "/promo/group" },
-      { id: 44, parentId: 4, name: "全店满减", path: "/promo/fullcut" },
-      { id: 45, parentId: 4, name: "首页广告配置", path: "/promo/banner" },
+      { id: 41, parentId: 4, name: "会员列表", path: "/member/list" },
+      { id: 42, parentId: 4, name: "会员标签", path: "/member/tag" },
+      { id: 43, parentId: 4, name: "会员等级配置", path: "/member/level" },
+      { id: 44, parentId: 4, name: "账户流水明细", path: "/member/account" },
     ],
   },
   {
     id: 5,
     parentId: 0,
-    name: "财务管理",
-    icon: "finance",
-    path: "/finance",
+    name: "营销活动",
+    icon: "marketing",
+    path: "/promo",
     children: [
-      { id: 51, parentId: 5, name: "资金流水", path: "/finance/log" },
-      { id: 52, parentId: 5, name: "订单对账报表", path: "/finance/check" },
-      { id: 53, parentId: 5, name: "退款账单", path: "/finance/refund" },
-      { id: 54, parentId: 5, name: "支付渠道配置", path: "/finance/payconfig" },
+      { id: 51, parentId: 5, name: "优惠券管理", path: "/promo/coupon" },
+      { id: 52, parentId: 5, name: "限时秒杀", path: "/promo/seckill" },
+      { id: 53, parentId: 5, name: "拼团活动", path: "/promo/group" },
+      { id: 54, parentId: 5, name: "全店满减", path: "/promo/fullcut" },
+      { id: 55, parentId: 5, name: "首页广告配置", path: "/promo/banner" },
     ],
   },
   {
     id: 6,
     parentId: 0,
-    name: "数据统计",
-    icon: "data",
-    path: "/stats",
+    name: "财务管理",
+    icon: "finance",
+    path: "/finance",
     children: [
-      { id: 61, parentId: 6, name: "运营概览看板", path: "/stats/dashboard" },
-      { id: 62, parentId: 6, name: "商品数据分析", path: "/stats/goods" },
-      { id: 63, parentId: 6, name: "订单统计报表", path: "/stats/order" },
-      { id: 64, parentId: 6, name: "用户数据分析", path: "/stats/user" },
+      { id: 61, parentId: 6, name: "资金流水", path: "/finance/log" },
+      { id: 62, parentId: 6, name: "订单对账报表", path: "/finance/check" },
+      { id: 63, parentId: 6, name: "退款账单", path: "/finance/refund" },
+      { id: 64, parentId: 6, name: "支付渠道配置", path: "/finance/payconfig" },
     ],
   },
   {
     id: 7,
     parentId: 0,
+    name: "数据统计",
+    icon: "data",
+    path: "/stats",
+    children: [
+      { id: 71, parentId: 7, name: "运营概览看板", path: "/stats/dashboard" },
+      { id: 72, parentId: 7, name: "商品数据分析", path: "/stats/goods" },
+      { id: 73, parentId: 7, name: "订单统计报表", path: "/stats/order" },
+      { id: 74, parentId: 7, name: "用户数据分析", path: "/stats/user" },
+    ],
+  },
+  {
+    id: 8,
+    parentId: 0,
     name: "系统权限",
     icon: "setting",
     path: "/system",
     children: [
-      { id: 71, parentId: 7, name: "管理员账号", path: "/system/admin" },
-      { id: 72, parentId: 7, name: "角色管理", path: "/system/role" },
-      { id: 73, parentId: 7, name: "站点基础配置", path: "/system/config" },
-      { id: 74, parentId: 7, name: "数据字典", path: "/system/dict" },
-      { id: 75, parentId: 7, name: "系统日志", path: "/system/log" },
+      { id: 81, parentId: 8, name: "管理员账号", path: "/system/admin" },
+      { id: 82, parentId: 8, name: "角色管理", path: "/system/role" },
+      { id: 83, parentId: 8, name: "站点基础配置", path: "/system/config" },
+      { id: 84, parentId: 8, name: "数据字典", path: "/system/dict" },
+      { id: 85, parentId: 8, name: "系统日志", path: "/system/log" },
     ],
   },
-  // 新增 问卷工坊 独立一级菜单
+  // 问卷工坊
   {
-    id: 8,
+    id: 9,
     parentId: 0,
     name: "问卷工坊",
     icon: "document",
     path: "/survey",
     children: [
-      { id: 81, parentId: 8, name: "问卷列表", path: "/survey/list" },
-      { id: 82, parentId: 8, name: "创建问卷", path: "/survey/create" },
-      { id: 83, parentId: 8, name: "答卷数据", path: "/survey/record" },
+      { id: 91, parentId: 9, name: "问卷列表", path: "/survey/list" },
+      { id: 92, parentId: 9, name: "创建问卷", path: "/survey/create" },
+      { id: 93, parentId: 9, name: "答卷数据", path: "/survey/record" },
     ],
   },
-  // 新增 Chief Agent 独立一级菜单
+  // Chief Agent
   {
-    id: 9,
+    id: 10,
     parentId: 0,
     name: "Chief Agent",
     icon: "magic-stick",
     path: "/agent",
     children: [
-      { id: 91, parentId: 9, name: "智能对话", path: "/agent/chat" },
-      { id: 92, parentId: 9, name: "会话记录", path: "/agent/history" },
+      { id: 101, parentId: 10, name: "智能对话", path: "/agent/chat" },
+      { id: 102, parentId: 10, name: "会话记录", path: "/agent/history" },
     ],
   },
 ]);
 
-function handleMenuClick(item: { path: string }) {
+function handleMenuClick(item: { path: string; name: string }) {
+  // 已完成功能
+  const completedPaths = [
+    "/dashboard",
+    "/projectShowcase",
+    "/survey",
+    "/agent",
+  ];
+  // 检查是否已完成
+  if (completedPaths.includes(item.path)) {
+    navigateTo(item.path);
+    return;
+  }
   // 功能未开放
   ElMessage.warning("功能暂未开发");
-  // 跳转到仪表盘
-  if (item.path === "/dashboard") {
-    navigateTo("/dashboard");
-  }
   return;
 }
 
@@ -324,12 +336,14 @@ function toggleMobileMenu() {
   }
 }
 
-.el-menu-item.is-active {
-  color: var(--el-menu-active-color);
-  background: var(--el-color-primary-light-7);
+.hidden-aside {
+  display: none;
 }
 
 @media (max-width: 768px) {
+  .hidden-aside {
+    display: block;
+  }
   .el-header {
     padding: 0 12px;
   }

@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import gsap from "gsap";
+import { useLoadingStore } from "@/stores/loading";
 definePageMeta({
   title: "首页",
   layout: "default",
@@ -114,7 +115,9 @@ function handleCardClick(card: CardConfig) {
  * 卡片标题动画
  */
 function animationCardTitle(): void {
-  const tl = gsap.timeline();
+  if (!tl) {
+    return;
+  }
   tl.from(".card-title-char", {
     opacity: 0,
     y: 55,
@@ -142,15 +145,34 @@ function handleMouseMove(e: MouseEvent) {
 }
 
 const { isDesktop } = useDevice(); // 监听鼠标移动事件，更新卡片位置
+/**注册GSAP时间线 */
+let tl: ReturnType<typeof gsap.timeline> | null = gsap.timeline();
 
 onMounted(() => {
+  console.log("projectShowcase组件挂载时");
+
+  animationCardTitle();
+
   if (isDesktop.value) {
     document.addEventListener("mousemove", handleMouseMove);
   }
-  animationCardTitle();
+});
+
+onActivated(() => {
+  console.log("组件激活时，播放GSAP时间线");
+  tl?.play();
+});
+
+onDeactivated(() => {
+  console.log("组件停用时，暂停GSAP时间线");
+  tl?.pause();
 });
 
 onUnmounted(() => {
+  console.log("projectShowcase组件卸载时");
+  // 清理GSAP时间线
+  tl?.kill();
+  tl = null;
   document.removeEventListener("mousemove", handleMouseMove);
 });
 </script>

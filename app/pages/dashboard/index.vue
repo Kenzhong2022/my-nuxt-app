@@ -482,15 +482,21 @@ onMounted(() => {
 });
 
 const debouncedResize = useDebounceFn(() => {
-  hourChart?.resize();
-  dayChart?.resize();
+  if (hourChart && dayChart) {
+    hourChart.resize();
+    dayChart.resize();
+  } else {
+    ElMessage.error("图表未初始化");
+  }
 }, 500);
 
 useResizeObserver(chartsRowRef, debouncedResize);
 
 onBeforeUnmount(() => {
   hourChart?.dispose();
+  hourChart = null;
   dayChart?.dispose();
+  dayChart = null;
 });
 </script>
 
