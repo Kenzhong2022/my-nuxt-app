@@ -18,17 +18,25 @@ export default defineNuxtConfig({
 
     // 公共配置：客户端也能访问（这里不要放任何敏感信息！）
     public: {
-      // 比如你的网站标题、版本号等
       title: "My Nuxt App",
       version: "1.0.0",
-      // Agent API 地址（客户端组件需要访问，放公共配置）
       agentBaseUrl: process.env.NUXT_AGENT_BASE_URL,
+      /** 登录页地址 */
+      loginBase: process.env.LOGIN_BASE,
     },
   },
   app: {
     keepalive: true, // 或配置 include/exclude
   },
-  modules: ["@pinia/nuxt", "@element-plus/nuxt", "@nuxtjs/tailwindcss"],
+  pinia: {
+    storesDirs: ["./stores"],
+  },
+  modules: [
+    "@pinia/nuxt",
+    "@pinia-plugin-persistedstate/nuxt",
+    "@element-plus/nuxt",
+    "@nuxtjs/tailwindcss",
+  ],
   vite: {
     build: {
       rollupOptions: {
@@ -76,6 +84,7 @@ export default defineNuxtConfig({
         "dayjs", // CJS
         "dayjs/plugin/*.js",
         "gsap",
+        "vue-draggable-plus",
       ],
     },
     plugins: [

@@ -79,7 +79,7 @@ const cart = useCartStore();
 
 // 初始化模拟数据（首次进入）
 onMounted(() => {
-  cart.initMockData();
+  cart.fetchCart();
 });
 
 function goShopping() {

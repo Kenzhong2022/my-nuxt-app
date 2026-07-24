@@ -30,17 +30,7 @@ import gsap from "gsap";
 import { computed } from "vue";
 
 const loadingStore = useLoadingStore();
-const isPlaying = computed({
-  get: () => {
-    if (loadingStore.isRouteChanging) {
-      console.log("加载动画中");
-    } else {
-      console.log("加载动画结束");
-    }
-    return loadingStore.isRouteChanging;
-  },
-  set: (val) => (loadingStore.isRouteChanging = val),
-});
+const isPlaying = computed(() => loadingStore.isRouteChanging);
 const nuxtApp = useNuxtApp();
 
 let tl = null;
@@ -77,20 +67,6 @@ watch(isPlaying, async (playing) => {
     },
     "+=0",
   );
-});
-
-// 页面加载完成后，关闭加载状态
-nuxtApp.hook("page:finish", () => {
-  console.log("页面加载完成");
-  loadingStore.setLoading(false);
-});
-
-onMounted(() => {
-  loadingStore.setLoading(true);
-
-  setTimeout(() => {
-    loadingStore.setLoading(false);
-  }, 2000);
 });
 </script>
 

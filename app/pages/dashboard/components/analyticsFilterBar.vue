@@ -33,7 +33,21 @@
           </div>
         </div>
         <div v-show="customOptionVisible" class="filter-item custom-option">
+          <!-- 单日期选择（小时图用） -->
           <el-date-picker
+            v-if="pickerType === 'single'"
+            ref="customDatePickerRef"
+            v-model="localCustomDate"
+            type="date"
+            placeholder="选择日期"
+            @change="onSingleDateChange"
+            @clear="onClear"
+            :disabled-date="disabledSingleDateFn"
+            :editable="false"
+          />
+          <!-- 日期范围选择（日图用） -->
+          <el-date-picker
+            v-else
             ref="customDatePickerRef"
             v-model="localCustomDateRange"
             type="daterange"
@@ -66,10 +80,14 @@ const props = withDefaults(
     customDate?: Date | null;
     customDateRange?: [Date, Date] | null;
     timeRangeOptions?: { label: string; value: string }[];
+    /** 选择器类型：single=单日期，range=日期范围 */
+    pickerType?: "single" | "range";
   }>(),
   {
     timeRange: "30d",
     customDate: null,
+    customDateRange: null,
+    pickerType: "range",
     timeRangeOptions: () => [
       { label: "近 7 天", value: "7d" },
       { label: "近 30 天", value: "30d" },
@@ -96,9 +114,18 @@ const dropdownVisible = ref(false);
 /** 自定义日期范围响应式数据 */
 const localCustomDateRange = computed({
   get: () => props.customDateRange,
-  set: (val) => {
+  set: (val: [Date, Date] | null) => {
     if (!val) return;
     emit("update:customDateRange", val);
+  },
+});
+
+/** 自定义单日期响应式数据 */
+const localCustomDate = computed({
+  get: () => props.customDate,
+  set: (val: Date | null) => {
+    if (!val) return;
+    emit("update:customDate", val);
   },
 });
 
@@ -113,6 +140,9 @@ const localTimeRange = computed({
 
 /** 显示标签响应式数据 */
 const displayLabel = computed(() => {
+  if (props.pickerType === "single" && localCustomDate.value) {
+    return localCustomDate.value.toLocaleDateString();
+  }
   if (localCustomDateRange.value && localCustomDateRange.value.length >= 2) {
     return `${localCustomDateRange.value[0].toLocaleDateString()} 至 ${localCustomDateRange.value[1].toLocaleDateString()}`;
   }
@@ -156,7 +186,7 @@ onUnmounted(() => {
 // ============ 方法 ============
 // 记录用户点击的第一个日期
 const selectedFirstDate = ref<Date | null>(null);
-// 禁用日期函数
+// 禁用日期函数（日期范围模式）
 const disabledDateFn = (time: Date) => {
   // 没有基准日期时，不禁用任何日期
   if (!selectedFirstDate.value) return false;
@@ -190,7 +220,12 @@ const disabledDateFn = (time: Date) => {
   return dateOnly < minOnly || dateOnly > maxOnly;
 };
 
-/** 日历选择变化 */
+/** 禁用日期函数（单日期模式：只禁用未来日期） */
+const disabledSingleDateFn = (time: Date) => {
+  return time.getTime() > Date.now();
+};
+
+/** 日历选择变化（日期范围模式） */
 function onCalendarChange(val: any) {
   const [startDate, endDate] = val;
   selectedFirstDate.value = startDate;
@@ -200,11 +235,21 @@ function onCalendarChange(val: any) {
   }
 }
 
+/** 单日期选择变化 */
+function onSingleDateChange(val: unknown) {
+  if (val instanceof Date) {
+    triggerDropdownMenu(false);
+  }
+}
+
 /** 清空选择 */
 function onClear() {
-  console.log("清空选择");
   selectedFirstDate.value = null;
-  emit("update:customDateRange", null);
+  if (props.pickerType === "single") {
+    emit("update:customDate", null);
+  } else {
+    emit("update:customDateRange", null);
+  }
 }
 
 const menuLeft = ref("0px");
@@ -220,20 +265,21 @@ function updateMenuPosition() {
 const curOption = ref("");
 /** 选择选项 */
 function onSelectOption(value: string) {
-  curOption.value = value; // 可能是普通时间范围，也可能是自定义时间范围
+  curOption.value = value;
 
-  // 判断是不是自定义时间范围
   if (value !== "custom") {
     // 是普通时间范围
     triggerDropdownMenu(false);
-    // 直接设置时间范围
     emit("update:timeRange", value);
-    // 清空自定义时间范围
-    emit("update:customDateRange", null);
+    // 清空对应的自定义数据
+    if (props.pickerType === "single") {
+      emit("update:customDate", null);
+    } else {
+      emit("update:customDateRange", null);
+    }
   } else {
     customOptionVisible.value = true;
-    // 清空普通时间范围
-    emit("update:timeRange", "");
+    emit("update:timeRange", "custom");
   }
 }
 

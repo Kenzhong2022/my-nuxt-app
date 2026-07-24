@@ -1,7 +1,9 @@
 // stores/loading.ts
-import { readonly } from "vue";
-
-export const useLoadingStore = defineStore("loading", () => {
+interface LoadingStore {
+  isRouteChanging: Readonly<Ref<boolean>>;
+  setLoading: (loading: boolean) => void;
+}
+export const useLoadingStore = defineStore("loading", (): LoadingStore => {
   const _isRouteChanging = ref(false); // 私有变量（下划线约定）
 
   /**

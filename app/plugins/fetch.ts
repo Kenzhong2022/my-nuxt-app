@@ -1,18 +1,23 @@
 // app/plugins/fetch.ts
+import { useAuthStore } from "~~/app/stores/auth";
 export default defineNuxtPlugin((nuxtApp) => {
   globalThis.$fetch = $fetch.create({
     // 1️⃣ 请求发送前
     onRequest({ request, options }) {
-      // 添加 Token、自定义头、修改 URL 等
-      const token = process.client
-        ? localStorage.getItem("access_token")
-        : undefined;
+      // 仅在客户端从 store 获取 token（服务端没有 store 持久化）
+      if (process.client) {
+        const authStore = useAuthStore();
+        const token = authStore.token; // 从 store 读取
+
+        if (token) {
+          const headers = new Headers(options.headers || {});
+          headers.set("Authorization", `Bearer ${token}`);
+          options.headers = headers;
+        }
+      }
+
       const headers = new Headers(options.headers);
 
-      // 有token才添加鉴权头
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
       headers.set(
         "X-Request-ID",
         crypto.randomUUID?.() || Date.now().toString(), // 请求ID
@@ -55,35 +60,33 @@ export default defineNuxtPlugin((nuxtApp) => {
     // 4️⃣ 响应返回错误（HTTP 状态码 >= 400，如 401, 404, 500 等）
     onResponseError({ request, options, response }) {
       console.error(`[响应错误] ${request}`, response.status, response._data);
+      if (process.client) {
+        // 401 未授权：清除 token 并跳转登录
+        if (response.status === 401) {
+          const authStore = useAuthStore();
+          // authStore.clearToken(); // 清空 store（自动清除 localStorage）
+          ElMessage.error("无法访问该接口。该接口属于第三方接口");
 
-      // 针对 401 未授权：清除 Token 并跳转登录页
-      if (response.status === 401) {
-        if (process.client) {
-          localStorage.removeItem("access_token");
-          // 使用 nuxtApp 实例跳转（注意在插件中导入 navigateTo）
-          //   nuxtApp.$router?.push("/login");
-          // 或者直接使用 window.location（但会刷新页面）
-          const LOGIN_BASE = process.env.LOGIN_BASE || "http://localhost:3001";
-          window.location.href = LOGIN_BASE + "/login";
+          // 使用 Nuxt 的 navigateTo 进行 SPA 跳转
+          const redirect = encodeURIComponent(window.location.pathname);
+          const config = useRuntimeConfig();
+          const LOGIN_BASE = config.public.loginBase;
+          if (!LOGIN_BASE) throw new Error("LOGIN_BASE 未配置");
+          // navigateTo(`${LOGIN_BASE}/login?redirect=${redirect}`, {
+          //   external: true,
+          // });
         }
-      }
 
-      // 针对 403 无权限：提示用户
-      if (response.status === 403) {
-        if (process.client) {
-          // 弹窗提示
+        // 403 无权限
+        if (response.status === 403) {
           alert("您没有权限执行此操作");
         }
-      }
 
-      // 针对 500 服务器错误：统一报错提示
-      if (response.status >= 500) {
-        // 可以统一上报错误日志到 Sentry 等
-        // reportError(response._data)
+        // 500 等服务器错误可上报日志
+        if (response.status >= 500) {
+          // reportError(response._data);
+        }
       }
-
-      // 你也可以修改 response._data 统一错误格式，让调用方捕获到统一结构
-      // response._data = { message: response._data?.message || '服务异常' }
     },
   });
 });

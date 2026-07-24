@@ -41,6 +41,9 @@
             @menu-click="handleMenuClick"
           >
             <template #submenu-title="{ menu }">
+              <el-icon>
+                <component :is="menu.icon" />
+              </el-icon>
               {{ menu.name }}
             </template>
           </AppMenu>
@@ -59,7 +62,7 @@
         @click="showMobileMenu = false"
       ></div>
       <el-aside
-        v-show="isClient && !isSidebarMenu"
+        v-show="isClient && isSidebarMenu"
         width="240px"
         class="border-r"
         :class="{
@@ -90,22 +93,20 @@ import gsap from "gsap";
 import { useDark, useStorage } from "@vueuse/core";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
-const isClient = import.meta.client;
+const isClient = ref(false);
 
 let isDark: Ref<boolean> = ref(false);
 let isSidebarMenu: Ref<boolean | undefined> = ref();
 
-if (isClient) {
+onMounted(() => {
+  rotateYOpen();
+  isClient.value = true;
   isDark = useDark({
     storageKey: "admin-dark-mode",
     selector: "html",
     valueDark: "dark",
   });
   isSidebarMenu = useStorage("admin-menu-mode", true);
-}
-
-onMounted(() => {
-  rotateYOpen();
 });
 
 onUnmounted(() => {
@@ -155,23 +156,23 @@ const menuConfig = ref<MenuItem[]>([
     id: 0,
     parentId: 0,
     name: "Dashboard",
-    icon: "dashboard",
+    icon: "Histogram",
     path: "/dashboard",
   },
   // 新增：项目展示页（第二位）
   {
     id: 1,
     parentId: 0,
-    name: "项目展示",
-    icon: "grid",
-    path: "/projectShowcase",
+    name: "我的项目",
+    icon: "FolderOpened",
+    path: "/myProjects",
   },
   // 原商品管理，id 顺延
   {
     id: 2,
     parentId: 0,
     name: "商品管理",
-    icon: "goods",
+    icon: "Goods",
     path: "/goods",
     children: [
       { id: 21, parentId: 2, name: "商品列表", path: "/goods/list" },
@@ -201,7 +202,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 4,
     parentId: 0,
     name: "商城会员",
-    icon: "member",
+    icon: "User",
     path: "/member",
     children: [
       { id: 41, parentId: 4, name: "会员列表", path: "/member/list" },
@@ -214,7 +215,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 5,
     parentId: 0,
     name: "营销活动",
-    icon: "marketing",
+    icon: "ShoppingBag",
     path: "/promo",
     children: [
       { id: 51, parentId: 5, name: "优惠券管理", path: "/promo/coupon" },
@@ -228,7 +229,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 6,
     parentId: 0,
     name: "财务管理",
-    icon: "finance",
+    icon: "Money",
     path: "/finance",
     children: [
       { id: 61, parentId: 6, name: "资金流水", path: "/finance/log" },
@@ -241,7 +242,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 7,
     parentId: 0,
     name: "数据统计",
-    icon: "data",
+    icon: "TrendCharts",
     path: "/stats",
     children: [
       { id: 71, parentId: 7, name: "运营概览看板", path: "/stats/dashboard" },
@@ -254,7 +255,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 8,
     parentId: 0,
     name: "系统权限",
-    icon: "setting",
+    icon: "Key",
     path: "/system",
     children: [
       { id: 81, parentId: 8, name: "管理员账号", path: "/system/admin" },
@@ -269,7 +270,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 9,
     parentId: 0,
     name: "问卷工坊",
-    icon: "document",
+    icon: "Document",
     path: "/survey",
     children: [
       { id: 91, parentId: 9, name: "问卷列表", path: "/survey/list" },
@@ -282,7 +283,7 @@ const menuConfig = ref<MenuItem[]>([
     id: 10,
     parentId: 0,
     name: "Chief Agent",
-    icon: "magic-stick",
+    icon: "Service",
     path: "/agent",
     children: [
       { id: 101, parentId: 10, name: "智能对话", path: "/agent/chat" },
@@ -293,12 +294,7 @@ const menuConfig = ref<MenuItem[]>([
 
 function handleMenuClick(item: { path: string; name: string }) {
   // 已完成功能
-  const completedPaths = [
-    "/dashboard",
-    "/projectShowcase",
-    "/survey",
-    "/agent",
-  ];
+  const completedPaths = ["/dashboard", "/myProjects", "/survey", "/agent"];
   // 检查是否已完成
   if (completedPaths.includes(item.path)) {
     navigateTo(item.path);

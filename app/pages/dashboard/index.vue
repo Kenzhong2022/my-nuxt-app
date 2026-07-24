@@ -6,7 +6,7 @@
       <el-card class="stat-card">
         <div class="stat-label">今日访问量</div>
         <div class="stat-value" ref="todayValueRef">
-          {{ dashboardData?.todayTotal ?? "--" }}
+          {{ hourlyToday?.total ?? "--" }}
         </div>
         <div class="stat-sub" :class="todayDiffClass">
           {{ todayDiffText }}
@@ -16,14 +16,14 @@
       <el-card class="stat-card">
         <div class="stat-label">昨日访问量</div>
         <div class="stat-value">
-          {{ dashboardData?.yesterdayTotal ?? "--" }}
+          {{ hourlyYesterday?.total ?? "--" }}
         </div>
         <div class="stat-sub">已归档</div>
       </el-card>
 
       <el-card class="stat-card">
         <div class="stat-label">近7天总计</div>
-        <div class="stat-value">{{ dashboardData?.weekTotal ?? "--" }}</div>
+        <div class="stat-value">{{ daily?.total ?? "--" }}</div>
         <div class="stat-sub">日均 {{ avgDaily }} 次</div>
       </el-card>
     </div>
@@ -37,10 +37,15 @@
           v-model:timeRange="hourChartTimeRange"
           v-model:customDate="customDate"
           :timeRangeOptions="hourChartTimeRangeOptions"
+          picker-type="single"
           @export="handleExport"
         />
-        <div class="chart-title">今日每小时访问分布</div>
-        <div ref="hourChartRef" class="chart-container"></div>
+        <div class="chart-title">{{ hourChartTitle }}</div>
+        <div
+          ref="hourChartRef"
+          v-loading="hourlyLoading"
+          class="chart-container"
+        ></div>
       </el-card>
 
       <el-card class="chart-card">
@@ -50,19 +55,24 @@
           ref="filterBarRef"
           v-model:timeRange="timeRange"
           v-model:customDateRange="customDateRange"
+          picker-type="range"
           @export="handleExport"
         />
-        <div class="chart-title">近7天每日访问趋势</div>
-        <div ref="dayChartRef" class="chart-container"></div>
+        <div class="chart-title">{{ dailyChartTitle }}</div>
+        <div
+          ref="dayChartRef"
+          v-loading="dailyLoading"
+          class="chart-container"
+        ></div>
       </el-card>
     </div>
 
     <!-- 更新时间 -->
     <div
       class="text-center text-[var(--el-text-color-secondary)]"
-      v-if="dashboardData?.updatedAt"
+      v-if="updatedAt"
     >
-      数据更新于 {{ formatUpdateTime(dashboardData.updatedAt) }}
+      数据更新于 {{ formatUpdateTime(updatedAt) }}
     </div>
   </div>
 </template>
@@ -70,23 +80,36 @@
 <script setup lang="ts">
 import { useResizeObserver, useDebounceFn } from "@vueuse/core";
 import * as echarts from "echarts";
-import type { DashboardOverview } from "~~/types/analytics";
+import type {
+  HourlyResponse,
+  DailyResponse,
+} from "~~/types/analytics/responses";
 import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
 import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
 
 // ============ 响应式数据 ============
-const dashboardData = ref<DashboardOverview | null>(null);
+// 统计卡片数据（固定为今日/昨日/近7天）
+const hourlyToday = ref<HourlyResponse | null>(null);
+const hourlyYesterday = ref<HourlyResponse | null>(null);
+const daily = ref<DailyResponse | null>(null);
+// 图表数据（随筛选条件变化）
+const hourlyChartData = ref<HourlyResponse | null>(null);
+const dailyChartData = ref<DailyResponse | null>(null);
+// 图表加载状态
+const hourlyLoading = ref(false);
+const dailyLoading = ref(false);
+
 const hourChartRef = ref<HTMLDivElement | null>(null);
 const dayChartRef = ref<HTMLDivElement | null>(null);
 const todayValueRef = ref<HTMLDivElement | null>(null);
 const filterBarRef = ref<InstanceType<typeof AnalyticsFilterBar> | null>(null);
 /** 图表行容器引用，用于监听尺寸变化统一更新图表 */
 const chartsRowRef = ref<HTMLDivElement | null>(null);
-/** 时间范围 */
-const timeRange = ref<string>("30d");
+/** 日图表时间范围 */
+const timeRange = ref<string>("7d");
 /** 小时图表时间范围 */
-const hourChartTimeRange = ref<string>("30d");
-/** 小时图表自定义日期 */
+const hourChartTimeRange = ref<string>("today");
+/** 小时图表自定义日期（单日期） */
 const customDate = ref<Date | null>(null);
 
 /** 小时图表时间范围选项 */
@@ -95,6 +118,7 @@ const hourChartTimeRangeOptions = ref([
   { label: "昨日", value: "yesterday" },
   { label: "自定义范围", value: "custom" },
 ]);
+/** 日图表自定义日期范围 */
 const customDateRange = ref<[Date, Date] | null>(null);
 
 function handleExport() {
@@ -106,32 +130,52 @@ let dayChart: echarts.ECharts | null = null;
 const chartTheme = useChartTheme();
 // 监听主题变化，自动重绘图表
 watch(chartTheme, () => {
-  if (dashboardData.value) {
-    updateCharts(dashboardData.value);
-  }
+  updateCharts();
 });
 // ============ 计算属性 ============
 const todayDiffText = computed(() => {
-  if (!dashboardData.value) return "--";
-  const diff =
-    dashboardData.value.todayTotal - dashboardData.value.yesterdayTotal;
+  if (!hourlyToday.value || !hourlyYesterday.value) return "--";
+  const diff = hourlyToday.value.total - hourlyYesterday.value.total;
   if (diff > 0) return `较昨日 ▲ +${diff}`;
   if (diff < 0) return `较昨日 ▼ ${diff}`;
   return "与昨日持平";
 });
 
 const todayDiffClass = computed(() => {
-  if (!dashboardData.value) return "";
-  const diff =
-    dashboardData.value.todayTotal - dashboardData.value.yesterdayTotal;
+  if (!hourlyToday.value || !hourlyYesterday.value) return "";
+  const diff = hourlyToday.value.total - hourlyYesterday.value.total;
   if (diff > 0) return "up";
   if (diff < 0) return "down";
   return "";
 });
 
 const avgDaily = computed(() => {
-  if (!dashboardData.value) return "--";
-  return Math.round(dashboardData.value.weekTotal / 7);
+  if (!daily.value) return "--";
+  return Math.round(daily.value.total / 7);
+});
+
+/** 小时图表标题 */
+const hourChartTitle = computed(() => {
+  if (hourChartTimeRange.value === "today") return "今日每小时访问分布";
+  if (hourChartTimeRange.value === "yesterday") return "昨日每小时访问分布";
+  if (hourChartTimeRange.value === "custom" && hourlyChartData.value) {
+    return `${hourlyChartData.value.date} 每小时访问分布`;
+  }
+  return "每小时访问分布";
+});
+
+/** 日图表标题 */
+const dailyChartTitle = computed(() => {
+  const rangeLabels: Record<string, string> = {
+    "7d": "近7天每日访问趋势",
+    "30d": "近30天每日访问趋势",
+    "90d": "近90天每日访问趋势",
+    year: "今年每日访问趋势",
+  };
+  if (timeRange.value === "custom" && dailyChartData.value) {
+    return `${dailyChartData.value.startDate} 至 ${dailyChartData.value.endDate} 每日访问趋势`;
+  }
+  return rangeLabels[timeRange.value] ?? "每日访问趋势";
 });
 
 // ============ 方法 ============
@@ -179,12 +223,33 @@ function createLinearGradient(
 }
 
 /**
- * 构建今日每小时柱状图配置
+ * 向上取整到“漂亮”的刻度，优先取 1、2、5 的倍数。
  */
-function buildHourOption(hourlyData: number[]): echarts.EChartsOption {
-  const currentHour = new Date().getHours();
+function roundUpToNiceNumber(value: number): number {
+  if (value <= 0) return 10;
+  const exponent = Math.floor(Math.log10(value));
+  const magnitude = 10 ** exponent;
+  const normalized = value / magnitude;
+  // 1, 2, 5, 10 是最常用的刻度基数
+  let step = 1;
+  if (normalized > 1) step = 2;
+  if (normalized > 2) step = 5;
+  if (normalized > 5) step = 10;
+  return step * magnitude;
+}
+
+/**
+ * 构建每小时柱状图配置
+ * @param hourlyData 24 小时访问量数组
+ * @param isToday 是否为今日数据（控制当前小时高亮）
+ */
+function buildHourOption(
+  hourlyData: number[],
+  isToday: boolean = true,
+): echarts.EChartsOption {
+  const currentHour = isToday ? new Date().getHours() : -1;
   const maxVal = Math.max(...hourlyData, 10);
-  const roundedMax = Math.ceil(maxVal / 10) * 10;
+  const roundedMax = roundUpToNiceNumber(maxVal);
 
   return {
     tooltip: {
@@ -316,23 +381,36 @@ function buildHourOption(hourlyData: number[]): echarts.EChartsOption {
 }
 
 /**
- * 构建近7天折线图配置
+ * 构建每日折线图配置
+ * @param dailyData 每日访问量数组
+ * @param dates 对应的日期字符串数组（YYYY-MM-DD），用于生成标签和判断今天
  */
-function buildDayOption(dailyData: number[]): echarts.EChartsOption {
+function buildDayOption(
+  dailyData: number[],
+  dates?: string[],
+): echarts.EChartsOption {
   const maxVal = Math.max(...dailyData, 10);
-  const roundedMax = Math.ceil(maxVal / 10) * 10;
+  const roundedMax = roundUpToNiceNumber(maxVal);
 
-  const dayLabels: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    dayLabels.push(
-      d.toLocaleDateString("zh-CN", {
-        timeZone: "Asia/Shanghai",
-        month: "2-digit",
-        day: "2-digit",
-      }),
-    );
-  }
+  const todayStr = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Shanghai",
+  });
+
+  const dayLabels: string[] = dates
+    ? dates.map((d) =>
+        new Date(d).toLocaleDateString("zh-CN", {
+          month: "2-digit",
+          day: "2-digit",
+        }),
+      )
+    : Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(Date.now() - (6 - i) * 86400000);
+        return d.toLocaleDateString("zh-CN", {
+          timeZone: "Asia/Shanghai",
+          month: "2-digit",
+          day: "2-digit",
+        });
+      });
 
   return {
     tooltip: {
@@ -340,7 +418,9 @@ function buildDayOption(dailyData: number[]): echarts.EChartsOption {
       ...TOOLTIP_STYLE,
       formatter: (params: any) => {
         const p = params[0];
-        const isToday = p.dataIndex === 6;
+        const isToday = dates
+          ? dates[p.dataIndex] === todayStr
+          : p.dataIndex === 6;
         return `<b>${p.axisValue}</b>${isToday ? " ⭐ 今天" : ""}<br/>访问量：<b style="font-size:15px;color:${chartTheme.value.itemStyle_color[1]};">${p.value} 次</b>`;
       },
     },
@@ -379,7 +459,13 @@ function buildDayOption(dailyData: number[]): echarts.EChartsOption {
         smooth: 0.4,
         symbol: "circle",
         symbolSize: (_: number, params: any) =>
-          params.dataIndex === 6 ? 14 : 10,
+          dates
+            ? dates[params.dataIndex] === todayStr
+              ? 14
+              : 10
+            : params.dataIndex === 6
+              ? 14
+              : 10,
         lineStyle: {
           width: 3,
           color: createLinearGradient(0, 0, 1, 0, [
@@ -440,35 +526,157 @@ function buildDayOption(dailyData: number[]): echarts.EChartsOption {
 /**
  * 更新图表
  */
-function updateCharts(data: DashboardOverview) {
-  if (hourChart) {
-    // 构建完整的 ECharts 配置
-    const option = buildHourOption(data.hourlyVisits);
-
-    // setOption 的第一个参数：图表的配置对象（option），包含 xAxis、yAxis、series 等
-    // 第二个参数（可选）：设置 { notMerge: true } 表示不合并旧配置，完全用新配置替换，
-    // 适用于数据完全刷新的场景，避免样式残留或新旧配置冲突。
-    hourChart.setOption(option, { notMerge: true });
+function updateCharts() {
+  if (hourChart && hourlyChartData.value) {
+    const isToday = hourChartTimeRange.value === "today";
+    hourChart.setOption(
+      buildHourOption(hourlyChartData.value.hourlyVisits, isToday),
+      {
+        notMerge: true,
+      },
+    );
   }
-  if (dayChart) {
-    dayChart.setOption(buildDayOption(data.dailyVisits), { notMerge: true });
+  if (dayChart && dailyChartData.value) {
+    dayChart.setOption(
+      buildDayOption(
+        dailyChartData.value.dailyVisits,
+        dailyChartData.value.dates,
+      ),
+      {
+        notMerge: true,
+      },
+    );
+  }
+}
+
+const updatedAt = ref<string>("");
+
+/** 格式化日期为 YYYY-MM-DD（北京时间） */
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+}
+
+/**
+ * 获取小时图表数据（随筛选条件变化）
+ */
+async function fetchHourlyChart() {
+  let dateStr: string | undefined;
+
+  if (hourChartTimeRange.value === "today") {
+    dateStr = undefined;
+  } else if (hourChartTimeRange.value === "yesterday") {
+    dateStr = formatDate(new Date(Date.now() - 86400000));
+  } else if (hourChartTimeRange.value === "custom" && customDate.value) {
+    dateStr = formatDate(customDate.value);
+  } else {
+    return; // 自定义模式但未选择日期
+  }
+
+  hourlyLoading.value = true;
+  try {
+    const res = await $fetch<HourlyResponse>("/api/public/analytics/hourly", {
+      query: dateStr ? { date: dateStr } : {},
+    });
+    hourlyChartData.value = res;
+    if (hourChart) {
+      const isToday = hourChartTimeRange.value === "today";
+      hourChart.setOption(buildHourOption(res.hourlyVisits, isToday), {
+        notMerge: true,
+      });
+    }
+  } catch (err) {
+    console.error("获取小时访问数据失败:", err);
+  } finally {
+    hourlyLoading.value = false;
   }
 }
 
 /**
- * 获取数据
+ * 获取日图表数据（随筛选条件变化）
  */
-async function fetchData() {
+async function fetchDailyChart() {
+  const query: Record<string, string> = {};
+
+  if (timeRange.value === "custom" && customDateRange.value) {
+    query.startDate = formatDate(customDateRange.value[0]);
+    query.endDate = formatDate(customDateRange.value[1]);
+  } else if (timeRange.value === "7d") {
+    // API 默认近 7 天，无需传参
+  } else if (timeRange.value === "30d") {
+    query.startDate = formatDate(new Date(Date.now() - 29 * 86400000));
+  } else if (timeRange.value === "90d") {
+    query.startDate = formatDate(new Date(Date.now() - 89 * 86400000));
+  } else if (timeRange.value === "year") {
+    const now = new Date();
+    query.startDate = `${now.getFullYear()}-01-01`;
+  } else {
+    return; // 自定义模式但未选择日期范围
+  }
+
+  dailyLoading.value = true;
   try {
-    const data = await $fetch<DashboardOverview>(
-      "/api/public/analytics/dashboard",
-    );
-    dashboardData.value = data;
-    updateCharts(data);
+    const res = await $fetch<DailyResponse>("/api/public/analytics/daily", {
+      query,
+    });
+    dailyChartData.value = res;
+    if (dayChart) {
+      dayChart.setOption(buildDayOption(res.dailyVisits, res.dates), {
+        notMerge: true,
+      });
+    }
   } catch (err) {
-    console.error("获取仪表盘数据失败:", err);
+    console.error("获取日期访问数据失败:", err);
+  } finally {
+    dailyLoading.value = false;
   }
 }
+
+/**
+ * 获取统计卡片数据（固定为今日/昨日/近7天）
+ */
+async function fetchData() {
+  hourlyLoading.value = true;
+  dailyLoading.value = true;
+  try {
+    const yesterdayStr = formatDate(new Date(Date.now() - 86400000));
+
+    const [todayRes, yesterdayRes, dailyRes] = await Promise.all([
+      $fetch<HourlyResponse>("/api/public/analytics/hourly"),
+      $fetch<HourlyResponse>("/api/public/analytics/hourly", {
+        query: { date: yesterdayStr },
+      }),
+      $fetch<DailyResponse>("/api/public/analytics/daily"),
+    ]);
+
+    hourlyToday.value = todayRes;
+    hourlyYesterday.value = yesterdayRes;
+    daily.value = dailyRes;
+
+    // 初始化图表数据
+    hourlyChartData.value = todayRes;
+    dailyChartData.value = dailyRes;
+
+    updatedAt.value = new Date(Date.now() + 8 * 60 * 60 * 1000)
+      .toISOString()
+      .replace("Z", "+08:00");
+
+    updateCharts();
+  } catch (err) {
+    console.error("获取仪表盘数据失败:", err);
+  } finally {
+    hourlyLoading.value = false;
+    dailyLoading.value = false;
+  }
+}
+
+// ============ 监听筛选变化，触发接口请求 ============
+watch([hourChartTimeRange, customDate], () => {
+  fetchHourlyChart();
+});
+
+watch([timeRange, customDateRange], () => {
+  fetchDailyChart();
+});
 
 // ============ 生命周期 ============
 onMounted(() => {

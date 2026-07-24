@@ -5,23 +5,39 @@
     :mode="mode"
     class="border-none"
   >
-    <template v-for="menu in menuData" :key="menu.path">
-      <el-sub-menu v-if="menu.children?.length" :index="menu.path">
+    <template v-for="menu in menuData">
+      <el-sub-menu
+        v-if="menu.children?.length"
+        :key="menu.id + '-sub'"
+        :index="menu.path"
+      >
         <template #title>
           <slot name="submenu-title" :menu="menu">
+            <el-icon>
+              <component :is="menu.icon" />
+            </el-icon>
             <span>{{ menu.name }}</span>
           </slot>
         </template>
         <el-menu-item
           v-for="child in menu.children"
-          :key="child.path"
+          :key="child.id"
           :index="child.path"
           @click="handleItemClick(child)"
         >
           {{ child.name }}
         </el-menu-item>
       </el-sub-menu>
-      <el-menu-item v-else :index="menu.path" @click="handleItemClick(menu)">
+
+      <el-menu-item
+        v-else
+        :key="menu.id + '-item'"
+        :index="menu.path"
+        @click="handleItemClick(menu)"
+      >
+        <el-icon>
+          <component :is="menu.icon" />
+        </el-icon>
         {{ menu.name }}
       </el-menu-item>
     </template>

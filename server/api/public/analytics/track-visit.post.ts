@@ -1,5 +1,5 @@
 // server/api/analytics/track-visit.post.ts
-import type { VisitRecord } from "~~/types/analytics";
+import type { VisitRecord } from "~~/types/analytics/common";
 import type { ApiResponse } from "~~/types/common";
 export default defineEventHandler(
   async (event): Promise<ApiResponse<never>> => {

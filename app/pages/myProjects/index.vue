@@ -104,11 +104,7 @@ const cardList: CardConfig[] = [
 const loadingStore = useLoadingStore();
 
 function handleCardClick(card: CardConfig) {
-  loadingStore.setLoading(true);
-  setTimeout(() => {
-    card.action();
-    loadingStore.setLoading(false);
-  }, 3000);
+  card.action();
 }
 
 /**
