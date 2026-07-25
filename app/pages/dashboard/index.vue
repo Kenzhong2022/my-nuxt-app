@@ -95,6 +95,19 @@ import {
 } from "~/utils/chart-config";
 import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
 
+definePageMeta({
+  name: "Dashboard", // 页面名称
+  title: "仪表盘", // 页面标题
+  layout: "default", // 指定布局
+  keepalive: true, // KeepAlive 缓存
+  key: "dashboard", // 路由 key
+  pageTransition: {
+    // 页面过渡动画
+    name: "slide",
+    mode: "out-in",
+  },
+});
+
 // ============ 响应式数据 ============
 // 统计卡片数据（固定为今日/昨日/近7天）
 const hourlyToday = ref<HourlyResponse | null>(null);
@@ -492,6 +505,8 @@ async function fetchHourlyChart() {
 }
 // 在需要修改配置的地方
 import { loadingConfig } from "~/config/loading";
+loadingConfig.text = "拼命加载中...";
+
 /**
  * 获取日图表数据（随筛选条件变化）
  */
@@ -516,10 +531,6 @@ async function fetchDailyChart() {
 
   dailyLoading.value = true;
 
-  loadingConfig.text = "拼命加载中...";
-  loadingConfig.color = "red"; // 绿色
-  loadingConfig.bgColor = "rgba(0,0,0,0.6)";
-  loadingConfig.textColor = "var(--el-text-color-primary)";
   try {
     const res = await $fetch<DailyResponse>("/api/public/analytics/daily", {
       query,

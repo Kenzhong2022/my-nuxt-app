@@ -31,16 +31,18 @@ export default defineEventHandler(async (event): Promise<DailyResponse> => {
   const endParam = getStringParam(query.endDate);
   const startDate = startParam
     ? new Date(startParam)
-    : new Date(Date.now() - 6 * 86400000);
+    : new Date(Date.now() - 6 * 86400000); // 默认近7天
   const endDate = endParam ? new Date(endParam) : now;
 
   const startDateStr = startDate.toLocaleDateString("en-CA", {
     timeZone: timezone,
-  });
+  }); // 格式化开始日期为字符串，用于 SQL 查询
   const endDateStr = endDate.toLocaleDateString("en-CA", {
     timeZone: timezone,
-  });
+  }); // 格式化结束日期为字符串，用于 SQL 查询
 
+
+  
   const rows = await sql`
     SELECT
       to_char(

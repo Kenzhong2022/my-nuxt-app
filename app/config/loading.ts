@@ -14,7 +14,7 @@ export interface LoadingConfig {
 export const loadingConfig: LoadingConfig = {
   text: "加载中...",
   color: "var(--el-color-primary)",
-  bgColor: "var(--el-overlay-color-lighter)",
+  bgColor: "var(--el-mask-color)",
   textColor: "var(--el-text-color-primary)",
   zIndex: 2000,
 };

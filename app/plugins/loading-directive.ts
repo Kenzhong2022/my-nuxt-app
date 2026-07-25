@@ -1,6 +1,7 @@
 // plugins/loading-directive.ts
 import type { Directive, DirectiveBinding } from "vue";
 import { loadingConfig } from "~/config/loading";
+import gsap from "gsap";
 
 /** 标记元素是否已挂载 loading 的属性名 */
 const LOADING_ATTR = "data-loading";
@@ -8,32 +9,9 @@ const LOADING_ATTR = "data-loading";
 /** loading 遮罩层的 CSS 类名 */
 const OVERLAY_CLASS = "v-loading-overlay";
 
-/** 样式是否已注入的标志 */
-let stylesReady = false;
-
-/**
- * 注入 loading 动画所需的 CSS 样式
- * 只在客户端首次调用时执行，避免重复注入
- */
-function ensureStyles(): void {
-  if (stylesReady || import.meta.server) return;
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .v-loading-spinner {
-      animation: v-loading-spin 1s linear infinite;
-    }
-    @keyframes v-loading-spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-  stylesReady = true;
-}
-
 /**
  * 创建 loading 遮罩 DOM 元素
- * @returns {HTMLElement} 包含转圈动画和文字提示的遮罩层
+ * @returns {HTMLElement} 包含 GSAP 动画和文字提示的遮罩层
  */
 function createOverlay(): HTMLElement {
   const { text, color, bgColor, textColor, zIndex } = loadingConfig;
@@ -51,7 +29,7 @@ function createOverlay(): HTMLElement {
     justify-content: center;
   `;
 
-  /** 旋转动画指示器 */
+  /** 旋转动画指示器（用 GSAP 驱动） */
   const spinner = document.createElement("div");
   spinner.className = "v-loading-spinner";
   spinner.style.cssText = `
@@ -78,7 +56,7 @@ function createOverlay(): HTMLElement {
 
   overlay.appendChild(container);
 
-  // 遮罩层铺满宿主元素，使用 flex 居中
+  // 遮罩层铺满宿主元素
   overlay.style.cssText = `
     position: absolute;
     inset: 0;
@@ -88,6 +66,14 @@ function createOverlay(): HTMLElement {
     background: ${bgColor};
     z-index: ${zIndex};
   `;
+
+  // GSAP 驱动旋转动画
+  gsap.to(spinner, {
+    rotation: 360,
+    duration: 1,
+    repeat: -1,
+    ease: "none",
+  });
 
   return overlay;
 }
@@ -101,7 +87,7 @@ function mountLoading(el: HTMLElement): void {
 
   el.setAttribute(LOADING_ATTR, "true");
 
-  // 确保宿主元素有定位上下文，否则 absolute 遮罩无法正确定位
+  // 确保宿主元素有定位上下文
   const pos = getComputedStyle(el).position;
   if (pos === "static" || !pos) {
     el.style.position = "relative";
@@ -118,7 +104,13 @@ function removeLoading(el: HTMLElement): void {
   if (!el.hasAttribute(LOADING_ATTR)) return;
 
   el.removeAttribute(LOADING_ATTR);
-  el.querySelector(`.${OVERLAY_CLASS}`)?.remove();
+
+  // 清理 GSAP 动画，避免内存泄漏
+  const overlay = el.querySelector(`.${OVERLAY_CLASS}`);
+  if (overlay) {
+    gsap.killTweensOf(overlay.querySelectorAll("*"));
+    overlay.remove();
+  }
 }
 
 /**
@@ -132,7 +124,6 @@ const loadingDirective: Directive<HTMLElement, boolean> = {
    * @param {DirectiveBinding<boolean>} binding - 指令绑定对象
    */
   mounted(el: HTMLElement, binding: DirectiveBinding<boolean>): void {
-    ensureStyles();
     if (binding.value) mountLoading(el);
   },
 
@@ -144,12 +135,11 @@ const loadingDirective: Directive<HTMLElement, boolean> = {
   updated(el: HTMLElement, binding: DirectiveBinding<boolean>): void {
     if (binding.value === binding.oldValue) return;
 
-    ensureStyles();
     binding.value ? mountLoading(el) : removeLoading(el);
   },
 
   /**
-   * 元素卸载时触发，清理残留的遮罩
+   * 元素卸载时触发，清理残留的遮罩和动画
    * @param {HTMLElement} el - 指令绑定的元素
    */
   unmounted(el: HTMLElement): void {

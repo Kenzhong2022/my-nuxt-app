@@ -1,19 +1,42 @@
 // middleware/analytics.global.ts
-export default defineNuxtRouteMiddleware((to, from) => {
-  // 仅在客户端执行（避免 SSR 期间运行）
-  if (import.meta.client) {
-    // 同一路由重复点击（如点击相同导航链接）不重复上报
-    if (to.fullPath === from.fullPath) return;
+import type { TrackVisitRequest } from "~~/types/analytics/requests";
 
-    // 异步上报，不阻塞导航
-    $fetch("/api/public/analytics/track-visit", {
-      method: "POST",
-      body: {
-        page: to.fullPath,
-        userAgent: navigator.userAgent,
-      },
-    }).catch((err) => {
-      console.warn("埋点上报失败:", err);
-    });
+export default defineNuxtRouteMiddleware((to, from) => {
+  // 打印路由信息
+  console.group(`[Analytics Middleware] ${from.fullPath} → ${to.fullPath}`);
+  console.log("目标路由:", to.meta.title);
+  console.log("来源路由:", from.meta.title);
+  console.log("执行环境:", import.meta.client ? "客户端" : "服务端");
+
+  if (!import.meta.client) {
+    console.log("结果: SSR 跳过");
+    console.groupEnd();
+    return;
   }
+
+  if (to.fullPath === from.fullPath) {
+    console.log("结果: 同路由，跳过");
+    console.groupEnd();
+    return;
+  }
+
+  console.log("结果: 执行上报");
+  const body: TrackVisitRequest = {
+    page: to.fullPath,
+    userAgent: navigator.userAgent,
+    timestamp: Date.now(),
+  };
+
+  $fetch("/api/public/analytics/track-visit", {
+    method: "POST",
+    body,
+  })
+    .then((res) => {
+      console.log("上报成功:", res);
+      console.groupEnd();
+    })
+    .catch((err) => {
+      console.warn("上报失败:", err);
+      console.groupEnd();
+    });
 });
