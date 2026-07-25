@@ -1,0 +1,10 @@
+/* assets/css/loading.css */
+.v-loading-spinner {
+  animation: v-loading-spin 1s linear infinite;
+}
+
+@keyframes v-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

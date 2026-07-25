@@ -51,7 +51,7 @@ export const TOOLTIP_STYLE_DARK = {
 export interface ChartTheme {
   // ========== series.itemStyle ==========
   /** 默认 itemStyle.color（3色渐变）→ series[].itemStyle.color */
-  itemStyle_color: readonly [string, string, string];
+  itemStyle_color: string[];
   /** 默认 itemStyle.shadowColor → series[].itemStyle.shadowColor */
   itemStyle_shadowColor: string;
   /** 默认 itemStyle.borderColor → series[].itemStyle.borderColor */
@@ -59,7 +59,7 @@ export interface ChartTheme {
 
   // ========== series.itemStyle（当前高亮状态） ==========
   /** 当前高亮 itemStyle.color（3色渐变）→ series[].itemStyle.color (当前) */
-  active_itemStyle_color: readonly [string, string, string];
+  active_itemStyle_color: string[];
   /** 当前高亮 itemStyle.shadowColor → series[].itemStyle.shadowColor */
   active_itemStyle_shadowColor: string;
   /** 当前高亮 itemStyle.borderColor → series[].itemStyle.borderColor */
@@ -67,17 +67,17 @@ export interface ChartTheme {
 
   // ========== series.itemStyle（未激活/占位状态） ==========
   /** 未激活 itemStyle.color（2色渐变）→ series[].itemStyle.color (未来/空值) */
-  inactive_itemStyle_color: readonly [string, string];
+  inactive_itemStyle_color: string[];
 
   // ========== series.lineStyle ==========
   /** 折线线条颜色（2色渐变）→ series[].lineStyle.color */
-  lineStyle_color: readonly [string, string];
+  lineStyle_color: string[];
   /** 折线阴影 → series[].lineStyle.shadowColor */
   lineStyle_shadowColor: string;
 
   // ========== series.areaStyle ==========
   /** 面积图填充颜色（3色渐变，含透明度）→ series[].areaStyle.color */
-  areaStyle_color: readonly [string, string, string];
+  areaStyle_color: string[];
 
   // ========== series.emphasis.itemStyle ==========
   /** emphasis.itemStyle.shadowBlur → 悬停时阴影模糊程度（数值，如 22） */
@@ -154,9 +154,9 @@ export const CHART_COLORS = {
 
     // --- series.emphasis.itemStyle ---
     // 悬停效果：阴影加深，增强交互反馈
-    emphasis_itemStyle_shadowBlur: 22, // 阴影模糊度：较大，柔和扩散
+    emphasis_itemStyle_shadowBlur: 8, // 阴影模糊度：较小，聚焦到当前数据点
     emphasis_itemStyle_shadowColor: "rgba(0,0,0,0.22)", // 中等黑影
-    emphasis_itemStyle_borderColor: "rgba(255,255,255,0.7)", // 保持亮边
+    emphasis_itemStyle_borderColor: "rgba(0,0,0,0.6)", // 保持主色对比度
 
     // --- markLine ---
     // 参考线：浅灰，低调不抢数据风头
@@ -185,7 +185,10 @@ export const CHART_COLORS = {
     itemStyle_color: ["#22d3ee", "#0ea5e9", "#6366f1"],
     active_itemStyle_color: ["#fcd34d", "#f59e0b", "#d97706"],
     inactive_itemStyle_color: ["#1e293b", "#0f172a"],
-    lineStyle_color: ["#22d3ee", "#a855f7"],
+    lineStyle_color: [
+      "#22d3ee",
+      "#a855f7",
+    ] /** 折线颜色 → lineStyle.color[0] 为柱状图主色，[1] 为折线图主色 */,
     lineStyle_shadowColor: "rgba(34,211,238,0.4)",
     areaStyle_color: [
       "rgba(34,211,238,0.20)",
@@ -196,7 +199,7 @@ export const CHART_COLORS = {
     active_itemStyle_shadowColor: "rgba(252,211,77,0.40)",
     itemStyle_borderColor: "rgba(0,0,0,0.3)",
     active_itemStyle_borderColor: "rgba(255,255,255,0.5)",
-    emphasis_itemStyle_shadowBlur: 22,
+    emphasis_itemStyle_shadowBlur: 8,
     emphasis_itemStyle_shadowColor: "rgba(34,211,238,0.30)",
     emphasis_itemStyle_borderColor: "rgba(255,255,255,0.6)",
     markLine_lineStyle_color: "#334155",

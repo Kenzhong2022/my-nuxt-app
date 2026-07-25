@@ -43,7 +43,7 @@
         <div class="chart-title">{{ hourChartTitle }}</div>
         <div
           ref="hourChartRef"
-          v-loading="hourlyLoading"
+          v-my-loading="hourlyLoading"
           class="chart-container"
         ></div>
       </el-card>
@@ -61,7 +61,7 @@
         <div class="chart-title">{{ dailyChartTitle }}</div>
         <div
           ref="dayChartRef"
-          v-loading="dailyLoading"
+          v-my-loading="dailyLoading"
           class="chart-container"
         ></div>
       </el-card>
@@ -85,6 +85,14 @@ import type {
   DailyResponse,
 } from "~~/types/analytics/responses";
 import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
+import {
+  createLinearGradient,
+  roundUpToNiceNumber,
+  getAxisBaseStyle,
+  getYAxisBase,
+  getMarkLineConfig,
+  buildTooltip,
+} from "~/utils/chart-config";
 import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
 
 // ============ 响应式数据 ============
@@ -198,47 +206,6 @@ function getCssVar(name: string): string {
 }
 
 /**
- * @description 创建线性渐变
- * @param x0 渐变起始点 x 坐标
- * @param y0 渐变起始点 y 坐标
- * @param x1 渐变结束点 x 坐标
- * @param y1 渐变结束点 y 坐标
- * @param stops 渐变停止点数组，每个元素为 [offset, color] 格式
- * @returns 线性渐变对象
- */
-function createLinearGradient(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  stops: [number, string][],
-): echarts.graphic.LinearGradient {
-  return new echarts.graphic.LinearGradient(
-    x0,
-    y0,
-    x1,
-    y1,
-    stops.map(([offset, color]) => ({ offset, color })),
-  );
-}
-
-/**
- * 向上取整到“漂亮”的刻度，优先取 1、2、5 的倍数。
- */
-function roundUpToNiceNumber(value: number): number {
-  if (value <= 0) return 10;
-  const exponent = Math.floor(Math.log10(value));
-  const magnitude = 10 ** exponent;
-  const normalized = value / magnitude;
-  // 1, 2, 5, 10 是最常用的刻度基数
-  let step = 1;
-  if (normalized > 1) step = 2;
-  if (normalized > 2) step = 5;
-  if (normalized > 5) step = 10;
-  return step * magnitude;
-}
-
-/**
  * 构建每小时柱状图配置
  * @param hourlyData 24 小时访问量数组
  * @param isToday 是否为今日数据（控制当前小时高亮）
@@ -250,70 +217,35 @@ function buildHourOption(
   const currentHour = isToday ? new Date().getHours() : -1;
   const maxVal = Math.max(...hourlyData, 10);
   const roundedMax = roundUpToNiceNumber(maxVal);
+  const theme = chartTheme.value;
 
   return {
-    tooltip: {
-      trigger: "axis",
-      ...TOOLTIP_STYLE,
-      formatter: (params: any) => {
-        const p = params[0];
-        const h = p.axisValue;
-        const v = p.value;
-        const label = parseInt(h) === currentHour ? " ⭐ 当前时段" : "";
-        return `<b>${h}:00 - ${h}:59</b>${label}<br/>访问量：<b style="font-size:15px;color:${chartTheme.value.itemStyle_color[1]};">${v} 次</b>`;
-      },
-    },
+    tooltip: buildTooltip((params: any) => {
+      const p = params[0];
+      const h = p.axisValue;
+      const v = p.value;
+      const label = parseInt(h) === currentHour ? " ⭐ 当前时段" : "";
+      return `<b>${h}:00 - ${h}:59</b>${label}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${v} 次</b>`;
+    }, TOOLTIP_STYLE),
     grid: GRID_CONFIG,
     xAxis: {
       type: "category",
       data: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-      axisLine: {
-        lineStyle: {
-          color: chartTheme.value.axisLine_lineStyle_color,
-          width: 1.5,
-        },
-      },
-      axisTick: { show: false },
+      ...getAxisBaseStyle(theme),
       axisLabel: {
-        color: chartTheme.value.axisLabel_color,
-        fontSize: 10,
-        fontWeight: 550,
+        ...getAxisBaseStyle(theme).axisLabel,
         interval: 2,
       },
     },
     yAxis: {
-      type: "value",
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: {
-        color: chartTheme.value.axisLabel_color,
-        fontSize: 10,
-        fontWeight: 550,
-      },
-      splitLine: { show: false },
+      ...getYAxisBase(theme),
       max: roundedMax,
     },
     series: [
       {
         type: "bar",
         barWidth: "55%",
-        markLine: {
-          silent: true,
-          symbol: "none",
-          lineStyle: {
-            color: chartTheme.value.markLine_lineStyle_color,
-            type: "dashed",
-            width: 1,
-          },
-          label: {
-            show: true,
-            position: "end",
-            formatter: "{c}",
-            color: chartTheme.value.markLine_label_color,
-            fontSize: 10,
-          },
-          data: [{ yAxis: roundedMax, name: "峰值线" }],
-        },
+        markLine: getMarkLineConfig(roundedMax, theme),
         data: hourlyData.map((v, i) => {
           const isCurrent = i === currentHour;
           const isFuture = i > currentHour;
@@ -321,20 +253,20 @@ function buildHourOption(
           let gradient: echarts.graphic.LinearGradient;
           if (isCurrent) {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, chartTheme.value.active_itemStyle_color[0]],
-              [0.4, chartTheme.value.active_itemStyle_color[1]],
-              [1, chartTheme.value.active_itemStyle_color[2]],
+              [0, theme.active_itemStyle_color[0] || "#000"],
+              [0.4, theme.active_itemStyle_color[1] || "#000"],
+              [1, theme.active_itemStyle_color[2] || "#000"],
             ]);
           } else if (isFuture) {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, chartTheme.value.inactive_itemStyle_color[0]],
-              [1, chartTheme.value.inactive_itemStyle_color[1]],
+              [0, theme.inactive_itemStyle_color[0] || "#000"],
+              [1, theme.inactive_itemStyle_color[1] || "#000"],
             ]);
           } else {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, chartTheme.value.itemStyle_color[0]],
-              [0.45, chartTheme.value.itemStyle_color[1]],
-              [1, chartTheme.value.itemStyle_color[2]],
+              [0, theme.itemStyle_color[0] || "#000"],
+              [0.45, theme.itemStyle_color[1] || "#000"],
+              [1, theme.itemStyle_color[2] || "#000"],
             ]);
           }
 
@@ -356,22 +288,24 @@ function buildHourOption(
                     borderRadius: [7, 7, 0, 0],
                     shadowBlur: isCurrent ? 18 : 6,
                     shadowColor: isCurrent
-                      ? chartTheme.value.active_itemStyle_shadowColor
-                      : chartTheme.value.itemStyle_shadowColor,
+                      ? theme.active_itemStyle_shadowColor
+                      : theme.itemStyle_shadowColor,
                     shadowOffsetY: 3,
                     borderColor: isCurrent
-                      ? chartTheme.value.active_itemStyle_borderColor
-                      : chartTheme.value.itemStyle_borderColor,
+                      ? theme.active_itemStyle_borderColor
+                      : theme.itemStyle_borderColor,
                     borderWidth: isCurrent ? 2 : 0.8,
                   },
           };
         }),
         emphasis: {
           itemStyle: {
-            shadowBlur: chartTheme.value.emphasis_itemStyle_shadowBlur,
-            shadowColor: chartTheme.value.emphasis_itemStyle_shadowColor,
+            shadowColor: theme.emphasis_itemStyle_shadowColor,
             borderRadius: [9, 9, 0, 0],
-            borderColor: chartTheme.value.emphasis_itemStyle_borderColor,
+            borderColor: theme.emphasis_itemStyle_borderColor,
+            borderWidth: 2,
+            shadowBlur: 12,
+            shadowOffsetY: 3,
             opacity: 0.88,
           },
         },
@@ -391,6 +325,7 @@ function buildDayOption(
 ): echarts.EChartsOption {
   const maxVal = Math.max(...dailyData, 10);
   const roundedMax = roundUpToNiceNumber(maxVal);
+  const theme = chartTheme.value;
 
   const todayStr = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Shanghai",
@@ -413,44 +348,25 @@ function buildDayOption(
       });
 
   return {
-    tooltip: {
-      trigger: "axis",
-      ...TOOLTIP_STYLE,
-      formatter: (params: any) => {
-        const p = params[0];
-        const isToday = dates
-          ? dates[p.dataIndex] === todayStr
-          : p.dataIndex === 6;
-        return `<b>${p.axisValue}</b>${isToday ? " ⭐ 今天" : ""}<br/>访问量：<b style="font-size:15px;color:${chartTheme.value.itemStyle_color[1]};">${p.value} 次</b>`;
-      },
-    },
+    tooltip: buildTooltip((params: any) => {
+      const p = params[0];
+      const isToday = dates
+        ? dates[p.dataIndex] === todayStr
+        : p.dataIndex === 6;
+      return `<b>${p.axisValue}</b>${isToday ? " ⭐ 今天" : ""}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${p.value} 次</b>`;
+    }, TOOLTIP_STYLE),
     grid: GRID_CONFIG,
     xAxis: {
       type: "category",
       data: dayLabels,
-      axisLine: {
-        lineStyle: {
-          color: chartTheme.value.axisLine_lineStyle_color,
-          width: 1.5,
-        },
-      },
-      axisTick: { show: false },
+      ...getAxisBaseStyle(theme),
       axisLabel: {
-        color: chartTheme.value.axisLabel_color,
-        fontSize: 10,
+        ...getAxisBaseStyle(theme).axisLabel,
         fontWeight: 600,
       },
     },
     yAxis: {
-      type: "value",
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: {
-        color: chartTheme.value.axisLabel_color,
-        fontSize: 10,
-        fontWeight: 550,
-      },
-      splitLine: { show: false },
+      ...getYAxisBase(theme),
       max: roundedMax + 10,
     },
     series: [
@@ -469,53 +385,37 @@ function buildDayOption(
         lineStyle: {
           width: 3,
           color: createLinearGradient(0, 0, 1, 0, [
-            [0, chartTheme.value.lineStyle_color[0]],
-            [1, chartTheme.value.lineStyle_color[1]],
+            [0, theme.lineStyle_color[0] || "#000"],
+            [1, theme.lineStyle_color[1] || "#000"],
           ]),
           shadowBlur: 8,
-          shadowColor: chartTheme.value.lineStyle_shadowColor,
+          shadowColor: theme.lineStyle_shadowColor,
           cap: "round",
           join: "round",
         },
         itemStyle: {
-          color: chartTheme.value.lineStyle_color[0],
-          borderColor: chartTheme.value.itemStyle_borderColor,
+          color: theme.lineStyle_color[0],
+          borderColor: theme.itemStyle_borderColor,
           borderWidth: 3,
           shadowBlur: 8,
-          shadowColor: chartTheme.value.lineStyle_shadowColor,
+          shadowColor: theme.lineStyle_shadowColor,
         },
         areaStyle: {
           color: createLinearGradient(0, 0, 0, 1, [
-            [0, chartTheme.value.areaStyle_color[0]],
-            [0.6, chartTheme.value.areaStyle_color[1]],
-            [1, chartTheme.value.areaStyle_color[2]],
+            [0, theme.areaStyle_color[0] || "#000"],
+            [0.6, theme.areaStyle_color[1] || "#000"],
+            [1, theme.areaStyle_color[2] || "#000"],
           ]),
         },
-        markLine: {
-          silent: true,
-          symbol: "none",
-          lineStyle: {
-            color: chartTheme.value.markLine_lineStyle_color,
-            type: "dashed",
-            width: 1,
-          },
-          label: {
-            show: true,
-            position: "end",
-            formatter: "{c}",
-            color: chartTheme.value.markLine_label_color,
-            fontSize: 10,
-          },
-          data: [{ yAxis: roundedMax, name: "峰值线" }],
-        },
+        markLine: getMarkLineConfig(roundedMax, theme),
         data: dailyData,
         emphasis: {
           scale: true,
           itemStyle: {
-            color: chartTheme.value.active_itemStyle_color[1],
-            borderColor: chartTheme.value.title_textStyle_color,
+            color: theme.active_itemStyle_color[1],
+            borderColor: theme.title_textStyle_color,
             shadowBlur: 18,
-            shadowColor: chartTheme.value.lineStyle_shadowColor,
+            shadowColor: theme.lineStyle_shadowColor,
           },
         },
       },
@@ -590,7 +490,8 @@ async function fetchHourlyChart() {
     hourlyLoading.value = false;
   }
 }
-
+// 在需要修改配置的地方
+import { loadingConfig } from "~/config/loading";
 /**
  * 获取日图表数据（随筛选条件变化）
  */
@@ -614,6 +515,11 @@ async function fetchDailyChart() {
   }
 
   dailyLoading.value = true;
+
+  loadingConfig.text = "拼命加载中...";
+  loadingConfig.color = "red"; // 绿色
+  loadingConfig.bgColor = "rgba(0,0,0,0.6)";
+  loadingConfig.textColor = "var(--el-text-color-primary)";
   try {
     const res = await $fetch<DailyResponse>("/api/public/analytics/daily", {
       query,
