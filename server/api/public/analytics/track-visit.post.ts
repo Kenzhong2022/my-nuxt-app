@@ -6,7 +6,7 @@ import type { TrackVisitRequest } from "~~/types/analytics/requests";
 import type { VisitInsert } from "~~/types/analytics/database";
 const qqwry = new QQwry();
 export default defineEventHandler(
-  async (event): Promise<ApiResponse<never>> => {
+  async (event): Promise<ApiResponse<{ sessionId: string }>> => {
     const { sql } = setupDatabase();
 
     const body = await readBody<TrackVisitRequest>(event);
@@ -102,7 +102,9 @@ export default defineEventHandler(
       return {
         code: 200,
         message: "访问记录已保存",
-        data: null as never,
+        data: {
+          sessionId,
+        },
       };
     } catch (error: any) {
       console.error("埋点写入失败:", error.message);

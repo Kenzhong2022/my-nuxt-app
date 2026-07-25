@@ -21,18 +21,27 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   console.log("结果: 执行上报");
-  const body: TrackVisitRequest = {
+
+  // 构建请求体
+  let body: TrackVisitRequest = {
     page: to.fullPath,
     userAgent: navigator.userAgent,
     timestamp: Date.now(),
   };
+
+  // 从 localStorage 读取会话 ID
+  const sessionId = localStorage.getItem("session_id") || "";
+  body = { ...body, sessionId };
+  console.log("上报体:", body);
 
   $fetch("/api/public/analytics/track-visit", {
     method: "POST",
     body,
   })
     .then((res) => {
-      console.log("上报成功:", res);
+      console.log("上报成功:", res.data.sessionId);
+      // 存储会话 ID
+      localStorage.setItem("session_id", res.data.sessionId);
       console.groupEnd();
     })
     .catch((err) => {

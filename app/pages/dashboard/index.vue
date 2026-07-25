@@ -41,11 +41,13 @@
           @export="handleExport"
         />
         <div class="chart-title">{{ hourChartTitle }}</div>
-        <div
-          ref="hourChartRef"
-          v-my-loading="hourlyLoading"
-          class="chart-container"
-        ></div>
+        <HourlyChart
+          ref="hourlyChartRef"
+          :data="hourlyChartData"
+          :loading="hourlyLoading"
+          :isToday="hourChartTimeRange === 'today'"
+          @chart-ready="handleHourlyChartReady"
+        />
       </el-card>
 
       <el-card class="chart-card">
@@ -59,11 +61,12 @@
           @export="handleExport"
         />
         <div class="chart-title">{{ dailyChartTitle }}</div>
-        <div
-          ref="dayChartRef"
-          v-my-loading="dailyLoading"
-          class="chart-container"
-        ></div>
+        <DailyChart
+          ref="dailyChartRef"
+          :data="dailyChartData"
+          :loading="dailyLoading"
+          @chart-ready="handleDailyChartReady"
+        />
       </el-card>
     </div>
 
@@ -79,21 +82,14 @@
 
 <script setup lang="ts">
 import { useResizeObserver, useDebounceFn } from "@vueuse/core";
-import * as echarts from "echarts";
 import type {
   HourlyResponse,
   DailyResponse,
+  CityHeatmapResponse,
 } from "~~/types/analytics/responses";
-import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
-import {
-  createLinearGradient,
-  roundUpToNiceNumber,
-  getAxisBaseStyle,
-  getYAxisBase,
-  getMarkLineConfig,
-  buildTooltip,
-} from "~/utils/chart-config";
 import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
+import HourlyChart from "./components/HourlyChart.vue";
+import DailyChart from "./components/DailyChart.vue";
 
 definePageMeta({
   name: "Dashboard", // 页面名称
@@ -120,10 +116,9 @@ const dailyChartData = ref<DailyResponse | null>(null);
 const hourlyLoading = ref(false);
 const dailyLoading = ref(false);
 
-const hourChartRef = ref<HTMLDivElement | null>(null);
-const dayChartRef = ref<HTMLDivElement | null>(null);
-const todayValueRef = ref<HTMLDivElement | null>(null);
-const filterBarRef = ref<InstanceType<typeof AnalyticsFilterBar> | null>(null);
+const hourlyChartRef = ref<InstanceType<typeof HourlyChart> | null>(null);
+const dailyChartRef = ref<InstanceType<typeof DailyChart> | null>(null);
+
 /** 图表行容器引用，用于监听尺寸变化统一更新图表 */
 const chartsRowRef = ref<HTMLDivElement | null>(null);
 /** 日图表时间范围 */
@@ -146,10 +141,16 @@ function handleExport() {
   // 导出逻辑
   console.log("导出数据", { timeRange: timeRange.value });
 }
-let hourChart: echarts.ECharts | null = null;
-let dayChart: echarts.ECharts | null = null;
 const chartTheme = useChartTheme();
-// 监听主题变化，自动重绘图表
+
+function handleHourlyChartReady() {
+  console.log("小时图组件已准备就绪");
+}
+
+function handleDailyChartReady() {
+  console.log("日图组件已准备就绪");
+}
+
 watch(chartTheme, () => {
   updateCharts();
 });
@@ -219,247 +220,10 @@ function getCssVar(name: string): string {
 }
 
 /**
- * 构建每小时柱状图配置
- * @param hourlyData 24 小时访问量数组
- * @param isToday 是否为今日数据（控制当前小时高亮）
- */
-function buildHourOption(
-  hourlyData: number[],
-  isToday: boolean = true,
-): echarts.EChartsOption {
-  const currentHour = isToday ? new Date().getHours() : -1;
-  const maxVal = Math.max(...hourlyData, 10);
-  const roundedMax = roundUpToNiceNumber(maxVal);
-  const theme = chartTheme.value;
-
-  return {
-    tooltip: buildTooltip((params: any) => {
-      const p = params[0];
-      const h = p.axisValue;
-      const v = p.value;
-      const label = parseInt(h) === currentHour ? " ⭐ 当前时段" : "";
-      return `<b>${h}:00 - ${h}:59</b>${label}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${v} 次</b>`;
-    }, TOOLTIP_STYLE),
-    grid: GRID_CONFIG,
-    xAxis: {
-      type: "category",
-      data: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-      ...getAxisBaseStyle(theme),
-      axisLabel: {
-        ...getAxisBaseStyle(theme).axisLabel,
-        interval: 2,
-      },
-    },
-    yAxis: {
-      ...getYAxisBase(theme),
-      max: roundedMax,
-    },
-    series: [
-      {
-        type: "bar",
-        barWidth: "55%",
-        markLine: getMarkLineConfig(roundedMax, theme),
-        data: hourlyData.map((v, i) => {
-          const isCurrent = i === currentHour;
-          const isFuture = i > currentHour;
-
-          let gradient: echarts.graphic.LinearGradient;
-          if (isCurrent) {
-            gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.active_itemStyle_color[0] || "#000"],
-              [0.4, theme.active_itemStyle_color[1] || "#000"],
-              [1, theme.active_itemStyle_color[2] || "#000"],
-            ]);
-          } else if (isFuture) {
-            gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.inactive_itemStyle_color[0] || "#000"],
-              [1, theme.inactive_itemStyle_color[1] || "#000"],
-            ]);
-          } else {
-            gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.itemStyle_color[0] || "#000"],
-              [0.45, theme.itemStyle_color[1] || "#000"],
-              [1, theme.itemStyle_color[2] || "#000"],
-            ]);
-          }
-
-          return {
-            value: v,
-            itemStyle:
-              v === 0
-                ? {
-                    color: "transparent",
-                    shadowBlur: 0,
-                    shadowColor: "transparent",
-                    shadowOffsetY: 0,
-                    borderColor: "transparent",
-                    borderWidth: 0,
-                    borderRadius: 0,
-                  }
-                : {
-                    color: gradient,
-                    borderRadius: [7, 7, 0, 0],
-                    shadowBlur: isCurrent ? 18 : 6,
-                    shadowColor: isCurrent
-                      ? theme.active_itemStyle_shadowColor
-                      : theme.itemStyle_shadowColor,
-                    shadowOffsetY: 3,
-                    borderColor: isCurrent
-                      ? theme.active_itemStyle_borderColor
-                      : theme.itemStyle_borderColor,
-                    borderWidth: isCurrent ? 2 : 0.8,
-                  },
-          };
-        }),
-        emphasis: {
-          itemStyle: {
-            shadowColor: theme.emphasis_itemStyle_shadowColor,
-            borderRadius: [9, 9, 0, 0],
-            borderColor: theme.emphasis_itemStyle_borderColor,
-            borderWidth: 2,
-            shadowBlur: 12,
-            shadowOffsetY: 3,
-            opacity: 0.88,
-          },
-        },
-      },
-    ],
-  };
-}
-
-/**
- * 构建每日折线图配置
- * @param dailyData 每日访问量数组
- * @param dates 对应的日期字符串数组（YYYY-MM-DD），用于生成标签和判断今天
- */
-function buildDayOption(
-  dailyData: number[],
-  dates?: string[],
-): echarts.EChartsOption {
-  const maxVal = Math.max(...dailyData, 10);
-  const roundedMax = roundUpToNiceNumber(maxVal);
-  const theme = chartTheme.value;
-
-  const todayStr = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Shanghai",
-  });
-
-  const dayLabels: string[] = dates
-    ? dates.map((d) =>
-        new Date(d).toLocaleDateString("zh-CN", {
-          month: "2-digit",
-          day: "2-digit",
-        }),
-      )
-    : Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(Date.now() - (6 - i) * 86400000);
-        return d.toLocaleDateString("zh-CN", {
-          timeZone: "Asia/Shanghai",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      });
-
-  return {
-    tooltip: buildTooltip((params: any) => {
-      const p = params[0];
-      const isToday = dates
-        ? dates[p.dataIndex] === todayStr
-        : p.dataIndex === 6;
-      return `<b>${p.axisValue}</b>${isToday ? " ⭐ 今天" : ""}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${p.value} 次</b>`;
-    }, TOOLTIP_STYLE),
-    grid: GRID_CONFIG,
-    xAxis: {
-      type: "category",
-      data: dayLabels,
-      ...getAxisBaseStyle(theme),
-      axisLabel: {
-        ...getAxisBaseStyle(theme).axisLabel,
-        fontWeight: 600,
-      },
-    },
-    yAxis: {
-      ...getYAxisBase(theme),
-      max: roundedMax + 10,
-    },
-    series: [
-      {
-        type: "line",
-        smooth: 0.4,
-        symbol: "circle",
-        symbolSize: (_: number, params: any) =>
-          dates
-            ? dates[params.dataIndex] === todayStr
-              ? 14
-              : 10
-            : params.dataIndex === 6
-              ? 14
-              : 10,
-        lineStyle: {
-          width: 3,
-          color: createLinearGradient(0, 0, 1, 0, [
-            [0, theme.lineStyle_color[0] || "#000"],
-            [1, theme.lineStyle_color[1] || "#000"],
-          ]),
-          shadowBlur: 8,
-          shadowColor: theme.lineStyle_shadowColor,
-          cap: "round",
-          join: "round",
-        },
-        itemStyle: {
-          color: theme.lineStyle_color[0],
-          borderColor: theme.itemStyle_borderColor,
-          borderWidth: 3,
-          shadowBlur: 8,
-          shadowColor: theme.lineStyle_shadowColor,
-        },
-        areaStyle: {
-          color: createLinearGradient(0, 0, 0, 1, [
-            [0, theme.areaStyle_color[0] || "#000"],
-            [0.6, theme.areaStyle_color[1] || "#000"],
-            [1, theme.areaStyle_color[2] || "#000"],
-          ]),
-        },
-        markLine: getMarkLineConfig(roundedMax, theme),
-        data: dailyData,
-        emphasis: {
-          scale: true,
-          itemStyle: {
-            color: theme.active_itemStyle_color[1],
-            borderColor: theme.title_textStyle_color,
-            shadowBlur: 18,
-            shadowColor: theme.lineStyle_shadowColor,
-          },
-        },
-      },
-    ],
-  };
-}
-
-/**
  * 更新图表
  */
 function updateCharts() {
-  if (hourChart && hourlyChartData.value) {
-    const isToday = hourChartTimeRange.value === "today";
-    hourChart.setOption(
-      buildHourOption(hourlyChartData.value.hourlyVisits, isToday),
-      {
-        notMerge: true,
-      },
-    );
-  }
-  if (dayChart && dailyChartData.value) {
-    dayChart.setOption(
-      buildDayOption(
-        dailyChartData.value.dailyVisits,
-        dailyChartData.value.dates,
-      ),
-      {
-        notMerge: true,
-      },
-    );
-  }
+  dailyChartRef.value?.resize();
 }
 
 const updatedAt = ref<string>("");
@@ -491,12 +255,6 @@ async function fetchHourlyChart() {
       query: dateStr ? { date: dateStr } : {},
     });
     hourlyChartData.value = res;
-    if (hourChart) {
-      const isToday = hourChartTimeRange.value === "today";
-      hourChart.setOption(buildHourOption(res.hourlyVisits, isToday), {
-        notMerge: true,
-      });
-    }
   } catch (err) {
     console.error("获取小时访问数据失败:", err);
   } finally {
@@ -536,11 +294,6 @@ async function fetchDailyChart() {
       query,
     });
     dailyChartData.value = res;
-    if (dayChart) {
-      dayChart.setOption(buildDayOption(res.dailyVisits, res.dates), {
-        notMerge: true,
-      });
-    }
   } catch (err) {
     console.error("获取日期访问数据失败:", err);
   } finally {
@@ -563,6 +316,9 @@ async function fetchData() {
         query: { date: yesterdayStr },
       }),
       $fetch<DailyResponse>("/api/public/analytics/daily"),
+      $fetch<CityHeatmapResponse>("/api/public/analytics/city-heatmap", {
+        query: { timeRange: "today" },
+      }),
     ]);
 
     hourlyToday.value = todayRes;
@@ -597,32 +353,15 @@ watch([timeRange, customDateRange], () => {
 
 // ============ 生命周期 ============
 onMounted(() => {
-  if (hourChartRef.value) {
-    hourChart = echarts.init(hourChartRef.value);
-  }
-  if (dayChartRef.value) {
-    dayChart = echarts.init(dayChartRef.value);
-  }
   fetchData();
 });
 
 const debouncedResize = useDebounceFn(() => {
-  if (hourChart && dayChart) {
-    hourChart.resize();
-    dayChart.resize();
-  } else {
-    ElMessage.error("图表未初始化");
-  }
+  hourlyChartRef.value?.resize();
+  dailyChartRef.value?.resize();
 }, 500);
 
 useResizeObserver(chartsRowRef, debouncedResize);
-
-onBeforeUnmount(() => {
-  hourChart?.dispose();
-  hourChart = null;
-  dayChart?.dispose();
-  dayChart = null;
-});
 </script>
 
 <style scoped lang="scss">
