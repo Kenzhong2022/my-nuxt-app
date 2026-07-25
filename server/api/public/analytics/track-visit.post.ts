@@ -1,10 +1,10 @@
 // server/api/analytics/track-visit.post.ts
 import { UAParser } from "ua-parser-js";
-import geoip from "geoip-lite";
+import { QQwry } from "qqwry-lite";
 import type { ApiResponse } from "~~/types/common";
 import type { TrackVisitRequest } from "~~/types/analytics/requests";
 import type { VisitInsert } from "~~/types/analytics/database";
-
+const qqwry = new QQwry();
 export default defineEventHandler(
   async (event): Promise<ApiResponse<never>> => {
     const { sql } = setupDatabase();
@@ -49,9 +49,21 @@ export default defineEventHandler(
 
     // ========== 4. IP → 国家 ==========
     let country: string | null = null;
-    if (clientIp && !isPrivateIp(clientIp)) {
-      const geo = geoip.lookup(clientIp);
-      country = geo?.country || null;
+    let region: string | null = null;
+    let city: string | null = null;
+    if (clientIp) {
+      const { addr, info } = qqwry.searchIP(clientIp);
+
+      if (addr.includes("省") || addr.includes("市")) {
+        // 国内地址
+        country = "中国";
+        const match = addr.match(/^(.*?省)?(.*?市)?/);
+        region = match?.[1] || null; // 江苏省
+        city = match?.[2] || null; // 南京市
+      } else {
+        // 国外地址，addr = "美国"
+        country = addr;
+      }
     }
 
     // ========== 5. 会话 ID ==========
@@ -71,6 +83,8 @@ export default defineEventHandler(
       country,
       user_agent: userAgent,
       load_time_ms: body.loadTimeMs || null,
+      region,
+      city,
     };
 
     // ========== 7. 插入数据库 ==========
@@ -78,10 +92,10 @@ export default defineEventHandler(
       await sql`
         INSERT INTO visits (
           page_path, page_query, referer, user_id, session_id,
-          device_type, browser, os, client_ip, country, user_agent, load_time_ms
+          device_type, browser, os, client_ip, country, user_agent, load_time_ms, region, city
         ) VALUES (
           ${record.page_path}, ${record.page_query}, ${record.referer}, ${record.user_id}, ${record.session_id},
-          ${record.device_type}, ${record.browser}, ${record.os}, ${record.client_ip}, ${record.country}, ${record.user_agent}, ${record.load_time_ms}
+          ${record.device_type}, ${record.browser}, ${record.os}, ${record.client_ip}, ${record.country}, ${record.user_agent}, ${record.load_time_ms}, ${record.region}, ${record.city}
         )
       `;
 

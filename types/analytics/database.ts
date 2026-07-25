@@ -16,6 +16,8 @@ export interface VisitRow {
   country: string | null;
   user_agent: string | null;
   load_time_ms: number | null;
+  region: string | null;
+  city: string | null;
 }
 
 /**
@@ -36,5 +38,7 @@ export type VisitInsert = Pick<VisitRow, "page_path"> &
       | "country"
       | "user_agent"
       | "load_time_ms"
+      | "region"
+      | "city"
     >
   >;
