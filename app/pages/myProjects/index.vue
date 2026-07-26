@@ -42,6 +42,11 @@
           </div>
         </div>
       </div>
+      <div>
+        <ClientOnly>
+          <MediaPipeSegmentation />
+        </ClientOnly>
+      </div>
     </div>
   </div>
 </template>

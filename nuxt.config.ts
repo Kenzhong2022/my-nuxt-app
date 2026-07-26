@@ -4,9 +4,15 @@ import { visualizer } from "rollup-plugin-visualizer";
 import viteCompression from "vite-plugin-compression";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   routeRules: {
     "/": { redirect: "/dashboard" },
+    "**": {
+      headers: {
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Embedder-Policy": "require-corp",
+      },
+    },
   },
   runtimeConfig: {
     // 私有配置：只有服务端能访问，客户端永远看不到
@@ -78,7 +84,20 @@ export default defineNuxtConfig({
         },
       },
     },
+    server: {
+      // 开发服务器响应头（仅限开发环境时生效）
+      headers: {
+        // 启用跨域隔离（Cross-Origin Isolated）所必需的两个头
+        // 1. COOP：限制弹窗交互只能同源，防止侧信道攻击
+        "Cross-Origin-Opener-Policy": "same-origin",
+        // 2. COEP：要求所有加载的子资源必须显式支持跨域，否则拒绝加载
+        "Cross-Origin-Embedder-Policy": "require-corp",
+      },
+    },
     optimizeDeps: {
+      // 排除 onnxruntime-web 的预构建
+      // 原因：该包体积大且包含 .wasm 文件，预构建会破坏其动态加载机制，导致运行时崩溃
+      exclude: ["onnxruntime-web"],
       include: [
         "@element-plus/icons-vue",
         "dayjs", // CJS
