@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   routeRules: {
     "/": { redirect: "/dashboard" },
-    "**": {
+    "/**": {
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Embedder-Policy": "require-corp",
@@ -33,6 +33,7 @@ export default defineNuxtConfig({
   },
   app: {
     keepalive: true, // 或配置 include/exclude
+    head: {},
   },
   pinia: {
     storesDirs: ["./stores"],
