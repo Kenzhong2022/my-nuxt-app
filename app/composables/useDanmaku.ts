@@ -35,7 +35,7 @@ export function useDanmaku() {
     if (!maskCanvas) return;
 
     // 获取掩码像素数据
-    const maskCtx = maskCanvas.getContext("2d")!;
+    const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true })!;
     const maskImageData = maskCtx.getImageData(
       0,
       0,
