@@ -42,11 +42,6 @@
           </div>
         </div>
       </div>
-      <div>
-        <ClientOnly>
-          <MediaPipeSegmentation />
-        </ClientOnly>
-      </div>
     </div>
   </div>
 </template>
@@ -105,8 +100,6 @@ const cardList: CardConfig[] = [
     action: () => navigateTo("/agent"),
   },
 ];
-
-const loadingStore = useLoadingStore();
 
 function handleCardClick(card: CardConfig) {
   card.action();
