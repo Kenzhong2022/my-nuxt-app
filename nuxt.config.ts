@@ -100,6 +100,8 @@ export default defineNuxtConfig({
       // 原因：该包体积大且包含 .wasm 文件，预构建会破坏其动态加载机制，导致运行时崩溃
       exclude: ["onnxruntime-web"],
       include: [
+        "@mediapipe/selfie_segmentation",
+        "@mediapipe/camera_utils",
         "@element-plus/icons-vue",
         "dayjs", // CJS
         "dayjs/plugin/*.js",
@@ -135,7 +137,6 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: "netlify", // 部署到Netlify时取消注释
-
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {},
   },

@@ -35,7 +35,7 @@
         </div>
         <div class="desktop-menu" v-show="isClient && !isSidebarMenu">
           <AppMenu
-            :menu-data="menuConfig"
+            :menu-data="sortedMenu"
             :default-active="activeMenu"
             mode="horizontal"
             @menu-click="handleMenuClick"
@@ -70,7 +70,7 @@
         }"
       >
         <AppMenu
-          :menu-data="menuConfig"
+          :menu-data="sortedMenu"
           :default-active="activeMenu"
           :default-openeds="defaultOpeneds"
           mode="vertical"
@@ -78,7 +78,7 @@
         />
       </el-aside>
       <el-main>
-        <div class="mx-auto">
+        <div class="mx-auto h-full">
           <slot />
         </div>
       </el-main>
@@ -116,20 +116,18 @@ onUnmounted(() => {
 // 方块横向收拢动画
 function rotateYOpen() {
   const tl = gsap.timeline();
-  tl.set(".flex-animation", {
+  tl.to(".flex-animation", {
     display: "flex",
-  })
-    .to(".inner-bg", {
-      scaleX: 0,
-      transformOrigin: "center center",
-      opacity: 0,
-      duration: 1.3,
-      stagger: 0.015,
-      ease: "power2.out",
-    })
-    .set(".flex-animation", {
-      display: "none",
-    });
+  });
+  tl.to(".inner-bg", {
+    scaleX: 0,
+    transformOrigin: "center center",
+    opacity: 0,
+    duration: 1.3,
+    stagger: 0.015,
+    ease: "power2.out",
+  });
+  tl.to(".flex-animation", { opacity: 0, duration: 1 }, ">-2");
 }
 
 const route = useRoute();
@@ -158,29 +156,42 @@ const menuConfig = ref<MenuItem[]>([
     name: "Dashboard",
     icon: "Histogram",
     path: "/dashboard",
+    sort: 0,
   },
-  // 新增：项目展示页（第二位）
   {
     id: 1,
     parentId: 0,
     name: "我的项目",
     icon: "FolderOpened",
     path: "/myProjects",
+    sort: 1,
   },
-  // 原商品管理，id 顺延
   {
     id: 2,
     parentId: 0,
     name: "商品管理",
     icon: "Goods",
     path: "/goods",
+    sort: 2,
     children: [
-      { id: 21, parentId: 2, name: "商品列表", path: "/goods/list" },
-      { id: 22, parentId: 2, name: "商品分类", path: "/goods/category" },
-      { id: 23, parentId: 2, name: "品牌管理", path: "/goods/brand" },
-      { id: 24, parentId: 2, name: "规格属性管理", path: "/goods/attr" },
-      { id: 25, parentId: 2, name: "库存管理", path: "/goods/stock" },
-      { id: 26, parentId: 2, name: "素材图库", path: "/goods/image" },
+      { id: 21, parentId: 2, name: "商品列表", path: "/goods/list", sort: 0 },
+      {
+        id: 22,
+        parentId: 2,
+        name: "商品分类",
+        path: "/goods/category",
+        sort: 1,
+      },
+      { id: 23, parentId: 2, name: "品牌管理", path: "/goods/brand", sort: 2 },
+      {
+        id: 24,
+        parentId: 2,
+        name: "规格属性管理",
+        path: "/goods/attr",
+        sort: 3,
+      },
+      { id: 25, parentId: 2, name: "库存管理", path: "/goods/stock", sort: 4 },
+      { id: 26, parentId: 2, name: "素材图库", path: "/goods/image", sort: 5 },
     ],
   },
   {
@@ -189,13 +200,44 @@ const menuConfig = ref<MenuItem[]>([
     name: "订单管理",
     icon: "order",
     path: "/order",
+    sort: 3,
     children: [
-      { id: 31, parentId: 3, name: "全部订单", path: "/order/all" },
-      { id: 32, parentId: 3, name: "待付款订单", path: "/order/unpay" },
-      { id: 33, parentId: 3, name: "待发货订单", path: "/order/unship" },
-      { id: 34, parentId: 3, name: "已完成/已取消订单", path: "/order/finish" },
-      { id: 35, parentId: 3, name: "售后管理", path: "/order/aftersale" },
-      { id: 36, parentId: 3, name: "物流运费配置", path: "/order/express" },
+      { id: 31, parentId: 3, name: "全部订单", path: "/order/all", sort: 0 },
+      {
+        id: 32,
+        parentId: 3,
+        name: "待付款订单",
+        path: "/order/unpay",
+        sort: 1,
+      },
+      {
+        id: 33,
+        parentId: 3,
+        name: "待发货订单",
+        path: "/order/unship",
+        sort: 2,
+      },
+      {
+        id: 34,
+        parentId: 3,
+        name: "已完成/已取消订单",
+        path: "/order/finish",
+        sort: 3,
+      },
+      {
+        id: 35,
+        parentId: 3,
+        name: "售后管理",
+        path: "/order/aftersale",
+        sort: 4,
+      },
+      {
+        id: 36,
+        parentId: 3,
+        name: "物流运费配置",
+        path: "/order/express",
+        sort: 5,
+      },
     ],
   },
   {
@@ -204,11 +246,24 @@ const menuConfig = ref<MenuItem[]>([
     name: "商城会员",
     icon: "User",
     path: "/member",
+    sort: 4,
     children: [
-      { id: 41, parentId: 4, name: "会员列表", path: "/member/list" },
-      { id: 42, parentId: 4, name: "会员标签", path: "/member/tag" },
-      { id: 43, parentId: 4, name: "会员等级配置", path: "/member/level" },
-      { id: 44, parentId: 4, name: "账户流水明细", path: "/member/account" },
+      { id: 41, parentId: 4, name: "会员列表", path: "/member/list", sort: 0 },
+      { id: 42, parentId: 4, name: "会员标签", path: "/member/tag", sort: 1 },
+      {
+        id: 43,
+        parentId: 4,
+        name: "会员等级配置",
+        path: "/member/level",
+        sort: 2,
+      },
+      {
+        id: 44,
+        parentId: 4,
+        name: "账户流水明细",
+        path: "/member/account",
+        sort: 3,
+      },
     ],
   },
   {
@@ -217,12 +272,37 @@ const menuConfig = ref<MenuItem[]>([
     name: "营销活动",
     icon: "ShoppingBag",
     path: "/promo",
+    sort: 5,
     children: [
-      { id: 51, parentId: 5, name: "优惠券管理", path: "/promo/coupon" },
-      { id: 52, parentId: 5, name: "限时秒杀", path: "/promo/seckill" },
-      { id: 53, parentId: 5, name: "拼团活动", path: "/promo/group" },
-      { id: 54, parentId: 5, name: "全店满减", path: "/promo/fullcut" },
-      { id: 55, parentId: 5, name: "首页广告配置", path: "/promo/banner" },
+      {
+        id: 51,
+        parentId: 5,
+        name: "优惠券管理",
+        path: "/promo/coupon",
+        sort: 0,
+      },
+      {
+        id: 52,
+        parentId: 5,
+        name: "限时秒杀",
+        path: "/promo/seckill",
+        sort: 1,
+      },
+      { id: 53, parentId: 5, name: "拼团活动", path: "/promo/group", sort: 2 },
+      {
+        id: 54,
+        parentId: 5,
+        name: "全店满减",
+        path: "/promo/fullcut",
+        sort: 3,
+      },
+      {
+        id: 55,
+        parentId: 5,
+        name: "首页广告配置",
+        path: "/promo/banner",
+        sort: 4,
+      },
     ],
   },
   {
@@ -231,11 +311,30 @@ const menuConfig = ref<MenuItem[]>([
     name: "财务管理",
     icon: "Money",
     path: "/finance",
+    sort: 6,
     children: [
-      { id: 61, parentId: 6, name: "资金流水", path: "/finance/log" },
-      { id: 62, parentId: 6, name: "订单对账报表", path: "/finance/check" },
-      { id: 63, parentId: 6, name: "退款账单", path: "/finance/refund" },
-      { id: 64, parentId: 6, name: "支付渠道配置", path: "/finance/payconfig" },
+      { id: 61, parentId: 6, name: "资金流水", path: "/finance/log", sort: 0 },
+      {
+        id: 62,
+        parentId: 6,
+        name: "订单对账报表",
+        path: "/finance/check",
+        sort: 1,
+      },
+      {
+        id: 63,
+        parentId: 6,
+        name: "退款账单",
+        path: "/finance/refund",
+        sort: 2,
+      },
+      {
+        id: 64,
+        parentId: 6,
+        name: "支付渠道配置",
+        path: "/finance/payconfig",
+        sort: 3,
+      },
     ],
   },
   {
@@ -244,11 +343,36 @@ const menuConfig = ref<MenuItem[]>([
     name: "数据统计",
     icon: "TrendCharts",
     path: "/stats",
+    sort: 7,
     children: [
-      { id: 71, parentId: 7, name: "运营概览看板", path: "/stats/dashboard" },
-      { id: 72, parentId: 7, name: "商品数据分析", path: "/stats/goods" },
-      { id: 73, parentId: 7, name: "订单统计报表", path: "/stats/order" },
-      { id: 74, parentId: 7, name: "用户数据分析", path: "/stats/user" },
+      {
+        id: 71,
+        parentId: 7,
+        name: "运营概览看板",
+        path: "/stats/dashboard",
+        sort: 0,
+      },
+      {
+        id: 72,
+        parentId: 7,
+        name: "商品数据分析",
+        path: "/stats/goods",
+        sort: 1,
+      },
+      {
+        id: 73,
+        parentId: 7,
+        name: "订单统计报表",
+        path: "/stats/order",
+        sort: 2,
+      },
+      {
+        id: 74,
+        parentId: 7,
+        name: "用户数据分析",
+        path: "/stats/user",
+        sort: 3,
+      },
     ],
   },
   {
@@ -257,52 +381,127 @@ const menuConfig = ref<MenuItem[]>([
     name: "系统权限",
     icon: "Key",
     path: "/system",
+    sort: 8,
     children: [
-      { id: 81, parentId: 8, name: "管理员账号", path: "/system/admin" },
-      { id: 82, parentId: 8, name: "角色管理", path: "/system/role" },
-      { id: 83, parentId: 8, name: "站点基础配置", path: "/system/config" },
-      { id: 84, parentId: 8, name: "数据字典", path: "/system/dict" },
-      { id: 85, parentId: 8, name: "系统日志", path: "/system/log" },
+      {
+        id: 81,
+        parentId: 8,
+        name: "管理员账号",
+        path: "/system/admin",
+        sort: 0,
+      },
+      { id: 82, parentId: 8, name: "角色管理", path: "/system/role", sort: 1 },
+      {
+        id: 83,
+        parentId: 8,
+        name: "站点基础配置",
+        path: "/system/config",
+        sort: 2,
+      },
+      { id: 84, parentId: 8, name: "数据字典", path: "/system/dict", sort: 3 },
+      { id: 85, parentId: 8, name: "系统日志", path: "/system/log", sort: 4 },
     ],
   },
-  // 问卷工坊
   {
     id: 9,
     parentId: 0,
     name: "问卷工坊",
     icon: "Document",
     path: "/survey",
+    sort: 9,
     children: [
-      { id: 91, parentId: 9, name: "问卷列表", path: "/survey/list" },
-      { id: 92, parentId: 9, name: "创建问卷", path: "/survey/create" },
-      { id: 93, parentId: 9, name: "答卷数据", path: "/survey/record" },
+      { id: 91, parentId: 9, name: "问卷列表", path: "/survey/list", sort: 0 },
+      {
+        id: 92,
+        parentId: 9,
+        name: "创建问卷",
+        path: "/survey/create",
+        sort: 1,
+      },
+      {
+        id: 93,
+        parentId: 9,
+        name: "答卷数据",
+        path: "/survey/record",
+        sort: 2,
+      },
     ],
   },
-  // Chief Agent
   {
     id: 10,
     parentId: 0,
     name: "Chief Agent",
     icon: "Service",
     path: "/agent",
+    sort: 10,
     children: [
-      { id: 101, parentId: 10, name: "智能对话", path: "/agent/chat" },
-      { id: 102, parentId: 10, name: "会话记录", path: "/agent/history" },
+      { id: 101, parentId: 10, name: "智能对话", path: "/agent/chat", sort: 0 },
+      {
+        id: 102,
+        parentId: 10,
+        name: "会话记录",
+        path: "/agent/history",
+        sort: 1,
+      },
+    ],
+  },
+  {
+    id: 11,
+    parentId: 0,
+    name: "Canvas",
+    icon: "Monitor",
+    path: "/canvas",
+    sort: 11,
+    children: [
+      {
+        id: 111,
+        parentId: 11,
+        name: "弹幕避让",
+        path: "/canvas/cameraMattingDanmakuView",
+        sort: 0,
+      },
+      {
+        id: 112,
+        parentId: 11,
+        name: "Gsap 动画",
+        path: "/canvas/gsap",
+        sort: 1,
+      },
     ],
   },
 ]);
 
+function sortMenu(items: MenuItem[]): MenuItem[] {
+  return [...items]
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+    .map((item) =>
+      item.children ? { ...item, children: sortMenu(item.children) } : item,
+    );
+}
+
+const sortedMenu = computed(() => sortMenu(menuConfig.value));
+
 function handleMenuClick(item: { path: string; name: string }) {
   // 已完成功能
-  const completedPaths = ["/dashboard", "/myProjects", "/survey", "/agent"];
+  const completedPaths = [
+    "/dashboard",
+    "/myProjects",
+    "/survey",
+    "/agent",
+    "/canvas/cameraMattingDanmakuView",
+    "/canvas/gsap",
+  ];
   // 检查是否已完成
-  if (completedPaths.includes(item.path)) {
+  if (
+    completedPaths.some(
+      (path) => path === item.path || path.startsWith(item.path),
+    )
+  ) {
     navigateTo(item.path);
     return;
   }
   // 功能未开放
-  ElMessage.warning("功能暂未开发");
-  return;
+  ElMessage.warning(`功能暂未开发：${item.path}`);
 }
 
 const showMobileMenu = ref(false);
@@ -320,7 +519,6 @@ function toggleMobileMenu() {
   justify-content: stretch;
   z-index: 9999;
   pointer-events: none;
-
   & > div {
     flex: 1;
     height: 100vh;
@@ -328,6 +526,29 @@ function toggleMobileMenu() {
       width: 100%;
       height: 100%;
       background: #000;
+    }
+  }
+
+  &::after {
+    content: "资源加载中...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 100px;
+    color: var(--el-text-color-primary, #ccc);
+    z-index: 999;
+    animation: breathe 1.8s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.5;
     }
   }
 }

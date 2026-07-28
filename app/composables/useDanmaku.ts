@@ -9,8 +9,16 @@ interface DanmakuItem {
   opacity?: number;
 }
 
+interface Crop {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+}
+
 export function useDanmaku() {
   let danmakuList: DanmakuItem[] = [];
+  /** 人物区域蒙版画布 人物存在的地方alpha通道不为0 */
   let maskCanvas: HTMLCanvasElement | null = null;
   const danmakuLayerCanvas = document.createElement("canvas");
 
@@ -27,29 +35,22 @@ export function useDanmaku() {
     maskCanvas = canvas;
   }
 
+  /**
+   * 渲染弹幕到目标上下文
+   * @param targetCtx 目标上下文
+   * @param width 目标宽度
+   * @param height 目标高度
+   * @param crop 蒙版裁剪参数，与视频绘制时的裁剪保持一致
+   */
   function render(
     targetCtx: CanvasRenderingContext2D,
     width: number,
     height: number,
+    crop?: Crop,
   ) {
     if (!maskCanvas) return;
 
-    // 获取掩码像素数据
-    const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true })!;
-    const maskImageData = maskCtx.getImageData(
-      0,
-      0,
-      maskCanvas.width,
-      maskCanvas.height,
-    );
-    const maskData = maskImageData.data;
-    const maskW = maskCanvas.width;
-    const maskH = maskCanvas.height;
-    const scaleX = maskW / width;
-    const scaleY = maskH / height;
-    const PADDING_PX = 4; // 安全距离，防止边缘闪烁
-
-    // 准备弹幕离屏层
+    // 准备离屏画布（大小与渲染尺寸一致）
     if (
       danmakuLayerCanvas.width !== width ||
       danmakuLayerCanvas.height !== height
@@ -59,54 +60,45 @@ export function useDanmaku() {
     }
     const layerCtx = danmakuLayerCanvas.getContext("2d")!;
     layerCtx.clearRect(0, 0, width, height);
-    layerCtx.textBaseline = "top";
 
-    danmakuList = danmakuList.filter((item) => {
+    // 1. 绘制所有弹幕（全部绘制，不关心碰撞）
+    for (const item of danmakuList) {
       // 更新位置
       layerCtx.font = `bold ${item.fontSize}px sans-serif`;
       const textWidth = layerCtx.measureText(item.text).width;
       item.x += item.speed;
-      if (item.x > width) {
+      if (item.x > width - 20) {
         item.x = -textWidth;
         item.y = 20 + Math.random() * (height - 40);
       }
+      // 绘制弹幕
+      layerCtx.fillStyle = item.color;
+      layerCtx.globalAlpha = item.opacity ?? 1;
+      layerCtx.textBaseline = "top";
+      layerCtx.fillText(item.text, item.x, item.y);
+    }
+    layerCtx.globalAlpha = 1;
 
-      // 文字矩形 (加 padding)
-      const rectX = item.x - PADDING_PX;
-      const rectY = item.y - PADDING_PX;
-      const rectW = textWidth + PADDING_PX * 2;
-      const rectH = item.fontSize + PADDING_PX * 2;
+    // 2. 使用蒙版擦除人物区域的弹幕
+    // drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
+    //   源矩形(sx,sy,sw,sh): 从 maskCanvas 的哪个区域裁剪（与视频裁剪保持一致）
+    //   目标矩形(dx,dy,dw,dh): 裁剪后的蒙版绘制到离屏画布的位置和尺寸
+    layerCtx.globalCompositeOperation = "destination-out"; // 后画上来的会挖走前面的画布
+    // 将 maskCanvas 按裁剪参数缩放绘制到离屏画布（人物区域 alpha > 0 会擦除弹幕）
+    layerCtx.drawImage(
+      maskCanvas,
+      crop?.sx ?? 0,
+      crop?.sy ?? 0,
+      crop?.sw ?? maskCanvas.width,
+      crop?.sh ?? maskCanvas.height,
+      0,
+      0,
+      width,
+      height,
+    );
+    layerCtx.globalCompositeOperation = "source-over"; // 两个我都要，后画上去的在上面
 
-      // 映射到掩码坐标
-      const maskX = Math.max(0, Math.floor(rectX * scaleX));
-      const maskY = Math.max(0, Math.floor(rectY * scaleY));
-      const maskX2 = Math.min(maskW, Math.ceil((rectX + rectW) * scaleX));
-      const maskY2 = Math.min(maskH, Math.ceil((rectY + rectH) * scaleY));
-
-      // 检查掩码 Alpha 通道
-      let overlapped = false;
-      for (let y = maskY; y < maskY2; y++) {
-        for (let x = maskX; x < maskX2; x++) {
-          const idx = (y * maskW + x) * 4 + 3; // alpha
-          if (maskData[idx] > 0) {
-            overlapped = true;
-            break;
-          }
-        }
-        if (overlapped) break;
-      }
-
-      // 只有不重叠才绘制
-      if (!overlapped) {
-        layerCtx.fillStyle = item.color;
-        layerCtx.globalAlpha = item.opacity ?? 1;
-        layerCtx.fillText(item.text, item.x, item.y);
-        layerCtx.globalAlpha = 1;
-      }
-
-      return true; // 保留弹幕数据
-    });
-
+    // 3. 将处理后的离屏画布绘制到目标上下文
     targetCtx.drawImage(danmakuLayerCanvas, 0, 0);
   }
 

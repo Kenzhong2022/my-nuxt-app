@@ -36,7 +36,7 @@ defineOptions({ ssr: false });
 import { ref, onMounted, onUnmounted } from "vue";
 import { ImageSegmenter, FilesetResolver } from "@mediapipe/tasks-vision";
 import { useMaskProcessor } from "@/composables/useMaskProcessor";
-import { useDanmaku } from "@/composables/useDanmaku";
+import { useDanmaku } from "~/composables/useDanmaku";
 
 const {
   applyTemporalSmooth,

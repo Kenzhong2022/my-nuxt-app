@@ -70,6 +70,22 @@
       </el-card>
     </div>
 
+    <!-- 热力图行 -->
+    <div class="heatmap-row">
+      <el-card class="chart-card">
+        <AnalyticsFilterBar
+          key="heatmapFilterBar"
+          v-model:timeRange="heatmapTimeRange"
+          v-model:customDateRange="heatmapCustomDateRange"
+          :timeRangeOptions="heatmapTimeRangeOptions"
+          picker-type="range"
+          @export="handleExport"
+        />
+        <div class="chart-title">{{ heatmapChartTitle }}</div>
+        <CityHeatmap :data="cityHeatmapData" />
+      </el-card>
+    </div>
+
     <!-- 更新时间 -->
     <div
       class="text-center text-[var(--el-text-color-secondary)]"
@@ -90,6 +106,7 @@ import type {
 import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
 import HourlyChart from "./components/HourlyChart.vue";
 import DailyChart from "./components/DailyChart.vue";
+import CityHeatmap from "./components/CityHeatmap.vue";
 
 definePageMeta({
   name: "Dashboard", // 页面名称
@@ -112,6 +129,7 @@ const daily = ref<DailyResponse | null>(null);
 // 图表数据（随筛选条件变化）
 const hourlyChartData = ref<HourlyResponse | null>(null);
 const dailyChartData = ref<DailyResponse | null>(null);
+const cityHeatmapData = ref<CityHeatmapResponse | null>(null);
 // 图表加载状态
 const hourlyLoading = ref(false);
 const dailyLoading = ref(false);
@@ -136,6 +154,20 @@ const hourChartTimeRangeOptions = ref([
 ]);
 /** 日图表自定义日期范围 */
 const customDateRange = ref<[Date, Date] | null>(null);
+
+/** 城市热力图时间范围（默认全部时间） */
+const heatmapTimeRange = ref<string>("all");
+/** 城市热力图自定义日期范围 */
+const heatmapCustomDateRange = ref<[Date, Date] | null>(null);
+/** 城市热力图时间范围选项（4个月为单位） */
+const heatmapTimeRangeOptions = ref([
+  { label: "全部时间", value: "all" },
+  { label: "近 4 个月", value: "4m" },
+  { label: "近 8 个月", value: "8m" },
+  { label: "近 12 个月", value: "12m" },
+  { label: "今年", value: "year" },
+  { label: "自定义范围", value: "custom" },
+]);
 
 function handleExport() {
   // 导出逻辑
@@ -198,6 +230,22 @@ const dailyChartTitle = computed(() => {
     return `${dailyChartData.value.startDate} 至 ${dailyChartData.value.endDate} 每日访问趋势`;
   }
   return rangeLabels[timeRange.value] ?? "每日访问趋势";
+});
+
+/** 城市热力图标题 */
+const heatmapChartTitle = computed(() => {
+  const rangeLabels: Record<string, string> = {
+    all: "全部时间城市访问分布",
+    "4m": "近 4 个月城市访问分布",
+    "8m": "近 8 个月城市访问分布",
+    "12m": "近 12 个月城市访问分布",
+    year: "今年城市访问分布",
+  };
+  if (heatmapTimeRange.value === "custom" && heatmapCustomDateRange.value) {
+    const [start, end] = heatmapCustomDateRange.value;
+    return `${formatDate(start)} 至 ${formatDate(end)} 城市访问分布`;
+  }
+  return rangeLabels[heatmapTimeRange.value] ?? "城市访问分布";
 });
 
 // ============ 方法 ============
@@ -302,6 +350,31 @@ async function fetchDailyChart() {
 }
 
 /**
+ * 获取城市热力图数据（随筛选条件变化）
+ */
+async function fetchCityHeatmap() {
+  const query: Record<string, string> = {};
+
+  if (heatmapTimeRange.value === "custom" && heatmapCustomDateRange.value) {
+    query.timeRange = "custom";
+    query.startDate = formatDate(heatmapCustomDateRange.value[0]);
+    query.endDate = formatDate(heatmapCustomDateRange.value[1]);
+  } else if (heatmapTimeRange.value !== "all") {
+    query.timeRange = heatmapTimeRange.value;
+  }
+
+  try {
+    const res = await $fetch<CityHeatmapResponse>(
+      "/api/public/analytics/city-heatmap",
+      { query },
+    );
+    cityHeatmapData.value = res;
+  } catch (err) {
+    console.error("获取城市热力图数据失败:", err);
+  }
+}
+
+/**
  * 获取统计卡片数据（固定为今日/昨日/近7天）
  */
 async function fetchData() {
@@ -310,20 +383,19 @@ async function fetchData() {
   try {
     const yesterdayStr = formatDate(new Date(Date.now() - 86400000));
 
-    const [todayRes, yesterdayRes, dailyRes] = await Promise.all([
+    const [todayRes, yesterdayRes, dailyRes, heatmapRes] = await Promise.all([
       $fetch<HourlyResponse>("/api/public/analytics/hourly"),
       $fetch<HourlyResponse>("/api/public/analytics/hourly", {
         query: { date: yesterdayStr },
       }),
       $fetch<DailyResponse>("/api/public/analytics/daily"),
-      $fetch<CityHeatmapResponse>("/api/public/analytics/city-heatmap", {
-        query: { timeRange: "today" },
-      }),
+      $fetch<CityHeatmapResponse>("/api/public/analytics/city-heatmap"),
     ]);
 
     hourlyToday.value = todayRes;
     hourlyYesterday.value = yesterdayRes;
     daily.value = dailyRes;
+    cityHeatmapData.value = heatmapRes;
 
     // 初始化图表数据
     hourlyChartData.value = todayRes;
@@ -349,6 +421,10 @@ watch([hourChartTimeRange, customDate], () => {
 
 watch([timeRange, customDateRange], () => {
   fetchDailyChart();
+});
+
+watch([heatmapTimeRange, heatmapCustomDateRange], () => {
+  fetchCityHeatmap();
 });
 
 // ============ 生命周期 ============
@@ -452,6 +528,14 @@ useResizeObserver(chartsRowRef, debouncedResize);
         }
       }
     }
+  }
+
+  // 热力图行
+  .heatmap-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 12px;
   }
 }
 </style>

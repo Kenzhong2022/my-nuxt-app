@@ -2,14 +2,14 @@
 
 /**
  * 城市热力图查询参数
- * 设计原因：
- * - timeRange 必填：热力图必须有时间维度才有意义
+ * - timeRange 可选：不传或传 "all" 时默认返回全部时间段数据
+ * - 时间段以 4 个月为单位递增（4m/8m/12m）
  * - region 可选：不传时展示全国城市，传了则聚焦该省
  * - topN 默认50：城市太多热力图会过密，50个是视觉最佳平衡点
  */
 export interface CityHeatmapQuery {
-  /** 时间范围 */
-  timeRange: "today" | "7d" | "30d" | "custom";
+  /** 时间范围（不传或 "all" 表示全部时间） */
+  timeRange?: "all" | "4m" | "8m" | "12m" | "today" | "7d" | "30d" | "year" | "custom";
 
   /** 自定义起止时间（timeRange=custom 时必填） */
   startDate?: string; // YYYY-MM-DD

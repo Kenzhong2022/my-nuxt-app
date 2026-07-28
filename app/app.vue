@@ -7,35 +7,30 @@
         <NuxtPage />
       </KeepAlive>
       <!-- 过场动画覆盖层 -->
-      <Transition name="overlay-fade">
-        <div v-if="isPlaying" class="transition-overlay">
-          <div class="slide-container">
-            <div class="slide-block" style="background: #3b82f6" />
-            <div class="slide-block" style="background: #ef4444" />
-            <div class="slide-block" style="background: #10b981" />
-            <div class="slide-block" style="background: #f59e0b" />
-            <!-- 加载 -->
-            <div class="loading-block">
-              <div class="loading-block-after"></div>
-            </div>
+      <div v-if="loadingStore.isRouteChanging" class="transition-overlay">
+        <div class="slide-container">
+          <div class="slide-block" style="background: #3b82f6" />
+          <div class="slide-block" style="background: #ef4444" />
+          <div class="slide-block" style="background: #10b981" />
+          <div class="slide-block" style="background: #f59e0b" />
+          <!-- 加载 -->
+          <div class="loading-block">
+            <div class="loading-block-after"></div>
           </div>
         </div>
-      </Transition>
+      </div>
     </NuxtLayout>
   </div>
 </template>
 
 <script setup>
 import gsap from "gsap";
-import { computed } from "vue";
 
 const loadingStore = useLoadingStore();
-const isPlaying = computed(() => loadingStore.isRouteChanging);
-const nuxtApp = useNuxtApp();
 
 let tl = null;
 
-watch(isPlaying, async (playing) => {
+watch(loadingStore.isRouteChanging, async (playing) => {
   if (!playing) {
     if (tl) {
       tl.kill();
@@ -135,17 +130,5 @@ watch(isPlaying, async (playing) => {
     height: 50px;
     width: 50px;
   }
-}
-
-/* 覆盖层本身的淡入淡出（让出现/消失更柔和） */
-.overlay-fade-enter-active {
-  transition: opacity 0.15s;
-}
-.overlay-fade-leave-active {
-  transition: opacity 0.3s;
-}
-.overlay-fade-enter-from,
-.overlay-fade-leave-to {
-  opacity: 0;
 }
 </style>

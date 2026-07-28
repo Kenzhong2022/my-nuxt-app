@@ -7,19 +7,15 @@ export default defineEventHandler(
     const { sql } = setupDatabase();
     const query = getQuery<CityHeatmapQuery>(event);
 
-    // 1. 参数校验
-    if (!query.timeRange) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "timeRange is required",
-      });
-    }
-
-    // 2. 构建时间条件
-    let timeCondition: string;
+    // 1. 构建时间条件（默认全部时间）
+    let timeCondition: string | null = null;
     const now = new Date();
+    const range = query.timeRange ?? "all";
 
-    switch (query.timeRange) {
+    switch (range) {
+      case "all":
+        timeCondition = null;
+        break;
       case "today":
         timeCondition = `timestamp >= '${now.toISOString().split("T")[0]} 00:00:00'`;
         break;
@@ -28,6 +24,18 @@ export default defineEventHandler(
         break;
       case "30d":
         timeCondition = `timestamp >= NOW() - INTERVAL '30 days'`;
+        break;
+      case "4m":
+        timeCondition = `timestamp >= NOW() - INTERVAL '4 months'`;
+        break;
+      case "8m":
+        timeCondition = `timestamp >= NOW() - INTERVAL '8 months'`;
+        break;
+      case "12m":
+        timeCondition = `timestamp >= NOW() - INTERVAL '12 months'`;
+        break;
+      case "year":
+        timeCondition = `timestamp >= '${now.getFullYear()}-01-01 00:00:00'`;
         break;
       case "custom":
         if (!query.startDate || !query.endDate) {
@@ -45,26 +53,24 @@ export default defineEventHandler(
         });
     }
 
-    // 3. 构建查询
-    const regionFilter = query.region ? `AND region = '${query.region}'` : "";
+    // 2. 执行查询（全部使用 sql 模板片段，避免字符串拼接问题）
     const topN = Math.min(query.topN || 50, 100);
 
-    // 4. 执行查询
     const cities = await sql`
     SELECT 
       city as name,
       COUNT(*)::int as value,
       COUNT(DISTINCT session_id)::int as uv
     FROM visits
-    WHERE ${sql.unsafe(timeCondition)}
-      AND city IS NOT NULL
-      ${sql.unsafe(regionFilter)}
+    WHERE city IS NOT NULL
+      ${timeCondition ? sql`AND ${sql.unsafe(timeCondition)}` : sql``}
+      ${query.region ? sql`AND region = ${query.region}` : sql``}
     GROUP BY city
     ORDER BY value DESC
     LIMIT ${topN}
   `;
 
-    // 5. 计算百分比和总量
+    // 3. 计算百分比和总量
     const totalVisits = cities.reduce((sum, city) => sum + city.value, 0);
     const maxValue = cities[0]?.value || 0;
 

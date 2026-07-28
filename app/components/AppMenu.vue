@@ -52,6 +52,7 @@ export interface MenuItem {
   icon?: string;
   path: string;
   children?: MenuItem[];
+  sort?: number;
 }
 
 interface Props {

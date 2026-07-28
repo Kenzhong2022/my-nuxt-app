@@ -13,6 +13,8 @@
     "@cloudinary/url-gen": "^1.22.0",
     "@cloudinary/vue": "^1.13.4",
     "@element-plus/icons-vue": "^2.3.2",
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@neondatabase/serverless": "^1.1.0",
     "@pinia-plugin-persistedstate/nuxt": "^1.2.1",
