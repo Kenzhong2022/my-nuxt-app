@@ -12,6 +12,7 @@ declare module "h3" {
 
 // ============================================
 // 1. 白名单配置（仅针对 API）
+// 注意：非 API 请求（页面、静态资源）在主中间件中已直接放行，无需配置在此
 // ============================================
 const WHITE_LIST = [
   "/api/token",
@@ -19,28 +20,23 @@ const WHITE_LIST = [
   "/api/callback",
   "/api/public",
   "/api/qrcode/generate",
+  "/api/ai/v1/chat/messages",
 ];
 
-// 框架内部错误页面（自动放行）
-const INTERNAL_ERROR_PREFIXES = ["/_nuxt_error", "/__nuxt_error"];
-
 /**
- * 判断是否白名单路径（精确匹配或前缀匹配）
+ * 判断 API 路径是否属于白名单（精确匹配或前缀匹配）
+ * 前缀匹配用于 /api/public 这类需要放行子路径的场景
  */
-function isWhitelisted(path: string): boolean {
-  if (INTERNAL_ERROR_PREFIXES.some((p) => path.startsWith(p))) {
-    return true;
-  }
+function isWhitelisted(pathname: string): boolean {
   return WHITE_LIST.some(
-    (item) => path === item || path.startsWith(item + "/"),
+    (item) => pathname === item || pathname.startsWith(item + "/"),
   );
 }
 
 // ============================================
-// 2. 工具函数：处理未授权请求（API 返回 401）
+// 2. 工具函数：抛出 401 未授权错误
 // ============================================
-function handleUnauthorized(event: any, message?: string) {
-  // 现在只会在 API 请求中调用，直接抛出 401 错误
+function handleUnauthorized(message?: string): never {
   throw createError({
     statusCode: 401,
     message: message || "无权限访问接口，请先登录",
@@ -48,39 +44,36 @@ function handleUnauthorized(event: any, message?: string) {
 }
 
 // ============================================
-// 3. 主中间件：只保护 API
+// 3. 主中间件：仅保护 API 请求
 // ============================================
 export default defineEventHandler(async (event) => {
-  const url = getRequestURL(event);
-  const pathname = url.pathname;
+  const pathname = getRequestURL(event).pathname;
 
-  // 关键修改：只拦截 API 请求，其他请求（页面、静态资源）直接放行
+  // 非接口请求（页面、静态资源等）直接放行
   if (!pathname.startsWith("/api/")) {
     return;
   }
 
-  // Step 1: 白名单放行（仅 API 路径）
+  // 白名单接口直接放行
   if (isWhitelisted(pathname)) {
     return;
   }
 
-  // Step 2: 提取并校验 token 格式
+  // 校验 Authorization 头格式
   const authHeader = getRequestHeader(event, "authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return handleUnauthorized(event);
+    return handleUnauthorized();
   }
 
-  const token = authHeader.split(" ")[1];
-
-  // Step 3: 验证 token 有效性
+  // 提取并验证 token
+  const token = authHeader.slice(7); // "Bearer ".length === 7
   try {
-    const payload = verifyAccessToken(token as string);
+    const payload = verifyAccessToken(token);
     event.context.user = {
       userId: payload.userId,
       role: payload.role as string,
     };
-  } catch (error) {
-    // token 无效或过期
-    return handleUnauthorized(event, "登录已过期，请重新登录");
+  } catch {
+    return handleUnauthorized("登录已过期，请重新登录");
   }
 });

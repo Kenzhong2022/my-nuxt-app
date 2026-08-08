@@ -400,6 +400,20 @@ const menuConfig = ref<MenuItem[]>([
       },
       { id: 84, parentId: 8, name: "数据字典", path: "/system/dict", sort: 3 },
       { id: 85, parentId: 8, name: "系统日志", path: "/system/log", sort: 4 },
+      {
+        id: 86,
+        parentId: 8,
+        name: "权限配置",
+        path: "/admin/permissions",
+        sort: 5,
+      },
+      {
+        id: 87,
+        parentId: 8,
+        name: "用户管理",
+        path: "/system/user",
+        sort: 6,
+      },
     ],
   },
   {
@@ -482,7 +496,7 @@ function sortMenu(items: MenuItem[]): MenuItem[] {
 const sortedMenu = computed(() => sortMenu(menuConfig.value));
 
 function handleMenuClick(item: { path: string; name: string }) {
-  // 已完成功能
+  // 已完成功能 需要去重，白名单的路径内容是当前内容的子集
   const completedPaths = [
     "/dashboard",
     "/myProjects",
@@ -490,6 +504,20 @@ function handleMenuClick(item: { path: string; name: string }) {
     "/agent",
     "/canvas/cameraMattingDanmakuView",
     "/canvas/gsap",
+    "/system/role",
+    "/admin/permissions",
+    "/system/user",
+    "/login",
+    "/register",
+    "/CallBack",
+    "/qrcode",
+    "/agent",
+    "/testdynamicForm",
+    "/Survey",
+    "/",
+    "/dashboard",
+    "/403",
+    "/admin/permissions",
   ];
   // 检查是否已完成
   if (

@@ -35,7 +35,7 @@
         :key="index"
         :class="['message-item', message.role]"
       >
-        <div class="message-role">
+        <div v-if="0" class="message-role">
           {{ message.role === "user" ? "用户" : "AI" }}
         </div>
         <div class="message-content">
@@ -52,6 +52,7 @@
               />
             </div>
           </template>
+          <!-- AI 消息内容 -->
           <template v-else>
             <div
               class="markdown-content"

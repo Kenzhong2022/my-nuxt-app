@@ -136,7 +136,7 @@ export function useAgentApi() {
               onMessage(event.data, event.id);
             }
           },
-          onRetry(interval) {
+          onRetry(interval: number) {
             retryInterval = interval;
             console.log("服务端要求重连间隔: %dms", interval);
           },

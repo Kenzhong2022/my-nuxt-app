@@ -138,6 +138,11 @@ export default defineNuxtConfig({
   nitro: {
     preset: "netlify", // 部署到Netlify时取消注释
     compressPublicAssets: true, // 静态资源仍然可以压缩
-    devProxy: {},
+    devProxy: {
+      "/api/ai": {
+        target: "https://chief-agent-alpha.vercel.app",
+        changeOrigin: true,
+      },
+    },
   },
 });

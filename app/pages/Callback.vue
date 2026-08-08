@@ -1,6 +1,19 @@
 <template>
   <div class="callback-page">
-    <p>{{ tip }}</p>
+    <el-timeline>
+      <el-timeline-item
+        v-for="(activity, index) in activities"
+        :key="index"
+        :timestamp="activity.timestamp"
+        :icon="activity.icon"
+        :type="activity.type"
+        :size="activity.size"
+        >{{ activity.content }}</el-timeline-item
+      >
+    </el-timeline>
+    <el-button v-if="btnVisible" type="primary" @click="handleLogin"
+      >重新登录</el-button
+    >
   </div>
 </template>
 
@@ -8,7 +21,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import { useAuthStore } from "~~/app/stores/auth"; // 导入 store
+import { useAuthStore } from "~~/app/stores/auth";
 
 definePageMeta({
   layout: false, // 不使用布局
@@ -16,71 +29,161 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
-const tip = ref("处理登录凭证中...");
 
-// 模拟后端交换 token 接口
-const fetchToken = async (code) => {
-  const res = await $fetch("/api/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+// ============================================
+// Activity 工厂：通过 config 覆盖默认值，未配置项使用统一默认
+// 状态切换时同步更新 content/type/timestamp
+// ============================================
+function createActivity(config = {}) {
+  const defaults = {
+    timestamp: "",
+    size: "large",
+    idle: { content: "等待中...", type: "info", icon: "Clock" },
+    pending: { content: "处理中...", type: "primary", icon: "Loading" },
+    success: { content: "操作成功", type: "success", icon: "SuccessFilled" },
+    error: { content: "操作失败", type: "danger", icon: "CircleCloseFilled" },
+  };
+
+  const states = {
+    idle: { ...defaults.idle, ...config.idle },
+    pending: { ...defaults.pending, ...config.pending },
+    success: { ...defaults.success, ...config.success },
+    error: { ...defaults.error, ...config.error },
+  };
+
+  return {
+    timestamp: config.timestamp ?? defaults.timestamp,
+    size: config.size ?? defaults.size,
+    content: states.idle.content,
+    type: states.idle.type,
+    icon: states.idle.icon,
+    _states: states,
+    setStatus(status) {
+      const s = this._states[status];
+      this.content = s.content;
+      this.type = s.type;
+      this.icon = s.icon;
+      this.timestamp = new Date().toLocaleString();
     },
-    body: JSON.stringify({
-      code,
-      client_id: "business-a",
-      redirect_uri: "http://localhost:3000/CallBack",
-    }),
-  });
-  return res;
-};
+    /** 从 idle 切到 pending，标记为当前进行中 */
+    activate() {
+      this.setStatus("pending");
+    },
+    markSuccess() {
+      this.setStatus("success");
+    },
+    markError() {
+      this.setStatus("error");
+    },
+  };
+}
 
-onMounted(async () => {
-  console.log("开始处理登录凭证...");
-  let code;
-  let backPath = "";
+// 预创建所有活动项，通过显式索引访问（避免原 curActivityIdx 越界 bug）
+const activities = ref([
+  createActivity({
+    pending: { content: "尝试获取token..." },
+    success: { content: "获取token成功" },
+    error: { content: "获取token失败" },
+  }),
+  createActivity({
+    pending: { content: "token持久化..." },
+    success: { content: "token已持久化" },
+    error: { content: "token持久化失败" },
+  }),
+]);
 
-  // 检查 redirect 参数
+const btnVisible = ref(false);
+
+// ============================================
+// 流程拆分：每步只负责一件事，并通过对应 timeline 项反馈状态
+// ============================================
+
+/** 解析重定向路径，缺失时兜底首页并提示 */
+function resolveRedirectPath() {
   if (!route.query.redirect) {
-    tip.value = "无重定向路径，登录失败";
-    ElMessage.error("无重定向路径，登录失败，重定向到首页");
-    backPath = "/";
-    // 这里直接跳转首页，但注意不要立即跳转，因为可能还有错误
-    router.push("/");
-    return;
-  } else {
-    backPath = route.query.redirect;
+    ElMessage.error("无重定向路径，将重定向到首页");
+    return "/";
   }
+  return route.query.redirect;
+}
 
-  // 检查 code 参数
+/** 校验授权码，缺失时返回 null */
+function getCode() {
   if (!route.query.code) {
-    tip.value = "无授权码code，登录失败";
-    ElMessage.error("缺少授权码");
-    router.push(backPath); // 跳转回原页面（但可能无法完成登录）
+    ElMessage.error("缺少授权码，登录失败");
+    return null;
+  }
+  return route.query.code;
+}
+
+/** 用授权码换取 token，操作 timeline[0] */
+async function redeemToken(code) {
+  activities.value[0].activate();
+  try {
+    const response = await $fetch("/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        client_id: "business-a",
+        redirect_uri: "http://localhost:3000/CallBack",
+      }),
+    });
+    activities.value[0].markSuccess();
+    return response;
+  } catch (err) {
+    activities.value[0].markError();
+    throw err;
+  }
+}
+
+/** 持久化 token 到 Pinia store（自动写入 localStorage），操作 timeline[1] */
+function persistToken(tokenResponse) {
+  activities.value[1].activate();
+  // ✅ 使用 Pinia store 存储 token（自动持久化到 localStorage）
+  // 如果你还想存储 refresh_token，可以扩展 store 添加 refreshToken 字段
+  const authStore = useAuthStore();
+  const accessToken = tokenResponse?.access_token;
+  if (!accessToken) {
+    activities.value[1].markError();
+    return false;
+  }
+  authStore.setToken(accessToken);
+  if (authStore.token) {
+    activities.value[1].markSuccess();
+    return true;
+  }
+  activities.value[1].markError();
+  return false;
+}
+
+/** 主流程：校验参数 → 换 token → 持久化 → 跳转 */
+async function handleCallback() {
+  const backPath = resolveRedirectPath();
+  const code = getCode();
+  if (!code) {
+    router.push(backPath);
     return;
   }
-  code = route.query.code;
 
   try {
-    // 换取长短 token
-    const tokenData = await fetchToken(code);
-
-    // ✅ 使用 Pinia store 存储 token（自动持久化到 localStorage）
-    const authStore = useAuthStore();
-    authStore.setToken(tokenData.access_token);
-    // 如果你还想存储 refresh_token，可以扩展 store 添加 refreshToken 字段
-    // 但这里仅演示 access_token
-
-    tip.value = "成功获取token，即将跳转原页面";
+    const tokenResponse = await redeemToken(code);
+    persistToken(tokenResponse);
     ElMessage.success("登录成功");
-    // 跳回之前想去的页面
     router.push(backPath);
   } catch (err) {
-    tip.value = "换取token失败：" + err.message;
-    ElMessage.error("登录失败，请重试");
-    // 可选择性跳转回首页
-    // router.push("/");
+    btnVisible.value = true;
+    ElMessage.error(err.message);
   }
-});
+}
+
+/** 重新登录流程 */
+async function handleLogin() {
+  // 前往重定向路径，间接回到登录页
+  router.push(resolveRedirectPath());
+}
+
+onMounted(handleCallback);
 </script>
 
 <style scoped>

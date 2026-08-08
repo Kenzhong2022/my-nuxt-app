@@ -20,3 +20,27 @@
   --leading-normal: 1.5; /* 正文 */
   --leading-relaxed: 1.75; /* 宽松排版 */
 }
+
+/* ============================================================
+   文本尺寸变量（--kk-* 前缀）
+   详见：文本尺寸变量使用规范.md
+   - 变量定义使用 rem（1rem = 16px）
+   - 组件中一律使用 var(--kk-*)，不再写入固定 px/rem
+   - 与 Element Plus（--el-*）、旧变量（--text-*）并存，互不冲突
+   ============================================================ */
+:root {
+  font-size: 16px; /* 根字体基准，1rem = 16px */
+
+  /* 字号层级（从大到小） */
+  --kk-font-size-extra-large: 1.25rem; /* 20px - 页面主标题 H1 */
+  --kk-font-size-large: 1.125rem; /* 18px - 二级标题 H2、卡片标题 */
+  --kk-font-size-medium: 1rem; /* 16px - 三级标题 H3、正文、按钮 */
+  --kk-font-size-base: 0.9375rem; /* 15px - 默认正文（基准） */
+  --kk-font-size-small: 0.875rem; /* 14px - 次标题、辅助信息、表格 */
+  --kk-font-size-extra-small: 0.75rem; /* 12px - 标签、注释、版权 */
+
+  /* 行高 */
+  --kk-line-height-base: 1.6; /* 正文 */
+  --kk-line-height-small: 1.4; /* 紧凑 */
+  --kk-line-height-large: 1.8; /* 宽松 */
+}

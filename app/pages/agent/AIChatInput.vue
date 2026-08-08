@@ -210,7 +210,7 @@ function handlePaste(e: ClipboardEvent) {
   border-radius: 16px;
   border: 1px solid var(--el-border-color-light);
   padding: 16px;
-  margin: 10px auto;
+  margin: 0 auto 20px;
   .image-slot {
     position: relative;
 

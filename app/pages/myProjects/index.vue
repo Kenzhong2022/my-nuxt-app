@@ -48,7 +48,6 @@
 
 <script setup lang="ts">
 import gsap from "gsap";
-import { useLoadingStore } from "@/stores/loading";
 definePageMeta({
   title: "首页",
   layout: "default",
@@ -116,16 +115,20 @@ function animationCardTitle(): void {
     opacity: 0,
     y: 55,
     stagger: 0.08,
-    duration: 0.5,
-    ease: "back.out",
+    duration: 0.3,
+    ease: "power1.out",
     delay: 1,
   });
-  tl.from(".project-desc-char", {
-    opacity: 0,
-    stagger: 0.05,
-    duration: 0.08,
-    ease: "none",
-  });
+  tl.from(
+    ".project-desc-char",
+    {
+      opacity: 0,
+      stagger: 0.05,
+      duration: 0.08,
+      ease: "none",
+    },
+    "<+0.5",
+  );
 }
 // 提取事件处理函数，便于添加和移除
 function handleMouseMove(e: MouseEvent) {
