@@ -12,27 +12,32 @@
       <div
         class="flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden"
       >
-        <div
-          class="text-xl font-bold flex items-center gap-3 whitespace-nowrap"
-        >
-          管理后台
-          <ClientOnly>
-            <el-switch
-              :model-value="isDark"
-              @update:model-value="(newVal) => (isDark = newVal as boolean)"
-              active-text="暗黑"
-              inactive-text="明亮"
-            />
-            <el-switch
-              :model-value="isSidebarMenu"
-              @update:model-value="
-                (newVal) => (isSidebarMenu = newVal as boolean)
-              "
-              active-text="侧边栏"
-              inactive-text="头部"
-            />
-          </ClientOnly>
+        <h1>管理后台</h1>
+        <ClientOnly>
+          <el-switch
+            :model-value="isDark"
+            @update:model-value="(newVal) => (isDark = newVal as boolean)"
+            active-text="暗黑"
+            inactive-text="明亮"
+          />
+          <el-switch
+            :model-value="isSidebarMenu"
+            @update:model-value="
+              (newVal) => (isSidebarMenu = newVal as boolean)
+            "
+            active-text="侧边栏"
+            inactive-text="头部"
+          />
+        </ClientOnly>
+        <div class="ml-auto">
+          <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin">
+            登录
+          </el-button>
+          <el-button v-else type="danger" @click="handleLogout">
+            退出登录
+          </el-button>
         </div>
+
         <div class="desktop-menu" v-show="isClient && !isSidebarMenu">
           <AppMenu
             :menu-data="sortedMenu"
@@ -94,6 +99,16 @@ import { useDark, useStorage } from "@vueuse/core";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
 const isClient = ref(false);
+
+const { isLoggedIn, login, logout: authLogout } = useAuth();
+
+function handleLogin(): void {
+  login();
+}
+
+function handleLogout(): void {
+  authLogout();
+}
 
 let isDark: Ref<boolean> = ref(false);
 let isSidebarMenu: Ref<boolean | undefined> = ref();
@@ -383,37 +398,15 @@ const menuConfig = ref<MenuItem[]>([
     path: "/system",
     sort: 8,
     children: [
+      { id: 81, parentId: 8, name: "角色管理", path: "/system/role", sort: 1 },
       {
-        id: 81,
-        parentId: 8,
-        name: "管理员账号",
-        path: "/system/admin",
-        sort: 0,
-      },
-      { id: 82, parentId: 8, name: "角色管理", path: "/system/role", sort: 1 },
-      {
-        id: 83,
-        parentId: 8,
-        name: "站点基础配置",
-        path: "/system/config",
-        sort: 2,
-      },
-      { id: 84, parentId: 8, name: "数据字典", path: "/system/dict", sort: 3 },
-      { id: 85, parentId: 8, name: "系统日志", path: "/system/log", sort: 4 },
-      {
-        id: 86,
-        parentId: 8,
-        name: "权限配置",
-        path: "/admin/permissions",
-        sort: 5,
-      },
-      {
-        id: 87,
+        id: 82,
         parentId: 8,
         name: "用户管理",
         path: "/system/user",
-        sort: 6,
+        sort: 2,
       },
+      { id: 83, parentId: 8, name: "系统日志", path: "/system/log", sort: 3 },
     ],
   },
   {
@@ -496,28 +489,28 @@ function sortMenu(items: MenuItem[]): MenuItem[] {
 const sortedMenu = computed(() => sortMenu(menuConfig.value));
 
 function handleMenuClick(item: { path: string; name: string }) {
-  // 已完成功能 需要去重，白名单的路径内容是当前内容的子集
+  // 已完成功能（去重）：仅保留有对应页面文件的路径
   const completedPaths = [
+    // 菜单项 - 已完成
     "/dashboard",
     "/myProjects",
     "/survey",
     "/agent",
+    "/canvas",
     "/canvas/cameraMattingDanmakuView",
     "/canvas/gsap",
     "/system/role",
-    "/admin/permissions",
     "/system/user",
-    "/login",
-    "/register",
+    "/admin/permissions",
+    // 非菜单页面 - 已完成
+    "/admin",
+    "/store",
+    "/store/cart",
+    "/store/chat",
     "/CallBack",
     "/qrcode",
-    "/agent",
     "/testdynamicForm",
-    "/Survey",
-    "/",
-    "/dashboard",
     "/403",
-    "/admin/permissions",
   ];
   // 检查是否已完成
   if (
@@ -563,7 +556,7 @@ function toggleMobileMenu() {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 100px;
+    font-size: 6.25rem;
     color: var(--el-text-color-primary, #ccc);
     z-index: 999;
     animation: breathe 1.8s ease-in-out infinite;
@@ -590,16 +583,16 @@ function toggleMobileMenu() {
     display: block;
   }
   .el-header {
-    padding: 0 12px;
+    padding: 0 0.75rem;
   }
   .el-header .text-xl {
-    font-size: 16px;
+    font-size: 1rem;
   }
   .mobile-menu-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 0.5rem;
   }
   .desktop-menu {
     display: none;
@@ -607,23 +600,23 @@ function toggleMobileMenu() {
   .el-aside {
     position: fixed;
     left: 0;
-    top: 60px;
+    top: 3.75rem;
     bottom: 0;
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     background: var(--el-bg-color);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0.125rem 0 0.5rem rgba(0, 0, 0, 0.1);
   }
   .el-aside.mobile-menu-visible {
     transform: translateX(0);
   }
   .el-main {
-    padding: 12px;
+    padding: 0.75rem;
   }
   .mobile-overlay {
     position: fixed;
-    top: 60px;
+    top: 3.75rem;
     left: 0;
     right: 0;
     bottom: 0;

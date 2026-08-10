@@ -63,23 +63,13 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (process.client) {
         // 401 未授权：清除 token 并跳转登录
         if (response.status === 401) {
-          const authStore = useAuthStore();
-          // authStore.clearToken(); // 清空 store（自动清除 localStorage）
-          ElMessage.error("无法访问该接口。该接口属于第三方接口");
-
-          // 使用 Nuxt 的 navigateTo 进行 SPA 跳转
-          const redirect = encodeURIComponent(window.location.pathname);
-          const config = useRuntimeConfig();
-          const LOGIN_BASE = config.public.loginBase;
-          if (!LOGIN_BASE) throw new Error("LOGIN_BASE 未配置");
-          // navigateTo(`${LOGIN_BASE}/login?redirect=${redirect}`, {
-          //   external: true,
-          // });
+          const { handleUnauthorized } = useAuth();
+          handleUnauthorized();
         }
 
         // 403 无权限
         if (response.status === 403) {
-          alert("您没有权限执行此操作");
+          ElMessage.error("您没有权限执行此操作");
         }
 
         // 500 等服务器错误可上报日志

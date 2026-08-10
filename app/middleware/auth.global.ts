@@ -1,22 +1,29 @@
 // middleware/auth.global.ts
-import { navigateTo } from "#app";
-import { isPublicPath } from "~~/utils/whitelist";
+import type { PermissionId } from "~~/types/permission";
 import { useAuthStore } from "~~/app/stores/auth";
 
+/**
+ * 前端登录守卫
+ * @description 仅当页面通过 definePageMeta 声明了 requiredPermission / requiredPermissionAny 时才要求登录
+ */
 export default defineNuxtRouteMiddleware((to) => {
-  if (process.server) return;
-  if (isPublicPath(to.path)) return;
-  console.log("需要登录");
-  const authStore = useAuthStore(); //暂时不做拦截，方便开发，作于页面拦截功能，后端拦截api权限
-
+  if (import.meta.server) {
+    return;
+  }
+  // 未声明权限要求的页面，默认公开
+  const required = to.meta.requiredPermission as PermissionId | undefined;
+  const requiredAny = to.meta.requiredPermissionAny as
+    | PermissionId[]
+    | undefined;
+  if (!required && !requiredAny) return;
+  const authStore = useAuthStore();
   if (!authStore.token) {
-    const config = useRuntimeConfig();
-    const LOGIN_BASE = config.public.loginBase;
-    if (!LOGIN_BASE) throw new Error("LOGIN_BASE 未配置");
-    ElMessage.warning("您因为未登录，无法访问该页面，请先登录后重试。");
-    return navigateTo(
-      `${LOGIN_BASE}/login?redirect=${encodeURIComponent(to.fullPath)}`,
-      { external: true },
-    );
+    const { login } = useAuth();
+    login(to.fullPath);
+  } else if (import.meta.client) {
+    console.log("客户端");
+    // 客户端
+    // 弹窗提示用户有权限访问该页面
+    ElMessage.success("经过鉴权，您有权限访问该页面");
   }
 });
