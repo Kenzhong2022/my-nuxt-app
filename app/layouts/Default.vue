@@ -557,7 +557,7 @@ function toggleMobileMenu() {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 6.25rem;
+    font-size: 1.25rem;
     color: var(--el-text-color-primary, #ccc);
     z-index: 999;
     animation: breathe 1.8s ease-in-out infinite;

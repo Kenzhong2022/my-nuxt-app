@@ -127,7 +127,7 @@ export default defineNuxtConfig({
   },
   css: [
     "~/assets/css/main.css",
-    "~/assets/iconfont/iconfont.css",
+    "~/assets/iconfont/iconfont.css", // 图标字体
     "element-plus/theme-chalk/dark/css-vars.css", // Element Plus 暗黑主题变量（背景/文字色等）
   ],
   elementPlus: {

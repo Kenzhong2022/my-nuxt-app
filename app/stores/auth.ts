@@ -1,43 +1,25 @@
 // stores/auth.ts
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-
-// 工具函数：安全读写 localStorage（仅在客户端）
-const STORAGE_KEY = "token";
-
-function getStoredToken(): string | null {
-  if (process.client) {
-    return localStorage.getItem(STORAGE_KEY);
-  }
-  return null;
-}
-
-function setStoredToken(token: string) {
-  if (process.client) {
-    localStorage.setItem(STORAGE_KEY, token);
-  }
-}
-
-function removeStoredToken() {
-  if (process.client) {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-}
+import { computed } from "vue";
 
 export const useAuthStore = defineStore("auth", () => {
-  // 初始化时从 localStorage 读取（客户端才执行）
-  const token = ref<string | null>(getStoredToken());
+  // 用 cookie 存储 token，SSR 和 CSR 都能读到，避免水合不匹配
+  // 赋值时 useCookie 会自动写回 cookie，无需手动持久化
+  const token = useCookie<string | null>("token", {
+    default: () => null,
+    maxAge: 60 * 60 * 24 * 7, // 7 天
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
 
   const isLoggedIn = computed(() => !!token.value);
 
   function setToken(newToken: string) {
     token.value = newToken;
-    setStoredToken(newToken);
   }
 
   function clearToken() {
     token.value = null;
-    removeStoredToken();
   }
 
   return { token, isLoggedIn, setToken, clearToken };
