@@ -12,6 +12,7 @@
   "dependencies": {
     "@cloudinary/url-gen": "^1.22.0",
     "@cloudinary/vue": "^1.13.4",
+    "@ctrl/tinycolor": "^4.2.0",
     "@element-plus/icons-vue": "^2.3.2",
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/selfie_segmentation": "^0.1.1675465747",

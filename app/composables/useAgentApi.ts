@@ -127,6 +127,9 @@ export function useAgentApi() {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
 
+        /**
+         * 解析 SSE 响应，触发事件回调
+         */
         const parser = createParser({
           onEvent(event: EventSourceMessage) {
             if (event.id) {

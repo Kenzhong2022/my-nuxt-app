@@ -112,15 +112,16 @@ function handleLogout(): void {
 
 let isDark: Ref<boolean> = ref(false);
 let isSidebarMenu: Ref<boolean | undefined> = ref();
-
+isDark = useDark({
+  storageKey: "color-scheme", // ✅ 独立的 key，只存 dark/light
+  selector: "html",
+  attribute: "class", // 通过 class="dark" 切换
+  valueDark: "dark",
+  valueLight: "",
+});
 onMounted(() => {
   rotateYOpen();
   isClient.value = true;
-  isDark = useDark({
-    storageKey: "admin-dark-mode",
-    selector: "html",
-    valueDark: "dark",
-  });
   isSidebarMenu = useStorage("admin-menu-mode", true);
 });
 

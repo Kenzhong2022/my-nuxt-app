@@ -128,11 +128,11 @@ export default defineNuxtConfig({
   css: [
     "~/assets/css/main.css",
     "~/assets/iconfont/iconfont.css",
-    "element-plus/theme-chalk/dark/css-vars.css", // 引入element-plus的暗黑主题变量
+    "element-plus/theme-chalk/dark/css-vars.css", // Element Plus 暗黑主题变量（背景/文字色等）
   ],
   elementPlus: {
     // 自动导入所有组件
-    importStyle: "scss",
+    importStyle: "css",
   },
 
   nitro: {
