@@ -1,5 +1,9 @@
 <template>
-  <div ref="chartRef" v-my-loading="loading" class="chart-container"></div>
+  <div
+    ref="chartRef"
+    v-custom-loading="{ value: loading, text: loadingText }"
+    class="chart-container"
+  ></div>
 </template>
 
 <script setup lang="ts">
@@ -18,6 +22,8 @@ import {
 const props = defineProps<{
   data: DailyResponse | null;
   loading: boolean;
+  /** loading 提示文本，不传则用指令默认值 */
+  loadingText?: string;
 }>();
 
 const emit = defineEmits<{
@@ -141,12 +147,9 @@ function initChart() {
 
 function updateChart() {
   if (!chart || !props.data) return;
-  chart.setOption(
-    buildDayOption(props.data.dailyVisits, props.data.dates),
-    {
-      notMerge: true,
-    },
-  );
+  chart.setOption(buildDayOption(props.data.dailyVisits, props.data.dates), {
+    notMerge: true,
+  });
 }
 
 function handleResize() {
@@ -176,18 +179,31 @@ onBeforeUnmount(() => {
   chart = null;
 });
 
+/** 导出当前图表数据为 CSV */
+function exportCsv(): boolean {
+  if (!props.data) return false;
+  const { dates, dailyVisits, total } = props.data;
+  downloadCsv(`每日访问趋势_${dates[0]}_至_${dates[dates.length - 1]}`, [
+    ["日期", "访问量"],
+    ...dates.map((d, i) => [d, dailyVisits[i] ?? 0]),
+    ["总计", total],
+  ]);
+  return true;
+}
+
 defineExpose({
   resize: handleResize,
+  exportCsv,
 });
 </script>
 
 <style scoped lang="scss">
 .chart-container {
   width: 100%;
-  height: 300px;
+  height: 18.75rem; /* 300px */
 
   @media (max-width: 700px) {
-    height: 240px;
+    height: 15rem; /* 240px */
   }
 }
 </style>

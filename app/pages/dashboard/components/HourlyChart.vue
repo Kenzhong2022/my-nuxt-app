@@ -1,5 +1,9 @@
 <template>
-  <div ref="chartRef" v-my-loading="loading" class="chart-container"></div>
+  <div
+    ref="chartRef"
+    v-custom-loading="{ value: loading, text: loadingText }"
+    class="chart-container"
+  ></div>
 </template>
 
 <script setup lang="ts">
@@ -19,6 +23,8 @@ const props = defineProps<{
   data: HourlyResponse | null;
   loading: boolean;
   isToday: boolean;
+  /** loading 提示文本，不传则用指令默认值 */
+  loadingText?: string;
 }>();
 
 const emit = defineEmits<{
@@ -59,7 +65,7 @@ function buildOption(
       ...getAxisBaseStyle(theme),
       axisLabel: {
         ...getAxisBaseStyle(theme).axisLabel,
-        interval: 2,
+        interval: 2, // 间隔2个标签 相当于显示0 3 6 ... 21
       },
     },
     yAxis: {
@@ -179,18 +185,34 @@ onBeforeUnmount(() => {
   chart = null;
 });
 
+/** 导出当前图表数据为 CSV */
+function exportCsv(): boolean {
+  if (!props.data) return false;
+  const { date, hourlyVisits, total } = props.data;
+  downloadCsv(`每小时访问分布_${date}`, [
+    ["时段", "访问量"], // 表头
+    ...hourlyVisits.map((v, i) => [
+      `${String(i).padStart(2, "0")}:00-${String(i).padStart(2, "0")}:59`,
+      v,
+    ]),
+    ["总计", total],
+  ]);
+  return true;
+}
+
 defineExpose({
   resize: handleResize,
+  exportCsv,
 });
 </script>
 
 <style scoped lang="scss">
 .chart-container {
   width: 100%;
-  height: 300px;
+  height: 18.75rem; /* 300px */
 
   @media (max-width: 700px) {
-    height: 240px;
+    height: 15rem; /* 240px */
   }
 }
 </style>

@@ -38,7 +38,7 @@
           v-model:customDate="customDate"
           :timeRangeOptions="hourChartTimeRangeOptions"
           picker-type="single"
-          @export="handleExport"
+          @export="handleExport('hourly')"
         />
         <div class="chart-title">{{ hourChartTitle }}</div>
         <HourlyChart
@@ -58,13 +58,14 @@
           v-model:timeRange="timeRange"
           v-model:customDateRange="customDateRange"
           picker-type="range"
-          @export="handleExport"
+          @export="handleExport('daily')"
         />
         <div class="chart-title">{{ dailyChartTitle }}</div>
         <DailyChart
           ref="dailyChartRef"
           :data="dailyChartData"
           :loading="dailyLoading"
+          loading-text="拼命加载中..."
           @chart-ready="handleDailyChartReady"
         />
       </el-card>
@@ -73,16 +74,21 @@
     <!-- 热力图行 -->
     <div class="heatmap-row">
       <el-card class="chart-card">
+        <!-- 文本描述 -->
         <AnalyticsFilterBar
           key="heatmapFilterBar"
           v-model:timeRange="heatmapTimeRange"
           v-model:customDateRange="heatmapCustomDateRange"
           :timeRangeOptions="heatmapTimeRangeOptions"
           picker-type="range"
-          @export="handleExport"
+          @export="handleExport('heatmap')"
         />
         <div class="chart-title">{{ heatmapChartTitle }}</div>
-        <CityHeatmap :data="cityHeatmapData" />
+        <div class="chart-desc">
+          基于访问者 IP
+          归属地统计的城市访问分布，颜色越深代表访问量越大。可切换时间范围查看不同周期内的地域热度变化，辅助判断核心用户区域与推广落地效果。
+        </div>
+        <CityHeatmap ref="cityHeatmapRef" :data="cityHeatmapData" />
       </el-card>
     </div>
 
@@ -98,6 +104,7 @@
 
 <script setup lang="ts">
 import { useResizeObserver, useDebounceFn } from "@vueuse/core";
+import { ElMessage } from "element-plus";
 import type {
   HourlyResponse,
   DailyResponse,
@@ -134,9 +141,6 @@ const cityHeatmapData = ref<CityHeatmapResponse | null>(null);
 const hourlyLoading = ref(false);
 const dailyLoading = ref(false);
 
-const hourlyChartRef = ref<InstanceType<typeof HourlyChart> | null>(null);
-const dailyChartRef = ref<InstanceType<typeof DailyChart> | null>(null);
-
 /** 图表行容器引用，用于监听尺寸变化统一更新图表 */
 const chartsRowRef = ref<HTMLDivElement | null>(null);
 /** 日图表时间范围 */
@@ -169,10 +173,31 @@ const heatmapTimeRangeOptions = ref([
   { label: "自定义范围", value: "custom" },
 ]);
 
-function handleExport() {
-  // 导出逻辑
-  console.log("导出数据", { timeRange: timeRange.value });
+const hourlyChartRef = ref<InstanceType<typeof HourlyChart> | null>(null);
+const dailyChartRef = ref<InstanceType<typeof DailyChart> | null>(null);
+const cityHeatmapRef = ref<InstanceType<typeof CityHeatmap> | null>(null);
+
+/** 图表 ref 映射：key 与筛选栏导出事件对应（存 ref 本身，保持响应式） */
+const chartRefMap = ref({
+  hourly: hourlyChartRef,
+  daily: dailyChartRef,
+  heatmap: cityHeatmapRef,
+});
+
+/**
+ * 导出图表数据为 CSV，由各图表组件自己实现导出逻辑
+ * @param key 图表标识，见 chartRefMap
+ */
+function handleExport(key: keyof typeof chartRefMap.value): void {
+  const exported = myTryCatch(
+    () => chartRefMap.value?.[key]?.exportCsv() ?? false,
+    "导出",
+  );
+  exported
+    ? ElMessage.success("导出成功")
+    : ElMessage.warning("暂无可导出的数据");
 }
+
 const chartTheme = useChartTheme();
 
 function handleHourlyChartReady() {
@@ -309,9 +334,6 @@ async function fetchHourlyChart() {
     hourlyLoading.value = false;
   }
 }
-// 在需要修改配置的地方
-import { loadingConfig } from "~/config/loading";
-loadingConfig.text = "拼命加载中...";
 
 /**
  * 获取日图表数据（随筛选条件变化）
@@ -430,6 +452,11 @@ watch([heatmapTimeRange, heatmapCustomDateRange], () => {
 // ============ 生命周期 ============
 onMounted(() => {
   fetchData();
+  chartRefMap.value = {
+    hourly: hourlyChartRef.value,
+    daily: dailyChartRef.value,
+    heatmap: cityHeatmapRef.value,
+  };
 });
 
 const debouncedResize = useDebounceFn(() => {
@@ -442,38 +469,38 @@ useResizeObserver(chartsRowRef, debouncedResize);
 
 <style scoped lang="scss">
 .dashboard {
-  max-width: 960px;
+  max-width: 60rem; /* 960px */
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: 1.25rem 1rem;
   color: var(--el-text-color-primary);
 
   // 统计卡片行
   .stats-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.875rem;
+    margin-bottom: 1rem;
 
     .stat-card {
       .stat-label {
-        font-size: 0.75rem;
+        font-size: var(--kk-font-size-extra-small);
         font-weight: 600;
         color: var(--el-text-color-secondary);
-        letter-spacing: 0.5px;
+        letter-spacing: 0.03125rem; /* 0.5px */
         text-transform: uppercase;
       }
 
       .stat-value {
-        font-size: 1.9rem;
+        font-size: 1.875rem; /* 30px 大数字展示 */
         font-weight: 800;
         color: var(--el-text-color-primary);
         line-height: 1.2;
-        margin: 4px 0 2px;
+        margin: 0.25rem 0 0.125rem;
         font-variant-numeric: tabular-nums;
       }
 
       .stat-sub {
-        font-size: 0.72rem;
+        font-size: var(--kk-font-size-extra-small);
         font-weight: 550;
         color: var(--el-text-color-regular);
 
@@ -492,8 +519,8 @@ useResizeObserver(chartsRowRef, debouncedResize);
   .charts-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 12px;
+    gap: 0.875rem;
+    margin-bottom: 0.75rem;
 
     @media (max-width: 700px) {
       grid-template-columns: 1fr;
@@ -503,8 +530,8 @@ useResizeObserver(chartsRowRef, debouncedResize);
       .custom-date-picker {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        min-width: 280px;
+        gap: 0.625rem;
+        min-width: 17.5rem;
 
         .el-date-editor {
           width: 100%;
@@ -512,19 +539,27 @@ useResizeObserver(chartsRowRef, debouncedResize);
       }
 
       .chart-title {
-        font-size: 0.82rem;
+        font-size: var(--kk-font-size-small);
         font-weight: 700;
         color: var(--el-text-color-primary);
-        margin-bottom: 4px;
-        padding: 0 4px;
+        margin-bottom: 0.25rem;
+        padding: 0 0.25rem;
+      }
+
+      .chart-desc {
+        font-size: var(--kk-font-size-extra-small);
+        line-height: var(--kk-line-height-small);
+        color: var(--el-text-color-secondary);
+        margin-bottom: 0.5rem;
+        padding: 0 0.25rem;
       }
 
       .chart-container {
         width: 100%;
-        height: 300px;
+        height: 18.75rem; /* 300px */
 
         @media (max-width: 700px) {
-          height: 240px;
+          height: 15rem; /* 240px */
         }
       }
     }
@@ -534,8 +569,26 @@ useResizeObserver(chartsRowRef, debouncedResize);
   .heatmap-row {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 14px;
-    margin-bottom: 12px;
+    gap: 0.875rem;
+    margin-bottom: 0.75rem;
+
+    .chart-card {
+      .chart-title {
+        font-size: var(--kk-font-size-small);
+        font-weight: 700;
+        color: var(--el-text-color-primary);
+        margin-bottom: 0.25rem;
+        padding: 0 0.25rem;
+      }
+
+      .chart-desc {
+        font-size: var(--kk-font-size-extra-small);
+        line-height: var(--kk-line-height-small);
+        color: var(--el-text-color-secondary);
+        margin-bottom: 0.5rem;
+        padding: 0 0.25rem;
+      }
+    }
   }
 }
 </style>

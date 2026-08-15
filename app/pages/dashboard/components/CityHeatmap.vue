@@ -85,6 +85,22 @@ onMounted(() => {
 onUnmounted(() => {
   chart?.dispose();
 });
+
+/** 导出当前图表数据为 CSV */
+function exportCsv(): boolean {
+  if (!props.data) return false;
+  const { cities, totalVisits } = props.data;
+  downloadCsv("城市访问分布", [
+    ["城市", "访问量"],
+    ...cities.map((c) => [c.name, c.value]),
+    ["总计", totalVisits],
+  ]);
+  return true;
+}
+
+defineExpose({
+  exportCsv,
+});
 </script>
 
 <style scoped>

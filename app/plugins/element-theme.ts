@@ -43,12 +43,31 @@ export default defineNuxtPlugin(() => {
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  // 用 useState 做跨组件响应式共享，初始值取自 cookie
-  const primaryColor = useState<string>("el-primary-color", () => cookie.value);
+  // 上一次主题色（用于"恢复上次"功能），同样 cookie 持久化
+  const prevCookie = useCookie<string | null>("el-primary-color-prev", {
+    default: () => null,
+    maxAge: 60 * 60 * 24 * 365,
+  });
 
-  // 共享状态变化时同步回 cookie（持久化）
-  watch(primaryColor, (val) => {
-    cookie.value = val;
+  // 用 useState 做跨组件响应式共享，初始值取自 cookie
+  const primaryColor = useState<string>(
+    "CUSTOM-PRIMARY-COLOR-KEY",
+    () => cookie.value,
+  );
+
+  // 共享"上一次颜色"状态，初始值取自 cookie
+  const prevColor = useState<string | null>(
+    "CUSTOM-PRIMARY-COLOR-PREV-KEY",
+    () => prevCookie.value,
+  );
+
+  // 颜色变化时：旧值存为"上一次"，新值同步回 cookie
+  watch(primaryColor, (newVal, oldVal) => {
+    if (oldVal && oldVal !== newVal) {
+      prevColor.value = oldVal;
+      prevCookie.value = oldVal;
+    }
+    cookie.value = newVal;
   });
 
   // 响应式生成 CSS

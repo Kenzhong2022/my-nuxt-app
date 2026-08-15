@@ -9,7 +9,7 @@
           width: CAPTURE_SIZE.width + 'px',
           height: CAPTURE_SIZE.height + 'px',
         }"
-        v-my-loading="videoLoading"
+        v-custom-loading="cameraLoading"
       >
         <video v-if="isCameraOn" ref="videoRef" autoplay playsinline muted />
         <div v-else class="video-placeholder">

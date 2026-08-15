@@ -9,7 +9,7 @@
           width: CAPTURE_SIZE.width + 'px',
           height: CAPTURE_SIZE.height + 'px',
         }"
-        v-my-loading="videoLoading"
+        v-custom-loading="videoLoading"
       >
         <video ref="videoRef" autoplay playsinline muted />
       </div>

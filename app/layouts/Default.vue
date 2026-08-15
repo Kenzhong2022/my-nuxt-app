@@ -5,7 +5,18 @@
       <div class="inner-bg"></div>
     </div>
   </div>
-
+  <div class="fixed top-[10%] right-4 z-[1]">
+    <div
+      class="w-[4rem] aspect-[1/1] cursor-pointer"
+      @click="showColorPicker = !showColorPicker"
+    >
+      <img src="/images/colorPickerLogo.png" alt="" class="w-full h-full" />
+    </div>
+    <ThemeColorPicker
+      v-if="showColorPicker"
+      class="fixed top-[calc(10%+4rem+0.5rem)] right-4 w-64"
+    />
+  </div>
   <el-container class="h-screen">
     <!-- 头部导航：文字不能换行 -->
     <el-header class="border-b">
@@ -99,6 +110,7 @@ import { useDark, useStorage } from "@vueuse/core";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
 const isClient = ref(false);
+const showColorPicker = ref(false);
 
 const { isLoggedIn, login, logout: authLogout } = useAuth();
 
