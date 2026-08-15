@@ -2,6 +2,7 @@
   <!-- 商品卡片组件 -->
   <div
     class="product-card rounded-lg shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer"
+    @click="navigateTo(`/store/${product.id}`)"
   >
     <!-- 商品图片区域 -->
     <div class="product-image-wrapper relative aspect-square">

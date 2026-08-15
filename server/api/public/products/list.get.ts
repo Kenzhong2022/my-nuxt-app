@@ -1,46 +1,59 @@
-import type { Product } from "~~/types/product";
+import type { ApiResponse, Pagination } from "~~/types/common";
+import type { MallProductRow, Product } from "~~/types/product";
 
-export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const page = Number(query.page) || 1;
-  const pageSize = Number(query.pageSize) || 10;
+export default defineEventHandler(
+  async (event): Promise<ApiResponse<Product[]>> => {
+    const query = getQuery(event);
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(50, Math.max(1, Number(query.pageSize) || 10));
+    const search = String(query.search || "").trim();
+    const category = String(query.category || "").trim();
 
-  try {
-    // 调用外部 API（fakestoreapi）
-    const products = await $fetch<Product[]>(
-      "https://fakestoreapi.com/products",
-      {
-        method: "GET",
-      },
-    );
+    const { sql } = setupDatabase();
 
-    // 本地分页处理
-    const total = products.length;
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const list = products.slice(start, end);
+    try {
+      const like = `%${search}%`;
+      const totalRows = (await sql`
+        SELECT COUNT(*)::int AS total
+        FROM mall_products
+        WHERE status = 1
+          AND (${search} = '' OR name ILIKE ${like} OR title ILIKE ${like})
+          AND (${category} = '' OR category = ${category})
+      `) as { total: number }[];
+      const total = totalRows[0] ? totalRows[0].total : 0;
 
-    return {
-      code: 200,
-      message: "success",
-      data: list,
-      pagination: {
+      const rows = (await sql`
+        SELECT id, title, name, description, price, original_price, image,
+               category, stock, sales, rating_rate, rating_count, tags,
+               created_at, updated_at
+        FROM mall_products
+        WHERE status = 1
+          AND (${search} = '' OR name ILIKE ${like} OR title ILIKE ${like})
+          AND (${category} = '' OR category = ${category})
+        ORDER BY id
+        LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+      `) as unknown as MallProductRow[];
+
+      const pagination: Pagination = {
         current: page,
         pageSize: pageSize,
         total: total,
-      },
-    };
-  } catch (error) {
-    console.error("请求外部 API 失败:", error);
-    return {
-      code: 500,
-      message: "获取商品列表失败",
-      data: [],
-      pagination: {
-        current: page,
-        pageSize: pageSize,
-        total: 0,
-      },
-    };
-  }
-});
+      };
+
+      return {
+        code: 200,
+        message: "success",
+        data: rows.map((row) => toMallProduct(row)),
+        pagination,
+      };
+    } catch (error) {
+      console.error("查询商品列表失败:", error);
+      return {
+        code: 500,
+        message: "获取商品列表失败",
+        data: [],
+        pagination: { current: page, pageSize: pageSize, total: 0 },
+      };
+    }
+  },
+);

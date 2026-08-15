@@ -1,15 +1,10 @@
 import type {
   Product,
-  ProductQuery,
-  ApiResponse,
-  Pagination,
+  ProductListApiRequest,
+  ProductListApiResponse,
+  ProductDetail,
 } from "~~/types/product";
-
-interface ProductsResponse extends ApiResponse<Product[]> {
-  pagination: Pagination;
-}
-
-interface ProductResponse extends ApiResponse<Product> {}
+import type { ApiResponse, Pagination } from "~~/types/common";
 
 interface UseProductsReturn {
   products: Ref<Product[]>;
@@ -19,7 +14,9 @@ interface UseProductsReturn {
   loadMore: () => Promise<void>;
 }
 
-export function useProducts(query: ProductQuery = {}): UseProductsReturn {
+export function useProducts(
+  query: ProductListApiRequest = {},
+): UseProductsReturn {
   const loading = ref(false);
   const hasMore = ref(true);
   const page = ref(query.page ? query.page : 1);
@@ -37,7 +34,7 @@ export function useProducts(query: ProductQuery = {}): UseProductsReturn {
     `products-list-${search.value}-${category.value}`,
     async () => {
       if (!query.pageSize) return [];
-      const response = await $fetch<ProductsResponse>(
+      const response = await $fetch<ProductListApiResponse>(
         "/api/public/products/list",
         {
           method: "GET",
@@ -69,7 +66,7 @@ export function useProducts(query: ProductQuery = {}): UseProductsReturn {
     loading.value = true;
     try {
       page.value++;
-      const response = await $fetch<ProductsResponse>(
+      const response = await $fetch<ApiResponse<Product[]>>(
         "/api/public/products/list",
         {
           query: {
@@ -103,15 +100,8 @@ export function useProducts(query: ProductQuery = {}): UseProductsReturn {
   };
 }
 
-interface UseProductDetailReturn {
-  product: Ref<Product | null>;
-  loading: Ref<boolean>;
-  error: Ref<string | null>;
-  fetchById: (id: number) => Promise<void>;
-}
-
 export function useProductDetail() {
-  const product = ref<Product | null>(null);
+  const product = ref<ProductDetail | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -120,7 +110,7 @@ export function useProductDetail() {
     error.value = null;
 
     try {
-      const response = await $fetch<ProductResponse>(
+      const response = await $fetch<ApiResponse<ProductDetail | null>>(
         `/api/public/products/${id}`,
       );
 

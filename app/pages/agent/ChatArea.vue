@@ -54,10 +54,7 @@
           </template>
           <!-- AI 消息内容 -->
           <template v-else>
-            <div
-              class="markdown-content"
-              v-html="renderMarkdown(message.content as string)"
-            ></div>
+            <MarkdownView :content="message.content" />
           </template>
         </div>
       </div>
@@ -72,8 +69,6 @@
 
 <script setup lang="ts">
 import AIChatInput from "./AIChatInput.vue";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
 import type { ChatMessage, UserMessageContent } from "~~/types/agent";
 import { ConnectionStatus } from "@/composables/useAgentApi";
 
@@ -91,16 +86,6 @@ const toggleDrawer = () => {
   // 提交抽屉状态变化到父组件处理
   emit("update:drawerVisible", !props.drawerVisible);
 };
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-});
-
-function renderMarkdown(text: string): string {
-  if (!text || typeof text !== "string") return "";
-  const rawHtml = marked.parse(text) as string;
-  return DOMPurify.sanitize(rawHtml);
-}
 
 const messagesContainer = ref<HTMLDivElement>();
 
@@ -184,7 +169,6 @@ const handleSend = async (payload: SendPayload) => {
 
 // 手动停止生成（点击停止按钮调用）
 const stopGeneration = () => {
-  console.log("手动停止生成123");
   if (cancelStream) {
     cancelStream();
     cancelStream = null;
@@ -204,52 +188,6 @@ onBeforeUnmount(() => {
   }
 });
 </script>
-
-<style lang="scss">
-.chat-area .markdown-content p {
-  margin: 0.3em 0;
-}
-.chat-area .markdown-content h1,
-.chat-area .markdown-content h2,
-.chat-area .markdown-content h3 {
-  font-weight: bold;
-  margin: 0.5em 0;
-}
-.chat-area .markdown-content ul,
-.chat-area .markdown-content ol {
-  padding-left: 1.2em;
-}
-.chat-area .markdown-content code {
-  background: var(--el-fill-color-light);
-  padding: 0.2em 0.4em;
-  border-radius: 4px;
-  font-family: monospace;
-}
-.chat-area .markdown-content pre {
-  background: var(--el-bg-color);
-  padding: 10px;
-  border-radius: 6px;
-  overflow-x: auto;
-}
-.chat-area .markdown-content pre code {
-  background: transparent;
-  padding: 0;
-}
-.chat-area .markdown-content table {
-  border-collapse: collapse;
-  width: 100%;
-}
-.chat-area .markdown-content table th,
-.chat-area .markdown-content table td {
-  border: 1px solid var(--el-border-color-light);
-  padding: 6px 10px;
-}
-.chat-area .markdown-content blockquote {
-  border-left: 3px solid var(--el-border-color-light);
-  padding-left: 10px;
-  color: var(--el-text-color-secondary);
-}
-</style>
 
 <style scoped lang="scss">
 .chat-area {
