@@ -73,7 +73,7 @@ const cardList: CardConfig[] = [
     title: "商城系统",
     description: "这是一个商城模块，用于展示商品信息、购物车功能和订单管理。",
     buttonText: "去逛逛",
-    action: () => navigateTo("/store"),
+    action: () => window.open("/store", "_blank"),
   },
   {
     id: "survey",
@@ -81,14 +81,14 @@ const cardList: CardConfig[] = [
     description:
       "支持拖拽可视化搭建、动态表单配置、题目联动依赖，可实时试答、一键发布分享问卷。",
     buttonText: "进入问卷",
-    action: () => navigateTo("/survey"),
+    action: () => window.open("/survey", "_blank"),
   },
   {
     id: "admin",
     title: "后台管理系统",
     description: "前往后台管理模块",
     buttonText: "进入后台",
-    action: () => navigateTo("/admin"),
+    action: () => window.open("/agent", "_blank"),
   },
   {
     id: "agent",
@@ -96,7 +96,7 @@ const cardList: CardConfig[] = [
     description:
       "Python后端构建LangChain智能体，调用千问视觉识别食材，联网搜索食谱，流式输出可暂停的Markdown结果。",
     buttonText: "进入Agent",
-    action: () => navigateTo("/agent"),
+    action: () => window.open("/agent", "_blank"),
   },
 ];
 
@@ -246,7 +246,7 @@ onUnmounted(() => {
     border-radius: 50%;
     background: radial-gradient(
       closest-side circle,
-      var(--el-border-color-darker) 0%,
+      var(--el-color-primary) 0%,
       transparent 100%
     );
     transform: translate(-50%, -50%);
@@ -286,7 +286,7 @@ onUnmounted(() => {
       bottom: -6px;
       width: 0;
       height: 1px;
-      background-color: var(--el-text-color-primary);
+      background-color: var(--el-color-primary);
       transition: width 0.3s ease-in;
     }
 

@@ -7,11 +7,9 @@
   </div>
   <div class="fixed top-[10%] right-4 z-[1]">
     <div
-      class="w-[4rem] aspect-[1/1] cursor-pointer"
+      class="theme-btn iconfont icon-yanse-zhutise flex items-center justify-center"
       @click="showColorPicker = !showColorPicker"
-    >
-      <img src="/images/colorPickerLogo.png" alt="" class="w-full h-full" />
-    </div>
+    ></div>
     <ThemeColorPicker
       v-if="showColorPicker"
       class="fixed top-[calc(10%+4rem+0.5rem)] right-4 w-64"
@@ -94,7 +92,7 @@
         />
       </el-aside>
       <el-main>
-        <div class="mx-auto h-full">
+        <div class="mx-auto h-full relative z-0">
           <slot />
         </div>
       </el-main>
@@ -545,6 +543,15 @@ function toggleMobileMenu() {
 </script>
 
 <style scoped lang="scss">
+.theme-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 3rem;
+  color: var(--el-color-primary);
+  filter: drop-shadow(0 0 0.5rem var(--el-color-primary));
+}
+
 .flex-animation {
   position: fixed;
   inset: 0;

@@ -15,6 +15,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-yanse-zhutise:before {
+  content: "\e617";
+}
+
 .icon-fasong:before {
   content: "\e604";
 }
@@ -158,3 +162,4 @@
 .icon-home:before {
   content: "\e858";
 }
+

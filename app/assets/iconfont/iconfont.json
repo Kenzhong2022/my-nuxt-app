@@ -6,6 +6,13 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "44819957",
+      "name": "颜色-主题色",
+      "font_class": "yanse-zhutise",
+      "unicode": "e617",
+      "unicode_decimal": 58903
+    },
+    {
       "icon_id": "6539845",
       "name": "发送",
       "font_class": "fasong",

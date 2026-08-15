@@ -95,7 +95,8 @@ const isDark = useDark({
   background-color: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 0.5rem;
-  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.12);
+  /* offset-x | offset-y | blur | spread | color */
+  box-shadow: 0 0.25rem 1rem 0.3rem var(--el-color-primary);
 
   .color-preset {
     display: grid;
