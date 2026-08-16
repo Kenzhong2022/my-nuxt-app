@@ -35,7 +35,7 @@
           <div class="gallery-main rounded-lg overflow-hidden">
             <el-image
               :src="
-                cloudinaryUrl(currentImage, 'w_800,h_800,c_fill,q_auto,f_webp')
+                cloudinaryUrl(product.image, 'w_800,h_800,c_fill,q_auto,f_webp')
               "
               :alt="product.name"
               fit="cover"

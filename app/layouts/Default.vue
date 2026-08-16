@@ -14,42 +14,40 @@
         <div class="header-inner">
           <h1>管理后台</h1>
           <el-switch
+            class="switchDark"
             :model-value="isDark"
             @update:model-value="(newVal) => (isDark = newVal as boolean)"
-            active-text="暗黑"
-            inactive-text="明亮"
-          />
-          <el-switch
-            ref="sidebarMenuRef"
-            :model-value="isSidebarMenu"
-            @update:model-value="
-              (newVal) => (isSidebarMenu = newVal as boolean)
-            "
-            active-text="侧边栏"
-            inactive-text="头部"
-          />
-          <div class="desktop-menu" v-show="!isSidebarMenu">
-            <AppMenu
-              :menu-data="sortedMenu"
-              :default-active="activeMenu"
-              mode="horizontal"
-              @menu-click="handleMenuClick"
-              :menu-max-width="menuMaxWidth"
-            >
-              <template #submenu-title="{ menu }">
-                <el-icon>
-                  <component :is="menu.icon" />
-                </el-icon>
-                {{ menu.name }}
-              </template>
-            </AppMenu>
-          </div>
+            size="large"
+          >
+            <template #active-action>
+              <!-- 月亮 → 灰色填充 -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path
+                  fill="#9ca3af"
+                  d="M28.053 4.41c-5.47 1.427-9.508 6.4-9.508 12.317 0 7.03 5.699 12.727 12.728 12.727 5.916 0 10.89-4.037 12.316-9.507.27 1.309.411 2.665.411 4.053 0 11.046-8.954 20-20 20S4 35.046 4 24 12.954 4 24 4c1.389 0 2.744.141 4.053.41Z"
+                />
+              </svg>
+            </template>
+            <template #inactive-action>
+              <!-- 太阳 → 黄色填充 -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path
+                  fill="#f59e0b"
+                  d="M24 37c7.18 0 13-5.82 13-13s-5.82-13-13-13-13 5.82-13 13 5.82 13 13 13Z"
+                />
+                <path
+                  fill="#f59e0b"
+                  d="M24 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM38.5 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM44.5 26.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM38.5 41a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM24 47a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM9.5 41a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 26.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM9.5 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+                />
+              </svg>
+            </template>
+          </el-switch>
           <el-button
             class="mobile-menu-btn"
             icon="Menu"
             @click="toggleMobileMenu"
           ></el-button>
-          <div ref="loginBtnRef" class="ml-auto login-btn">
+          <div class="ml-auto login-btn">
             <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin">
               登录
             </el-button>
@@ -66,7 +64,6 @@
           @click="showMobileMenu = false"
         ></div>
         <el-aside
-          v-show="isSidebarMenu"
           width="240px"
           class="border-r"
           :class="{
@@ -77,7 +74,6 @@
             :menu-data="sortedMenu"
             :default-active="activeMenu"
             :default-openeds="defaultOpeneds"
-            mode="vertical"
             @menu-click="handleMenuClick"
           />
         </el-aside>
@@ -92,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type ComponentPublicInstance } from "vue";
+import { ref, computed } from "vue";
 import { ElMessage } from "element-plus";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
@@ -109,15 +105,6 @@ function handleLogout(): void {
 }
 
 /**
- * 侧边栏菜单开关同样存 cookie：SSR 直接读出布局模式，
- * 首屏即渲染正确的菜单形态（侧边栏/头部），避免布局切换闪烁
- */
-const isSidebarMenu = useCookie<boolean>("admin-menu-mode", {
-  default: () => true,
-  maxAge: 60 * 60 * 24 * 365,
-});
-
-/**
  * 暗黑模式布尔值存 cookie（而非 localStorage）：
  * SSR 阶段服务端即可随请求读到，首屏 HTML 直接带正确的 dark 类，避免主题闪烁
  */
@@ -131,21 +118,6 @@ useHead({
   htmlAttrs: {
     class: computed(() => (isDark.value ? "dark" : "")),
   },
-});
-
-// 模板 ref 必须声明在 setup 顶层，模板里的 ref="xxx" 才能自动绑定到同名变量
-const sidebarMenuRef = ref<ComponentPublicInstance | null>(null);
-const loginBtnRef = ref<HTMLDivElement | null>(null);
-const menuMaxWidth = ref<number>();
-onMounted(() => {
-  // el-switch 是组件，真实 DOM 在 $el 上
-  const sidebarEl = sidebarMenuRef.value?.$el as HTMLElement | undefined;
-  if (sidebarEl && loginBtnRef.value) {
-    const distance =
-      loginBtnRef.value.getBoundingClientRect().left -
-      sidebarEl.getBoundingClientRect().right;
-    menuMaxWidth.value = distance - (distance % 100);
-  }
 });
 
 onUnmounted(() => {
@@ -558,6 +530,10 @@ function toggleMobileMenu() {
 </script>
 
 <style scoped lang="scss">
+:deep(.switchDark .el-switch__action) {
+  background: transparent !important;
+}
+
 /* 头部导航内容行：等价于 flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden */
 .el-header {
   .header-inner {
@@ -609,9 +585,6 @@ function toggleMobileMenu() {
     align-items: center;
     justify-content: center;
     padding: 0.5rem;
-  }
-  .desktop-menu {
-    display: none;
   }
   .el-aside {
     position: fixed;

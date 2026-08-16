@@ -113,7 +113,7 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          width="100"
+          width="150"
           fixed="right"
           :resizable="false"
         >
@@ -124,6 +124,9 @@
               @click="openEdit(row as Product)"
             >
               编辑
+            </el-button>
+            <el-button size="small" @click="openDetail(row as Product)">
+              详情
             </el-button>
           </template>
         </el-table-column>
@@ -150,6 +153,9 @@
       :product="editingProduct"
       @saved="fetchProducts"
     />
+
+    <!-- 编辑商品详情抽屉 -->
+    <DetailDrawer v-model:visible="detailVisible" :product="detailProduct" />
   </div>
 </template>
 
@@ -158,6 +164,7 @@ import type { Product } from "~~/types/product";
 import { ElMessage } from "element-plus";
 import dayjs from "dayjs";
 import EditDialog from "./components/EditDialog.vue";
+import DetailDrawer from "./components/DetailDrawer.vue";
 
 const products = ref<Product[]>([]);
 const loading = ref(false);
@@ -169,6 +176,10 @@ const searchText = ref("");
 // 编辑弹窗状态
 const editVisible = ref(false);
 const editingProduct = ref<Product | null>(null);
+
+// 详情抽屉状态
+const detailVisible = ref(false);
+const detailProduct = ref<Product | null>(null);
 
 async function fetchProducts() {
   loading.value = true;
@@ -216,6 +227,15 @@ function onPageSizeChange(val: number) {
 function openEdit(row: Product) {
   editingProduct.value = row;
   editVisible.value = true;
+}
+
+/**
+ * 打开详情抽屉，记录当前编辑的商品行（详情在抽屉内懒加载）
+ * @param row - 当前行商品数据
+ */
+function openDetail(row: Product) {
+  detailProduct.value = row;
+  detailVisible.value = true;
 }
 
 function formatTime(iso?: string) {

@@ -79,7 +79,7 @@
             :loading="regenerating"
             @click="handleRegenerateImage"
           >
-            AI 生图替换
+            AI 生成主图替换
           </el-button>
         </div>
       </el-form-item>
@@ -231,7 +231,7 @@ async function handleRegenerateImage() {
     return; // 用户取消
   }
   regenerating.value = true;
-  await $fetch(`/api/admin/products/${props.product.id}/regenerate-images`, {
+  await $fetch(`/api/admin/products/${props.product.id}/generate-main-image`, {
     method: "POST",
   })
     .then((res) => {

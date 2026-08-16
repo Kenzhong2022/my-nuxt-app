@@ -114,7 +114,7 @@ function animationCardTitle(): void {
   tl.from(".card-title-char", {
     opacity: 0,
     y: 55,
-    stagger: 0.08, // 每间隔0.08秒显示一个字符，
+    stagger: 0.08, // 每间隔0.08秒显示一个字符，实现文字滚动效果
     duration: 0.3,
     ease: "power1.out",
     delay: 1,
@@ -213,7 +213,7 @@ onUnmounted(() => {
 // ===================== 卡片主体 =====================
 .project-card {
   --card-radius: 20px; // 统一抽取圆角变量，方便修改
-  --card-inset: 3px;
+  --card-inset: 5px;
   position: relative;
   border-radius: var(--card-radius);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

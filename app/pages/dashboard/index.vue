@@ -83,7 +83,9 @@
         <div class="chart-title">{{ heatmapChartTitle }}</div>
         <div class="chart-desc">
           基于访问者 IP
-          归属地统计的城市访问分布，颜色越深代表访问量越大。可切换时间范围查看不同周期内的地域热度变化，辅助判断核心用户区域与推广落地效果。
+          归属地统计的城市访问分布，颜色越深代表访问量越大。本地开发的访问虽会被记录并计入访问量，但其
+          IP
+          为局域网地址，无法解析出城市归属地，故不参与地域分布统计。可切换时间范围查看不同周期内的地域热度变化，辅助判断核心用户区域与推广落地效果。
         </div>
         <CityHeatmap ref="cityHeatmapRef" :data="cityHeatmapData" />
       </el-card>

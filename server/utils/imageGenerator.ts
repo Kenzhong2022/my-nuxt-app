@@ -1,18 +1,23 @@
 /**
- * 文生图工具：多 provider 统一入口，均返回图片二进制
- * - cloudflare（默认）: Workers AI Flux schnell，免费快速，1024×1024
+ * 生图工具：多 provider 统一入口，均返回图片二进制
+ * - cloudflare（默认）: Workers AI Flux schnell，免费快速，1024×1024（纯文生图）
  * - bailian: 阿里百炼多模态（wan2.7-image-pro / qwen-image-3.0-pro），支持 1K/2K/4K
+ * - qwen-edit: 百炼 qwen-image 系列 I2I 图像编辑（默认 2.0），以参考图锁定商品形态，保证图集一致性
  *
- * 接入新模型只需在 PROVIDERS 注册实现，上传与入库流程（cloudinary.ts / regenerate-images）完全不用动。
+ * 接入新模型只需在 PROVIDERS 注册实现，上传与入库流程（cloudinary.ts / generate-main-image）完全不用动。
  */
 
 /** 生图 provider 及其选项 */
 export interface GenerateImageOptions {
-  provider?: "cloudflare" | "bailian";
-  /** 仅 bailian 生效：默认 wan2.7-image-pro，可选 qwen-image-3.0-pro 等 */
+  provider?: "cloudflare" | "bailian" | "qwen-edit";
+  /** 仅 bailian / qwen-edit 生效：模型名。bailian 默认 wan2.7-image-pro；qwen-edit 默认 qwen-image-2.0（免费额度独立于 3.0），可传 qwen-image-3.0 / qwen-image-edit-plus 等 */
   model?: string;
   /** 仅 bailian 生效：1K / 2K / 4K 或 "宽*高"，默认 2K */
   size?: string;
+  /** 随机数种子：同 seed + 相近提示词可显著收敛输出形态（商品一致性辅助手段） */
+  seed?: number;
+  /** 仅 qwen-image-3.0 生效：参考图 URL（一般传商品主图），锁定商品的形状/颜色/材质。仅支持单图，多图参考不支持 */
+  referenceImageUrl?: string;
 }
 
 type GenerateFn = (
@@ -37,7 +42,7 @@ function getCloudflareConfig() {
 }
 
 /** Flux schnell 仅支持 prompt / steps / seed，无宽高参数（固定 1024×1024） */
-const generateWithFlux: GenerateFn = async (prompt) => {
+const generateWithFlux: GenerateFn = async (prompt, options) => {
   const { accountId, apiToken } = getCloudflareConfig();
 
   const response = await fetch(
@@ -48,7 +53,8 @@ const generateWithFlux: GenerateFn = async (prompt) => {
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, steps: 4 }),
+      // seed 需为 uint64 范围内整数，传入时锁定初始噪声，提升跨图一致性
+      body: JSON.stringify({ prompt, steps: 4, seed: options.seed }),
     },
   );
 
@@ -196,12 +202,97 @@ const generateWithBailian: GenerateFn = async (prompt, options) => {
 };
 
 // ============================================
+// Provider 3: 百炼 qwen-image 系列图像编辑 I2I（参考图 + 指令，同步调用）
+// ============================================
+//
+// 商品一致性方案：以商品主图为视觉锚点，提示词只描述"如何变换视角/场景"，
+// 商品的形状、颜色、材质由参考图锁定，图集内多张图保持同款。
+// 默认 qwen-image-2.0（免费额度与 3.0 相互独立），可通过 options.model 切换同系列模型。
+// API: POST /services/aigc/multimodal-generation/generation（同步，直接返回图片 URL）
+
+const generateWithQwenEdit: GenerateFn = async (prompt, options) => {
+  const { apiKey, baseUrl } = getDashscopeConfig();
+  const referenceImage = options.referenceImageUrl;
+  // 仅允许单张参考图（本业务只传商品主图），拒绝多图/非法输入
+  if (
+    typeof referenceImage !== "string" ||
+    !/^https?:\/\//.test(referenceImage)
+  ) {
+    throw new Error(
+      "qwen-edit 需要单个合法的 referenceImageUrl（http(s) 参考图 URL，一般传商品主图），不支持多图参考",
+    );
+  }
+
+  const response = await fetch(
+    `${baseUrl}/services/aigc/multimodal-generation/generation`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: options.model || "qwen-image-2.0",
+        input: {
+          messages: [
+            {
+              role: "user",
+              content: [
+                // 固定单图参考（商品主图）+ 编辑指令；不允许多图参考
+                { image: referenceImage },
+                { text: prompt },
+              ],
+            },
+          ],
+        },
+        parameters: {
+          // I2I 图像编辑：prompt_extend 只能用 direct 模式，agent 会 400
+          prompt_extend: true,
+          prompt_extend_mode: "direct",
+          // 商品图负面提示词：防变形/水印/多余物体
+          negative_prompt: "变形，扭曲，水印，文字，模糊，残缺，多余物体，畸形",
+          n: 1,
+          watermark: false,
+          ...(options.size ? { size: options.size } : {}),
+        },
+      }),
+    },
+  );
+
+  // 同步返回：output.choices[0].message.content[].image 即图片 URL
+  const data = (await response.json()) as {
+    output?: {
+      choices?: Array<{ message?: { content?: Array<{ image?: string }> } }>;
+    };
+    code?: string;
+    message?: string;
+  };
+  const imageUrl = data.output?.choices?.[0]?.message?.content?.find(
+    (item) => item.image,
+  )?.image;
+  if (!response.ok || !imageUrl) {
+    throw new Error(
+      `qwen-image(${options.model || "qwen-image-2.0"}) 生图失败: ${data.code || response.status} ${data.message || ""}`,
+    );
+  }
+
+  const imgResponse = await fetch(imageUrl);
+  if (!imgResponse.ok) {
+    throw new Error(
+      `下载 qwen-image 图片失败: ${imgResponse.status} ${imgResponse.statusText}`,
+    );
+  }
+  return Buffer.from(await imgResponse.arrayBuffer());
+};
+
+// ============================================
 // 统一入口
 // ============================================
 
 const PROVIDERS: Record<string, GenerateFn> = {
   cloudflare: generateWithFlux,
   bailian: generateWithBailian,
+  "qwen-edit": generateWithQwenEdit,
 };
 
 /**
