@@ -34,7 +34,9 @@
         <div class="gallery">
           <div class="gallery-main rounded-lg overflow-hidden">
             <el-image
-              :src="currentImage"
+              :src="
+                cloudinaryUrl(currentImage, 'w_800,h_800,c_fill,q_auto,f_webp')
+              "
               :alt="product.name"
               fit="cover"
               :preview-src-list="galleryImages"
@@ -52,7 +54,11 @@
               @mouseenter="currentImageIndex = i"
               @click="currentImageIndex = i"
             >
-              <img :src="img" :alt="`${product.name} ${i + 1}`" />
+              <img
+                loading="lazy"
+                :src="cloudinaryUrl(img, 'w_150,h_150,c_fill,q_auto,f_webp')"
+                :alt="`${product.name} ${i + 1}`"
+              />
             </div>
           </div>
         </div>

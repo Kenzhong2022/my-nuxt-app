@@ -30,7 +30,7 @@
 
     <!-- 图表行 -->
     <div class="charts-row" ref="chartsRowRef">
-      <el-card class="chart-card">
+      <el-card class="chart-card" v-custom-loading="hourlyLoading">
         <!-- 操作行 -->
         <AnalyticsFilterBar
           key="hourChartFilterBar"
@@ -44,13 +44,12 @@
         <HourlyChart
           ref="hourlyChartRef"
           :data="hourlyChartData"
-          :loading="hourlyLoading"
           :isToday="hourChartTimeRange === 'today'"
           @chart-ready="handleHourlyChartReady"
         />
       </el-card>
 
-      <el-card class="chart-card">
+      <el-card class="chart-card" v-custom-loading="dailyLoading">
         <!-- 操作行 -->
         <AnalyticsFilterBar
           key="dayChartFilterBar"
@@ -64,15 +63,13 @@
         <DailyChart
           ref="dailyChartRef"
           :data="dailyChartData"
-          :loading="dailyLoading"
-          loading-text="拼命加载中..."
           @chart-ready="handleDailyChartReady"
         />
       </el-card>
     </div>
 
     <!-- 热力图行 -->
-    <div class="heatmap-row">
+    <div class="heatmap-row" v-custom-loading="heatmapLoading">
       <el-card class="chart-card">
         <!-- 文本描述 -->
         <AnalyticsFilterBar
@@ -138,8 +135,9 @@ const hourlyChartData = ref<HourlyResponse | null>(null);
 const dailyChartData = ref<DailyResponse | null>(null);
 const cityHeatmapData = ref<CityHeatmapResponse | null>(null);
 // 图表加载状态
-const hourlyLoading = ref(false);
-const dailyLoading = ref(false);
+const hourlyLoading = ref(true);
+const dailyLoading = ref(true);
+const heatmapLoading = ref(true);
 
 /** 图表行容器引用，用于监听尺寸变化统一更新图表 */
 const chartsRowRef = ref<HTMLDivElement | null>(null);
@@ -277,19 +275,6 @@ const heatmapChartTitle = computed(() => {
 function formatUpdateTime(isoStr: string): string {
   const d = new Date(isoStr);
   return d.toLocaleString("zh-CN", { hour12: false });
-}
-
-/**
- * 获取 CSS 变量的真实值
- * @param name 变量名，支持带或不带 -- 前缀
- * @returns 变量的真实值，若不存在返回空字符串
- */
-function getCssVar(name: string): string {
-  const varName = name.startsWith("--") ? name : `--${name}`;
-
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(varName)
-    .trim() as string;
 }
 
 /**
@@ -433,6 +418,7 @@ async function fetchData() {
   } finally {
     hourlyLoading.value = false;
     dailyLoading.value = false;
+    heatmapLoading.value = false;
   }
 }
 

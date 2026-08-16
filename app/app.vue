@@ -1,6 +1,6 @@
 <!-- app.vue -->
 <template>
-  <div>
+  <div class="app-container">
     <!-- 页面内容 -->
     <NuxtLayout>
       <KeepAlive>

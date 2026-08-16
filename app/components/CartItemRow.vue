@@ -13,7 +13,8 @@
       class="cart-image-wrapper w-20 h-20 md:w-24 md:h-24 rounded overflow-hidden flex-shrink-0"
     >
       <img
-        :src="item.image"
+        loading="lazy"
+        :src="cloudinaryUrl(item.image, 'w_200,h_200,c_fill,q_auto,f_webp')"
         :alt="item.name"
         class="w-full h-full object-cover"
       />

@@ -1,6 +1,7 @@
-import { createError, getRequestHeader } from "h3";
+import { createError, getCookie, getRequestHeader } from "h3";
 import { verifyAccessToken } from "~~/server/utils/jwt";
-
+import jwt from "jsonwebtoken";
+const { JsonWebTokenError, TokenExpiredError } = jwt;
 declare module "h3" {
   interface H3EventContext {
     user?: {
@@ -59,21 +60,36 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  // 校验 Authorization 头格式
+  // 提取 token：优先 Authorization 头（客户端 fetch 插件注入），其次 cookie（SSR 服务端请求）
   const authHeader = getRequestHeader(event, "authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return handleUnauthorized();
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7) // "Bearer ".length === 7
+    : getCookie(event, "token");
+
+  // 验证 token：try 只包 verifyAccessToken，handleUnauthorized 的 throw
+  // 必须在 try 之外触发，否则 401 会被下面的 catch 捕获并包装成 500
+  let payload: TokenPayload | null = null;
+  try {
+    payload = token ? verifyAccessToken(token) : null;
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      handleUnauthorized("token已过期，请刷新令牌或重新登录");
+    }
+    if (error instanceof JsonWebTokenError) {
+      // 签名不符 / 格式错误 / 缺失等
+      handleUnauthorized("token校验失败，请重新登录");
+    }
+    // 其他未知错误（如 token不能为空）同样按 401 处理，而非 500
+    handleUnauthorized("登录已过期，请重新登录");
   }
 
-  // 提取并验证 token
-  const token = authHeader.slice(7); // "Bearer ".length === 7
-  try {
-    const payload = verifyAccessToken(token);
+  if (payload) {
     event.context.user = {
       userId: payload.userId,
       role: payload.role as string,
     };
-  } catch {
-    return handleUnauthorized("登录已过期，请重新登录");
+  } else {
+    // 无 token：在 try 之外抛 401，不会被误捕获
+    handleUnauthorized("登录已过期，请重新登录");
   }
 });

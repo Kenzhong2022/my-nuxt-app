@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="chartRef"
-    v-custom-loading="{ value: loading, text: loadingText }"
-    class="chart-container"
-  ></div>
+  <div ref="chartRef" class="chart-container"></div>
 </template>
 
 <script setup lang="ts">
@@ -21,10 +17,7 @@ import {
 
 const props = defineProps<{
   data: HourlyResponse | null;
-  loading: boolean;
   isToday: boolean;
-  /** loading 提示文本，不传则用指令默认值 */
-  loadingText?: string;
 }>();
 
 const emit = defineEmits<{

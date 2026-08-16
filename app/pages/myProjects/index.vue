@@ -114,7 +114,7 @@ function animationCardTitle(): void {
   tl.from(".card-title-char", {
     opacity: 0,
     y: 55,
-    stagger: 0.08,
+    stagger: 0.08, // 每间隔0.08秒显示一个字符，
     duration: 0.3,
     ease: "power1.out",
     delay: 1,

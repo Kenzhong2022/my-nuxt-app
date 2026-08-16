@@ -11,18 +11,14 @@ export default defineNuxtRouteMiddleware((to) => {
     return;
   }
   // 未声明权限要求的页面，默认公开
-  const required = to.meta.requiredPermission as PermissionId | undefined;
-  const requiredAny = to.meta.requiredPermissionAny as
-    | PermissionId[]
-    | undefined;
+  const required = to.meta.requiredPermission;
+  const requiredAny = to.meta.requiredPermissionAny;
   if (!required && !requiredAny) return;
   const authStore = useAuthStore();
   if (!authStore.token) {
     const { login } = useAuth();
     login(to.fullPath);
-  } else if (import.meta.client) {
-    console.log("客户端");
-    // 客户端
+  } else {
     // 弹窗提示用户有权限访问该页面
     ElMessage.success("经过鉴权，您有权限访问该页面");
   }

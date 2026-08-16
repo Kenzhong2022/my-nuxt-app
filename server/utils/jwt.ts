@@ -13,12 +13,12 @@ export function verifyAccessToken(token: string): TokenPayload {
   if (!token) {
     throw new Error("token不能为空");
   }
-  // 校验token签名
+  // 校验token（按错误类型抛出对应信息，便于调用方区分过期与无效）
   try {
     const config = useRuntimeConfig();
     const payload = jwt.verify(token, config.jwt.accessSecret) as TokenPayload;
     return payload;
-  } catch {
-    throw new Error("token签名错误");
+  } catch (error) {
+    throw error;
   }
 }

@@ -1,28 +1,18 @@
 <template>
-  <!-- 开场动画遮罩 -->
-  <div class="flex-animation">
-    <div v-for="idx in 50" :key="idx">
-      <div class="inner-bg"></div>
-    </div>
-  </div>
-  <div class="fixed top-[10%] right-4 z-[1]">
+  <div class="default-layout isolate">
     <div
-      class="theme-btn iconfont icon-yanse-zhutise flex items-center justify-center"
+      class="theme-btn iconfont icon-yanse-zhutise"
       @click="showColorPicker = !showColorPicker"
     ></div>
     <ThemeColorPicker
       v-if="showColorPicker"
-      class="fixed top-[calc(10%+4rem+0.5rem)] right-4 w-64"
+      class="fixed z-[1] top-[calc(10%+4rem+0.5rem)] right-4 w-64"
     />
-  </div>
-  <el-container class="h-screen">
-    <!-- 头部导航：文字不能换行 -->
-    <el-header class="border-b">
-      <div
-        class="flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden"
-      >
-        <h1>管理后台</h1>
-        <ClientOnly>
+    <el-container class="h-screen">
+      <!-- 头部导航：文字不能换行 -->
+      <el-header class="border-b">
+        <div class="header-inner">
+          <h1>管理后台</h1>
           <el-switch
             :model-value="isDark"
             @update:model-value="(newVal) => (isDark = newVal as boolean)"
@@ -30,6 +20,7 @@
             inactive-text="明亮"
           />
           <el-switch
+            ref="sidebarMenuRef"
             :model-value="isSidebarMenu"
             @update:model-value="
               (newVal) => (isSidebarMenu = newVal as boolean)
@@ -37,77 +28,74 @@
             active-text="侧边栏"
             inactive-text="头部"
           />
-        </ClientOnly>
-        <div class="ml-auto">
-          <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin">
-            登录
-          </el-button>
-          <el-button v-else type="danger" @click="handleLogout">
-            退出登录
-          </el-button>
+          <div class="desktop-menu" v-show="!isSidebarMenu">
+            <AppMenu
+              :menu-data="sortedMenu"
+              :default-active="activeMenu"
+              mode="horizontal"
+              @menu-click="handleMenuClick"
+              :menu-max-width="menuMaxWidth"
+            >
+              <template #submenu-title="{ menu }">
+                <el-icon>
+                  <component :is="menu.icon" />
+                </el-icon>
+                {{ menu.name }}
+              </template>
+            </AppMenu>
+          </div>
+          <el-button
+            class="mobile-menu-btn"
+            icon="Menu"
+            @click="toggleMobileMenu"
+          ></el-button>
+          <div ref="loginBtnRef" class="ml-auto login-btn">
+            <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin">
+              登录
+            </el-button>
+            <el-button v-else type="danger" @click="handleLogout">
+              退出登录
+            </el-button>
+          </div>
         </div>
-
-        <div class="desktop-menu" v-show="isClient && !isSidebarMenu">
+      </el-header>
+      <el-container>
+        <div
+          class="mobile-overlay"
+          :class="{ active: showMobileMenu }"
+          @click="showMobileMenu = false"
+        ></div>
+        <el-aside
+          v-show="isSidebarMenu"
+          width="240px"
+          class="border-r"
+          :class="{
+            'mobile-menu-visible': showMobileMenu,
+          }"
+        >
           <AppMenu
             :menu-data="sortedMenu"
             :default-active="activeMenu"
-            mode="horizontal"
+            :default-openeds="defaultOpeneds"
+            mode="vertical"
             @menu-click="handleMenuClick"
-          >
-            <template #submenu-title="{ menu }">
-              <el-icon>
-                <component :is="menu.icon" />
-              </el-icon>
-              {{ menu.name }}
-            </template>
-          </AppMenu>
-        </div>
-        <el-button
-          class="mobile-menu-btn"
-          icon="Menu"
-          @click="toggleMobileMenu"
-        ></el-button>
-      </div>
-    </el-header>
-    <el-container>
-      <div
-        class="mobile-overlay"
-        :class="{ active: showMobileMenu }"
-        @click="showMobileMenu = false"
-      ></div>
-      <el-aside
-        v-show="isClient && isSidebarMenu"
-        width="240px"
-        class="border-r"
-        :class="{
-          'mobile-menu-visible': showMobileMenu,
-        }"
-      >
-        <AppMenu
-          :menu-data="sortedMenu"
-          :default-active="activeMenu"
-          :default-openeds="defaultOpeneds"
-          mode="vertical"
-          @menu-click="handleMenuClick"
-        />
-      </el-aside>
-      <el-main>
-        <div class="mx-auto h-full relative z-0">
-          <slot />
-        </div>
-      </el-main>
+          />
+        </el-aside>
+        <el-main>
+          <div class="mx-auto h-full relative z-0">
+            <slot />
+          </div>
+        </el-main>
+      </el-container>
     </el-container>
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type Ref } from "vue";
+import { ref, computed, onMounted, type ComponentPublicInstance } from "vue";
 import { ElMessage } from "element-plus";
-import gsap from "gsap";
-import { useDark, useStorage } from "@vueuse/core";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
-const isClient = ref(false);
 const showColorPicker = ref(false);
 
 const { isLoggedIn, login, logout: authLogout } = useAuth();
@@ -120,41 +108,49 @@ function handleLogout(): void {
   authLogout();
 }
 
-let isDark: Ref<boolean> = ref(false);
-let isSidebarMenu: Ref<boolean | undefined> = ref();
-isDark = useDark({
-  storageKey: "color-scheme", // ✅ 独立的 key，只存 dark/light
-  selector: "html",
-  attribute: "class", // 通过 class="dark" 切换
-  valueDark: "dark",
-  valueLight: "",
+/**
+ * 侧边栏菜单开关同样存 cookie：SSR 直接读出布局模式，
+ * 首屏即渲染正确的菜单形态（侧边栏/头部），避免布局切换闪烁
+ */
+const isSidebarMenu = useCookie<boolean>("admin-menu-mode", {
+  default: () => true,
+  maxAge: 60 * 60 * 24 * 365,
 });
+
+/**
+ * 暗黑模式布尔值存 cookie（而非 localStorage）：
+ * SSR 阶段服务端即可随请求读到，首屏 HTML 直接带正确的 dark 类，避免主题闪烁
+ */
+const isDark = useCookie<boolean>("color-scheme", {
+  default: () => false,
+  maxAge: 60 * 60 * 24 * 365, // 一年
+});
+
+// <html> 的 dark 类由 useHead 统一管理：服务端渲染输出 + 客户端切换时响应式更新
+useHead({
+  htmlAttrs: {
+    class: computed(() => (isDark.value ? "dark" : "")),
+  },
+});
+
+// 模板 ref 必须声明在 setup 顶层，模板里的 ref="xxx" 才能自动绑定到同名变量
+const sidebarMenuRef = ref<ComponentPublicInstance | null>(null);
+const loginBtnRef = ref<HTMLDivElement | null>(null);
+const menuMaxWidth = ref<number>();
 onMounted(() => {
-  rotateYOpen();
-  isClient.value = true;
-  isSidebarMenu = useStorage("admin-menu-mode", true);
+  // el-switch 是组件，真实 DOM 在 $el 上
+  const sidebarEl = sidebarMenuRef.value?.$el as HTMLElement | undefined;
+  if (sidebarEl && loginBtnRef.value) {
+    const distance =
+      loginBtnRef.value.getBoundingClientRect().left -
+      sidebarEl.getBoundingClientRect().right;
+    menuMaxWidth.value = distance - (distance % 100);
+  }
 });
 
 onUnmounted(() => {
   console.log("组件卸载时执行");
 });
-
-// 方块横向收拢动画
-function rotateYOpen() {
-  const tl = gsap.timeline();
-  tl.to(".flex-animation", {
-    display: "flex",
-  });
-  tl.to(".inner-bg", {
-    scaleX: 0,
-    transformOrigin: "center center",
-    opacity: 0,
-    duration: 1.3,
-    stagger: 0.015,
-    ease: "power2.out",
-  });
-  tl.to(".flex-animation", { opacity: 0, duration: 1 }, ">-2");
-}
 
 const route = useRoute();
 const activeMenu = ref(route.path);
@@ -197,27 +193,45 @@ const menuConfig = ref<MenuItem[]>([
     parentId: 0,
     name: "商品管理",
     icon: "Goods",
-    path: "/goods",
+    path: "/product",
     sort: 2,
     children: [
-      { id: 21, parentId: 2, name: "商品列表", path: "/goods/list", sort: 0 },
+      { id: 21, parentId: 2, name: "商品列表", path: "/product/list", sort: 0 },
       {
         id: 22,
         parentId: 2,
         name: "商品分类",
-        path: "/goods/category",
+        path: "/product/category",
         sort: 1,
       },
-      { id: 23, parentId: 2, name: "品牌管理", path: "/goods/brand", sort: 2 },
+      {
+        id: 23,
+        parentId: 2,
+        name: "品牌管理",
+        path: "/product/brand",
+        sort: 2,
+      },
       {
         id: 24,
         parentId: 2,
         name: "规格属性管理",
-        path: "/goods/attr",
+        path: "/product/attr",
         sort: 3,
       },
-      { id: 25, parentId: 2, name: "库存管理", path: "/goods/stock", sort: 4 },
-      { id: 26, parentId: 2, name: "素材图库", path: "/goods/image", sort: 5 },
+      {
+        id: 25,
+        parentId: 2,
+        name: "库存管理",
+        path: "/product/stock",
+        sort: 4,
+      },
+      {
+        id: 26,
+        parentId: 2,
+        name: "素材图库",
+        path: "/product/image",
+        sort: 5,
+      },
     ],
   },
   {
@@ -382,7 +396,7 @@ const menuConfig = ref<MenuItem[]>([
         id: 72,
         parentId: 7,
         name: "商品数据分析",
-        path: "/stats/goods",
+        path: "/stats/product",
         sort: 1,
       },
       {
@@ -510,6 +524,7 @@ function handleMenuClick(item: { path: string; name: string }) {
     "/canvas",
     "/canvas/cameraMattingDanmakuView",
     "/canvas/gsap",
+    "/product/list",
     "/system/role",
     "/system/user",
     "/admin/permissions",
@@ -543,54 +558,35 @@ function toggleMobileMenu() {
 </script>
 
 <style scoped lang="scss">
+/* 头部导航内容行：等价于 flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden */
+.el-header {
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
 .theme-btn {
+  position: fixed;
+  top: 10%;
+  right: 1%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 3rem;
   color: var(--el-color-primary);
   filter: drop-shadow(0 0 0.5rem var(--el-color-primary));
-}
-
-.flex-animation {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  z-index: 9999;
-  pointer-events: none;
-  & > div {
-    flex: 1;
-    height: 100vh;
-    .inner-bg {
-      width: 100%;
-      height: 100%;
-      background: #000;
-    }
-  }
-
-  &::after {
-    content: "资源加载中...";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.25rem;
-    color: var(--el-text-color-primary, #ccc);
-    z-index: 999;
-    animation: breathe 1.8s ease-in-out infinite;
-  }
-  @keyframes breathe {
-    0% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.5;
-    }
+  &:hover {
+    filter: drop-shadow(0 0 0.1rem var(--el-color-primary));
   }
 }
 

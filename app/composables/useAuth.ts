@@ -81,16 +81,15 @@ export function useAuth() {
   }
 
   /**
-   * 处理 401 未授权响应
-   * @description 清空登录态后弹出登录提示，用于 fetch 拦截器
+   * 处理接口 401 未授权响应
+   * @description 仅轻提示 + 清登录态，不弹窗不跳转（区别于页面级无权限的 login 弹窗），
+   *              避免接口失败打断用户当前操作
    * @returns 无返回值
    */
   function handleUnauthorized(): void {
-    if (authStore.token) {
-      authStore.clearToken();
-      permissionStore.clearPermissions();
-      login();
-    }
+    authStore.clearToken();
+    permissionStore.clearPermissions();
+    ElMessage.warning("登录已过期，请重新登录");
   }
 
   return {

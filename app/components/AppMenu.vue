@@ -3,7 +3,10 @@
     :default-active="defaultActive"
     :default-openeds="defaultOpeneds"
     :mode="mode"
-    class="border-none"
+    class="border-none menu-container"
+    ellipsis
+    style="max-width: 600px; overflow: hidden"
+    :style="{ maxWidth: `${menuMaxWidth}px` }"
   >
     <template v-for="menu in menuData">
       <el-sub-menu
@@ -60,12 +63,14 @@ interface Props {
   mode?: "horizontal" | "vertical";
   defaultActive?: string;
   defaultOpeneds?: string[];
+  menuMaxWidth?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mode: "vertical",
   defaultActive: "",
   defaultOpeneds: () => [],
+  menuMaxWidth: 600,
 });
 
 const emit = defineEmits<{

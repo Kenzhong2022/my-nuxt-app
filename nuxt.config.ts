@@ -10,7 +10,9 @@ export default defineNuxtConfig({
     "/**": {
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
-        "Cross-Origin-Embedder-Policy": "require-corp",
+        // credentialless：保持跨域隔离（crossOriginIsolated），但允许加载
+        // 未携带 CORP/CORS 头的跨域图片等资源（require-corp 会直接拦截）
+        "Cross-Origin-Embedder-Policy": "credentialless",
       },
     },
   },
@@ -21,6 +23,32 @@ export default defineNuxtConfig({
       baseURL: process.env.DEEPSEEK_BASE_URL,
     },
     databaseUrl: process.env.NUXT_DATABASE_URL,
+    // JWT 签名密钥（与登录中心保持一致，声明后 NUXT_JWT_ACCESS_SECRET 才会映射到此处）
+    jwt: {
+      accessSecret: process.env.NUXT_JWT_ACCESS_SECRET,
+      refreshSecret: process.env.NUXT_JWT_REFRESH_SECRET,
+    },
+    // Cloudinary 媒体上传
+    cloudinary: {
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      apiSecret: process.env.CLOUDINARY_API_SECRET,
+    },
+    // Cloudflare Workers AI 生图
+    cloudflare: {
+      accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
+      apiToken: process.env.CLOUDFLARE_API_TOKEN,
+    },
+    // 阿里百炼多模态生图
+    dashscope: {
+      apiKey: process.env.DASHSCOPE_API_KEY,
+      baseUrl: process.env.DASHSCOPE_BASE_URL,
+    },
+    // 百度翻译
+    baidu: {
+      appId: process.env.BAIDU_APPID,
+      appKey: process.env.BAIDU_APPKEY,
+    },
 
     // 公共配置：客户端也能访问（这里不要放任何敏感信息！）
     public: {
@@ -91,8 +119,8 @@ export default defineNuxtConfig({
         // 启用跨域隔离（Cross-Origin Isolated）所必需的两个头
         // 1. COOP：限制弹窗交互只能同源，防止侧信道攻击
         "Cross-Origin-Opener-Policy": "same-origin",
-        // 2. COEP：要求所有加载的子资源必须显式支持跨域，否则拒绝加载
-        "Cross-Origin-Embedder-Policy": "require-corp",
+        // 2. COEP：credentialless 模式下保持隔离，同时允许无 CORP 头的跨域资源
+        "Cross-Origin-Embedder-Policy": "credentialless",
       },
     },
     optimizeDeps: {

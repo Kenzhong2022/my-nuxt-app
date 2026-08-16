@@ -7,7 +7,8 @@
     <!-- 商品图片区域 -->
     <div class="product-image-wrapper relative aspect-square">
       <img
-        :src="product.image"
+        loading="lazy"
+        :src="cloudinaryUrl(product.image, 'w_600,h_600,c_fill,q_auto,f_webp')"
         :alt="product.name"
         class="w-full h-full object-cover"
       />

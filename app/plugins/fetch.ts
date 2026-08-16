@@ -63,6 +63,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (process.client) {
         // 401 未授权：清除 token 并跳转登录
         if (response.status === 401) {
+          console.log("401 未授权");
           const { handleUnauthorized } = useAuth();
           handleUnauthorized();
         }
