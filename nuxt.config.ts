@@ -173,6 +173,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    preset: 'cloudflare-pages',
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {
       "/api/ai": {

@@ -594,7 +594,7 @@ async function saveDetail() {
   margin-top: 8px;
 }
 
-.gallery-upload :deep(.el-upload) {
+.gallery-upload ::deep(.el-upload) {
   width: 100px;
   height: 100px;
   border: 1px dashed var(--el-border-color);

@@ -530,7 +530,7 @@ function toggleMobileMenu() {
 </script>
 
 <style scoped lang="scss">
-:deep(.switchDark .el-switch__action) {
+::deep(.switchDark .el-switch__action) {
   background: transparent !important;
 }
 

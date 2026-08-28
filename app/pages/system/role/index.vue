@@ -552,7 +552,7 @@ onMounted(fetchRoles);
   margin-bottom: 0.75rem;
 }
 
-:deep(.el-tree) {
+::deep(.el-tree) {
   flex: 1;
   overflow-y: auto;
   border: 0.0625rem solid var(--el-border-color-lighter);

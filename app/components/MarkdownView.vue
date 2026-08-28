@@ -33,36 +33,36 @@ const html = computed(() => {
   line-height: var(--kk-line-height-large);
   word-break: break-word;
 
-  :deep(h1),
-  :deep(h2) {
+  ::deep(h1),
+  ::deep(h2) {
     font-size: var(--kk-font-size-large);
     font-weight: 600;
     color: var(--el-text-color-primary);
     margin: 1.5rem 0 0.75rem;
   }
 
-  :deep(h3),
-  :deep(h4) {
+  ::deep(h3),
+  ::deep(h4) {
     font-size: var(--kk-font-size-medium);
     font-weight: 600;
     color: var(--el-text-color-primary);
     margin: 1.25rem 0 0.5rem;
   }
 
-  :deep(p) {
+  ::deep(p) {
     margin: 0.5rem 0;
   }
 
-  :deep(ul),
-  :deep(ol) {
+  ::deep(ul),
+  ::deep(ol) {
     padding-left: 1.5rem;
   }
 
-  :deep(li) {
+  ::deep(li) {
     margin: 0.25rem 0;
   }
 
-  :deep(a) {
+  ::deep(a) {
     color: var(--el-color-primary);
     text-decoration: none;
 
@@ -71,12 +71,12 @@ const html = computed(() => {
     }
   }
 
-  :deep(img) {
+  ::deep(img) {
     max-width: 100%;
     border-radius: 0.5rem;
   }
 
-  :deep(code) {
+  ::deep(code) {
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
     background: var(--el-fill-color-light);
@@ -84,7 +84,7 @@ const html = computed(() => {
     font-family: monospace;
   }
 
-  :deep(pre) {
+  ::deep(pre) {
     padding: 0.75rem;
     border-radius: 0.5rem;
     background: var(--el-fill-color-light);
@@ -97,14 +97,14 @@ const html = computed(() => {
     }
   }
 
-  :deep(blockquote) {
+  ::deep(blockquote) {
     margin: 0.5rem 0;
     padding-left: 0.75rem;
     border-left: 3px solid var(--el-border-color-light);
     color: var(--el-text-color-secondary);
   }
 
-  :deep(table) {
+  ::deep(table) {
     border-collapse: collapse;
     width: 100%;
 
@@ -120,7 +120,7 @@ const html = computed(() => {
     }
   }
 
-  :deep(hr) {
+  ::deep(hr) {
     border: none;
     border-top: 1px solid var(--el-border-color-lighter);
     margin: 1rem 0;
