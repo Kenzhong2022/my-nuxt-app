@@ -71,7 +71,7 @@ watch(
 </script>
 
 <style lang="scss">
-::deep(.iconfont) {
+.iconfont {
   font-family: "iconfont" !important;
 }
 ::-webkit-scrollbar {

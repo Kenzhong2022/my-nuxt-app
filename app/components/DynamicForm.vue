@@ -209,7 +209,7 @@ function handleReset() {
   margin: 0 auto;
   padding: 20px;
 }
-::deep(.el-form-item) {
+:deep(.el-form-item) {
   margin-bottom: 18px;
 }
 </style>

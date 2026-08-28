@@ -73,7 +73,7 @@ function handleItemClick(item: MenuItem) {
 </script>
 
 <style scoped lang="scss">
-::deep(.el-menu-item.is-active) {
+:deep(.el-menu-item.is-active) {
   color: var(--el-menu-active-color);
   background: var(--el-color-primary-light-7);
 }
