@@ -1,6 +1,5 @@
 import type {
   ActionButtonConfig,
-  PermissionId,
   PermissionNode,
   PermissionTree,
 } from "~~/types/permission";
@@ -24,11 +23,11 @@ import type {
  * @param actionId - action 级权限 ID
  * @returns 所属 page ID，若格式非法则返回 null
  */
-export function getParentPageId(actionId: PermissionId): PermissionId | null {
+export function getParentPageId(actionId: string): string | null {
   const parts = actionId.split(":");
   // action:{module}:{page}:{operation} → 必须 4 段
   if (parts.length === 4 && parts[0] === "action") {
-    return `page:${parts[1]}:${parts[2]}` as PermissionId;
+    return `page:${parts[1]}:${parts[2]}`;
   }
   return null;
 }
@@ -42,14 +41,14 @@ export function getParentPageId(actionId: PermissionId): PermissionId | null {
  */
 export function getParentIds(
   tree: PermissionTree,
-  targetId: PermissionId,
-): PermissionId[] {
-  const parents: PermissionId[] = [];
+  targetId: string,
+): string[] {
+  const parents: string[] = [];
 
   const findPath = (
     nodes: readonly PermissionNode[],
-    target: PermissionId,
-    path: PermissionId[] = [],
+    target: string,
+    path: string[] = [],
   ): boolean => {
     for (const node of nodes) {
       if (node.id === target) {
@@ -77,7 +76,7 @@ export function getParentIds(
  */
 export function findNodeById(
   tree: PermissionTree,
-  targetId: PermissionId,
+  targetId: string,
 ): PermissionNode | null {
   for (const node of tree) {
     if (node.id === targetId) return node;
@@ -98,8 +97,8 @@ export function findNodeById(
  */
 export function collectDescendantIds(
   node: PermissionNode | null,
-  result: PermissionId[] = [],
-): PermissionId[] {
+  result: string[] = [],
+): string[] {
   if (!node || !node.children) return result;
   for (const child of node.children) {
     result.push(child.id);
@@ -116,8 +115,8 @@ export function collectDescendantIds(
  */
 export function extractPageMenus(
   tree: PermissionTree,
-): Array<{ readonly id: PermissionId; readonly label: string }> {
-  const menus: Array<{ readonly id: PermissionId; readonly label: string }> =
+): Array<{ readonly id: string; readonly label: string }> {
+  const menus: Array<{ readonly id: string; readonly label: string }> =
     [];
 
   const walk = (nodes: readonly PermissionNode[]): void => {
@@ -142,9 +141,9 @@ export function extractPageMenus(
  */
 export function getPageActions(
   tree: PermissionTree,
-  pageId: PermissionId,
+  pageId: string,
 ): Array<{
-  id: PermissionId;
+  id: string;
   label: string;
   uiType: ActionButtonConfig["uiType"];
 }> {
@@ -167,7 +166,7 @@ export function getPageActions(
  * @returns Element Plus 按钮类型
  */
 export function getElBtnType(
-  actionId: PermissionId,
+  actionId: string,
 ): ActionButtonConfig["uiType"] {
   if (actionId.includes(":delete")) return "danger";
   if (actionId.includes(":edit")) return "default";
@@ -185,15 +184,15 @@ export function getElBtnType(
  * @param permissions - 用户拥有的权限 ID 数组
  * @returns 权限判断方法集合
  */
-export function createPermissionChecker(permissions: readonly PermissionId[]) {
-  const permissionSet = new Set<PermissionId>(permissions);
+export function createPermissionChecker(permissions: readonly string[]) {
+  const permissionSet = new Set<string>(permissions);
 
   /**
    * 判断单个权限是否生效
    * - action 级: 自身被勾选 且 所属 page 被勾选
    * - page/module 级: 自身被勾选
    */
-  const hasPermission = (id: PermissionId): boolean => {
+  const hasPermission = (id: string): boolean => {
     if (!permissionSet.has(id)) return false;
 
     if (id.startsWith("action:")) {
@@ -204,17 +203,17 @@ export function createPermissionChecker(permissions: readonly PermissionId[]) {
   };
 
   /** 判断页面是否有访问权 */
-  const hasPageAccess = (pageId: PermissionId): boolean => {
+  const hasPageAccess = (pageId: string): boolean => {
     return hasPermission(pageId);
   };
 
   /** 判断是否拥有任意一项权限（"或"关系） */
-  const hasAnyPermission = (ids: readonly PermissionId[]): boolean => {
+  const hasAnyPermission = (ids: readonly string[]): boolean => {
     return ids.some((id) => hasPermission(id));
   };
 
   /** 判断是否拥有所有权限（"与"关系） */
-  const hasAllPermissions = (ids: readonly PermissionId[]): boolean => {
+  const hasAllPermissions = (ids: readonly string[]): boolean => {
     return ids.every((id) => hasPermission(id));
   };
 

@@ -1,4 +1,3 @@
-import type { PermissionId } from "~~/types/permission";
 import { createPermissionChecker } from "~~/app/composables/usePermission";
 
 /**
@@ -21,7 +20,7 @@ const CACHE_KEY = "permission_config";
 export const usePermissionStore = defineStore("permission", () => {
   // ========== State ==========
   /** 当前用户拥有的所有权限 ID */
-  const permissions = ref<PermissionId[]>([]);
+  const permissions = ref<string[]>([]);
 
   /** 权限是否已加载（用于防止重复请求） */
   const isLoaded = ref(false);
@@ -29,7 +28,7 @@ export const usePermissionStore = defineStore("permission", () => {
   // ========== Getters (Computed) ==========
   /** 扁平化权限集合（O(1) 查找） */
   const permissionSet = computed(
-    () => new Set<PermissionId>(permissions.value),
+    () => new Set<string>(permissions.value),
   );
 
   /** 权限判断器（缓存实例，避免每次调用都重新创建） */
@@ -41,7 +40,7 @@ export const usePermissionStore = defineStore("permission", () => {
    * 设置权限（配置页保存或登录后调用）
    * 同时写入本地缓存
    */
-  const setPermissions = (perms: readonly PermissionId[]): void => {
+  const setPermissions = (perms: readonly string[]): void => {
     permissions.value = [...perms];
     isLoaded.value = true;
     saveToCache(perms);
@@ -75,19 +74,19 @@ export const usePermissionStore = defineStore("permission", () => {
    * 拉取权限（当前无后端，直接从本地配置加载）
    * 保留方法名以便未来接入后端时替换实现
    */
-  const fetchPermissions = async (): Promise<PermissionId[]> => {
+  const fetchPermissions = async (): Promise<string[]> => {
     restoreFromCache();
     return permissions.value;
   };
 
   // ========== 代理 checker 方法（保持调用方式一致） ==========
-  const hasPermission = (id: PermissionId): boolean =>
+  const hasPermission = (id: string): boolean =>
     checker.value.hasPermission(id);
-  const hasPageAccess = (id: PermissionId): boolean =>
+  const hasPageAccess = (id: string): boolean =>
     checker.value.hasPageAccess(id);
-  const hasAnyPermission = (ids: readonly PermissionId[]): boolean =>
+  const hasAnyPermission = (ids: readonly string[]): boolean =>
     checker.value.hasAnyPermission(ids);
-  const hasAllPermissions = (ids: readonly PermissionId[]): boolean =>
+  const hasAllPermissions = (ids: readonly string[]): boolean =>
     checker.value.hasAllPermissions(ids);
 
   return {
@@ -110,13 +109,13 @@ export const usePermissionStore = defineStore("permission", () => {
 });
 
 // ========== 本地缓存工具函数 ==========
-function saveToCache(perms: readonly PermissionId[]): void {
+function saveToCache(perms: readonly string[]): void {
   if (process.client) {
     localStorage.setItem(CACHE_KEY, JSON.stringify([...perms]));
   }
 }
 
-function loadFromCache(): PermissionId[] | null {
+function loadFromCache(): string[] | null {
   if (process.client) {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
@@ -125,7 +124,7 @@ function loadFromCache(): PermissionId[] | null {
         if (Array.isArray(parsed)) {
           // 校验数据有效性：仅保留符合层级命名规则的字符串
           return parsed.filter(
-            (k): k is PermissionId =>
+            (k): k is string =>
               typeof k === "string" &&
               (k.startsWith("module:") ||
                 k.startsWith("page:") ||

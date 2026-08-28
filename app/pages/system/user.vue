@@ -117,7 +117,6 @@
 </template>
 
 <script setup lang="ts">
-import type { PermissionId } from "~~/types/permission";
 import type { UserListItem } from "~~/types/user";
 import { ElMessage } from "element-plus";
 import dayjs from "dayjs";
@@ -125,7 +124,7 @@ import dayjs from "dayjs";
 import { UserFilled } from "@element-plus/icons-vue";
 definePageMeta({
   // 页面级管控：进入本页必须拥有「用户管理」页面权限
-  requiredPermission: "page:system:user" as PermissionId,
+  requiredPermission: "page:system:user",
 });
 
 const users = ref<UserListItem[]>([]);
@@ -153,7 +152,7 @@ onMounted(fetchUsers);
 
 const permissionStore = usePermissionStore();
 const canCreate = computed(() =>
-  permissionStore.hasPermission("action:system:user:create" as PermissionId),
+  permissionStore.hasPermission("action:system:user:create"),
 );
 
 function onCreate(): void {

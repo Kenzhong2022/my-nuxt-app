@@ -1,5 +1,3 @@
-import type { PermissionId } from "./permission";
-
 /** 角色状态 */
 export enum RoleStatus {
   DISABLED = 0,
@@ -29,7 +27,7 @@ export interface Role {
 
 /** 角色列表项（含权限 ID 列表） */
 export interface RoleWithPermissions extends Role {
-  permissions: PermissionId[];
+  permissions: string[];
 }
 
 /** 角色列表响应 */
@@ -41,7 +39,7 @@ export interface RoleListResponse {
 
 /** 角色权限更新请求 */
 export interface UpdateRolePermissionsRequest {
-  permissions: PermissionId[];
+  permissions: string[];
 }
 
 /** 角色权限更新响应 */

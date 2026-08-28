@@ -1,5 +1,3 @@
-import type { PermissionId } from '~~/types/permission'
-
 /**
  * ============================================================
  * 全局权限路由守卫
@@ -12,12 +10,12 @@ import type { PermissionId } from '~~/types/permission'
  *
  * 用法:
  *   definePageMeta({
- *     requiredPermission: 'page:system:user' as PermissionId
+ *     requiredPermission: 'page:system:user' 
  *   })
  *
  *   // 或满足任意一项即可:
  *   definePageMeta({
- *     requiredPermissionAny: ['page:system:user', 'page:system:admin'] as PermissionId[]
+ *     requiredPermissionAny: ['page:system:user', 'page:system:admin'] 
  *   })
  */
 export default defineNuxtRouteMiddleware((to) => {
@@ -36,13 +34,13 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   // 页面声明了单一必需权限
-  const required = to.meta.requiredPermission as PermissionId | undefined
+  const required = to.meta.requiredPermission as string | undefined
   if (required && !permissionStore.hasPageAccess(required)) {
     return navigateTo('/403', { replace: true })
   }
 
   // 页面声明了"满足任意一项即可"的权限列表
-  const requiredAny = to.meta.requiredPermissionAny as PermissionId[] | undefined
+  const requiredAny = to.meta.requiredPermissionAny as string[] | undefined
   if (requiredAny && !permissionStore.hasAnyPermission(requiredAny)) {
     return navigateTo('/403', { replace: true })
   }

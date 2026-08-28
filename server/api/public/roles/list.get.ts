@@ -4,7 +4,6 @@ import type {
   RoleWithPermissions,
   RoleListResponse,
 } from "~~/types/role";
-import type { PermissionId } from "~~/types/permission";
 
 export default defineEventHandler(async (): Promise<RoleListResponse> => {
   const { sql } = setupDatabase();
@@ -23,10 +22,10 @@ export default defineEventHandler(async (): Promise<RoleListResponse> => {
     `;
 
     // 按 role_id 分组权限
-    const permMap = new Map<number, PermissionId[]>();
+    const permMap = new Map<number, string[]>();
     for (const row of permissions) {
       const list = permMap.get(row.role_id) || [];
-      list.push(row.perm_key as PermissionId);
+      list.push(row.perm_key as string);
       permMap.set(row.role_id, list);
     }
 

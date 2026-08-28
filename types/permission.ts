@@ -170,7 +170,7 @@ export interface PermissionCache {
 
 /**
  * 扩展 vue-router 路由元信息，使 definePageMeta 支持权限声明
- * 用法: definePageMeta({ requiredPermission: 'page:system:user' as PermissionId })
+ * 用法: definePageMeta({ requiredPermission: 'page:system:user' })
  */
 declare module "vue-router" {
   interface RouteMeta {

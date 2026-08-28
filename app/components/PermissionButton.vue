@@ -14,12 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import type { PermissionId, ActionButtonConfig } from "~~/types/permission";
+import type { ActionButtonConfig } from "~~/types/permission";
 import { ElMessage } from "element-plus";
 
 interface Props {
   /** 按钮权限 ID，如 action:system:user:create */
-  action: PermissionId;
+  action: string;
   /** Element Plus 按钮类型 */
   type?: ActionButtonConfig["uiType"];
   /** Element Plus 按钮尺寸 */
