@@ -2,7 +2,7 @@
   <el-container class="h-screen">
     <el-header class="border-b">
       <div class="flex items-center justify-between h-full">
-        <div class="text-xl font-bold">管理后台</div>
+        <div class="text-xl font-bold">后台管理</div>
         <div class="desktop-menu">
           <el-menu
             :default-active="activeMenu"
