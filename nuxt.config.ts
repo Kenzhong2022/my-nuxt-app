@@ -2,6 +2,15 @@
 
 import { visualizer } from "rollup-plugin-visualizer";
 import viteCompression from "vite-plugin-compression";
+
+/** 环境判定：nuxt dev 为 true，nuxt build（含 Netlify 部署构建）为 false */
+const isDev = process.dev;
+
+/** OAuth2 回调地址按环境区分（需与认证中心 clientDB 白名单注册的 redirect_uri 完全一致） */
+const CALLBACK_URL = isDev
+  ? "http://localhost:3000/CallBack"
+  : "https://auth-center.netlify.app/CallBack";
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: false },
@@ -59,8 +68,8 @@ export default defineNuxtConfig({
       loginBase: process.env.LOGIN_BASE,
       /** OAuth2 客户端标识（需与认证中心注册的 client 一致） */
       clientId: process.env.OAUTH_CLIENT_ID || "business-a",
-      /** OAuth2 回调地址（需与认证中心注册的 redirect_uri 完全一致） */
-      callbackUrl: process.env.OAUTH_CALLBACK_URL || "http://localhost:3000/CallBack",
+      /** OAuth2 回调地址（环境变量优先，其次按 dev/prod 取默认值） */
+      callbackUrl: process.env.OAUTH_CALLBACK_URL || CALLBACK_URL,
     },
   },
   app: {
