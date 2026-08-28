@@ -48,7 +48,7 @@
           check-strictly
           :default-expand-all="true"
           @check="
-            (_, info) => onPermissionChange(info.checkedKeys as PermissionId[])
+            (_, info) => onPermissionChange(info.checkedKeys as string[])
           "
         />
 
@@ -188,7 +188,6 @@
 
 <script setup lang="ts">
 import type {
-  PermissionId,
   PermissionNode,
   PermissionTree,
 } from "~~/types/permission";
@@ -284,9 +283,9 @@ const roleList = ref<RoleWithPermissions[]>([]);
 /** 当前选中的角色 ID */
 const currentRoleId = ref<number | null>(null);
 /** 当前角色的已勾选权限 */
-const checkedKeys = ref<PermissionId[]>([]);
+const checkedKeys = ref<string[]>([]);
 /** 当前激活的预览页面 */
-const activePageId = ref<PermissionId>("page:system:user");
+const activePageId = ref<string>("page:system:user");
 /** 保存中状态 */
 const saving = ref(false);
 /** 加载中状态 */
@@ -308,7 +307,7 @@ const pageMenus = computed(() => extractPageMenus(permissionTree));
  * @param id - 权限 ID
  * @returns 权限是否生效
  */
-function hasPermission(id: PermissionId): boolean {
+function hasPermission(id: string): boolean {
   return checker.value.hasPermission(id);
 }
 /**
@@ -316,7 +315,7 @@ function hasPermission(id: PermissionId): boolean {
  * @param id - 页面权限 ID
  * @returns 是否有访问权限
  */
-function hasPageAccess(id: PermissionId): boolean {
+function hasPageAccess(id: string): boolean {
   return checker.value.hasPageAccess(id);
 }
 /**
@@ -324,7 +323,7 @@ function hasPageAccess(id: PermissionId): boolean {
  * @param pageId - 页面权限 ID
  * @returns 是否至少有一个操作权限
  */
-function hasAnyPageButton(pageId: PermissionId): boolean {
+function hasAnyPageButton(pageId: string): boolean {
   const buttons = getPageButtons(pageId);
   return buttons.some((btn) => hasPermission(btn.id));
 }
@@ -334,7 +333,7 @@ function hasAnyPageButton(pageId: PermissionId): boolean {
  * @param pageId - 页面权限 ID
  * @returns 按钮配置数组
  */
-function getPageButtons(pageId: PermissionId) {
+function getPageButtons(pageId: string) {
   return getPageActions(permissionTree, pageId);
 }
 
@@ -404,11 +403,11 @@ function onRoleChange(roleId: number): void {
  * @param checked - 当前所有勾选的权限 ID 数组
  * @returns 无返回值
  */
-function onPermissionChange(checked: PermissionId[]): void {
+function onPermissionChange(checked: string[]): void {
   if (!treeRef.value) return;
 
-  const newChecked = new Set<PermissionId>(checked);
-  const previousChecked = new Set<PermissionId>(checkedKeys.value);
+  const newChecked = new Set<string>(checked);
+  const previousChecked = new Set<string>(checkedKeys.value);
 
   const uncheckedKeys = [...previousChecked].filter((k) => !newChecked.has(k));
   for (const key of uncheckedKeys) {
@@ -436,7 +435,7 @@ function onPermissionChange(checked: PermissionId[]): void {
  * @param key - 权限 ID，如 "action:system:user:create"
  * @returns {ElTagType} action→primary, page→success, module→warning
  */
-function getTagType(key: PermissionId): ElTagType {
+function getTagType(key: string): ElTagType {
   if (key.startsWith("action:")) return "primary";
   if (key.startsWith("page:")) return "success";
   return "warning";
@@ -449,7 +448,7 @@ function getTagType(key: PermissionId): ElTagType {
  * @param btn.label - 按钮显示文本
  * @returns 无返回值
  */
-function simulateAction(btn: { id: PermissionId; label: string }): void {
+function simulateAction(btn: { id: string; label: string }): void {
   if (hasPermission(btn.id)) {
     ElMessage.success(`执行了「${btn.label}」操作`);
   } else {

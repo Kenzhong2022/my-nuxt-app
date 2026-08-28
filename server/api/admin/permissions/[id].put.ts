@@ -99,6 +99,9 @@ export default defineEventHandler(
                   route_name, menu_visible, icon, button_type,
                   status, description, created_at, updated_at
       `) as unknown as PermissionRow[];
+      if (rows.length === 0 || !rows[0]) {
+        return { code: 404, message: "权限节点不存在", data: null };
+      }
 
       return { code: 200, message: "更新成功", data: toPermissionResource(rows[0]) };
     } catch (error) {
