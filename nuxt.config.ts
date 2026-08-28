@@ -117,7 +117,9 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'cloudflare-pages',
+    // 部署目标是 Netlify：必须用 netlify 预设生成 Netlify Functions 格式输出，
+    // 硬编码 cloudflare-pages 会导致 Netlify 上所有路由 404
+    preset: 'netlify',
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {
       "/api/ai": {
