@@ -31,3 +31,8 @@ logs
 eCommerce-dataset-samples/
 
 test*
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

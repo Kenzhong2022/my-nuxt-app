@@ -78,11 +78,7 @@ export default defineNuxtConfig({
   pinia: {
     storesDirs: ["./stores"],
   },
-  modules: [
-    "@pinia/nuxt",
-    "@element-plus/nuxt",
-    "@nuxtjs/tailwindcss",
-  ],
+  modules: ["nitro-cloudflare-dev"],
   vite: {
     server: {
       // 开发服务器响应头（仅限开发环境时生效）
@@ -117,15 +113,21 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // 部署目标是 Netlify：必须用 netlify 预设生成 Netlify Functions 格式输出，
-    // 硬编码 cloudflare-pages 会导致 Netlify 上所有路由 404
-    preset: 'netlify',
-    compressPublicAssets: true, // 静态资源仍然可以压缩
+    preset: "cloudflare_module",
+
+    // 静态资源仍然可以压缩
+    compressPublicAssets: true,
+
     devProxy: {
       "/api/ai": {
         target: "https://chief-agent-alpha.vercel.app",
         changeOrigin: true,
       },
     },
+
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true
+    }
   },
 });
