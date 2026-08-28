@@ -81,7 +81,6 @@ export default defineNuxtConfig({
   },
   modules: [
     "@pinia/nuxt",
-    "@pinia-plugin-persistedstate/nuxt",
     "@element-plus/nuxt",
     "@nuxtjs/tailwindcss",
   ],
@@ -174,7 +173,6 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: "netlify", // 部署到Netlify时取消注释
     compressPublicAssets: true, // 静态资源仍然可以压缩
     devProxy: {
       "/api/ai": {
