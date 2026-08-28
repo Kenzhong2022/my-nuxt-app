@@ -1,12 +1,11 @@
 // middleware/auth.global.ts
-import type { PermissionId } from "~~/types/permission";
 import { useAuthStore } from "~~/app/stores/auth";
 
 /**
  * 前端登录守卫
  * @description 仅当页面通过 definePageMeta 声明了 requiredPermission / requiredPermissionAny 时才要求登录
  */
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware((to, from) => {
   if (import.meta.server) {
     return;
   }
@@ -16,6 +15,7 @@ export default defineNuxtRouteMiddleware((to) => {
   if (!required && !requiredAny) return;
   const authStore = useAuthStore();
   if (!authStore.token) {
+    console.log("未登录，跳转到登录页", to.fullPath, from.fullPath);
     const { requireLogin } = useAuth();
     requireLogin(to.fullPath);
   } else {
