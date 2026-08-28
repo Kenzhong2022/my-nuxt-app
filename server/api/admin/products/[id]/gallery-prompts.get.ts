@@ -20,11 +20,11 @@ export interface GalleryPromptItem {
 }
 
 /**
- * 图集默认提示词（按图片类型）：
+ * 图集默认提示词（按图片类型，品类无关的通用模板）：
  * - angle 角度图：合并 side 侧面、back 背面等各拍摄角度
  * - detail 细节图：合并 detail 普通特写、zoom 放大细节
- * - scene  场景图：合并场景效果图、使用环境图（区别于主图的白色背景正面图）
- * - wear   佩戴图：真人佩戴/使用效果，展示商品与人的交互
+ * - scene  场景图：商品所处品类的典型使用环境（由模型按商品自适应，不写死具体场景）
+ * - wear   交互图：真人与商品的自然交互（佩戴/手持/操作等，由模型按商品形态决定）
  */
 function buildGalleryPrompts(subject: string): GalleryPromptItem[] {
   const baseStyle =
@@ -44,12 +44,12 @@ function buildGalleryPrompts(subject: string): GalleryPromptItem[] {
     {
       type: "scene",
       label: "场景图",
-      prompt: `${subject} lifestyle scene, elegantly placed on a modern wooden desk in a bright, airy living room, soft natural daylight streaming through sheer curtains, warm ambient tones, subtle bokeh background, hero product prominently in foreground, harmonious and inviting composition, ${baseStyle}`,
+      prompt: `${subject} placed in its typical usage environment that best matches this category of product, realistic everyday setting with contextual props, soft natural daylight, warm ambient tones, subtle bokeh background, hero product prominently in foreground, harmonious and inviting composition, ${baseStyle}`,
     },
     {
       type: "wear",
-      label: "佩戴图",
-      prompt: `${subject} worn on a person, realistic human model, natural and relaxed posture, showing the product fitting naturally on the user, authentic lifestyle photography, soft natural daylight, modern urban or cozy home setting, warm skin tones, medium shot, focus on both product and user interaction, harmonious composition, ${baseStyle}`,
+      label: "交互图",
+      prompt: `${subject} naturally used by a person, realistic human model interacting with the product in the most natural way for this type of product, natural and relaxed posture, authentic lifestyle photography, soft natural daylight, warm skin tones, medium shot, focus on both product and human interaction, harmonious composition, ${baseStyle}`,
     },
   ];
 }

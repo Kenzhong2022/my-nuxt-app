@@ -25,7 +25,7 @@ export default defineEventHandler(
       if (permissions.length > 0) {
         const values = permissions.map((p) => [Number(roleId), p]);
         await sql`
-          INSERT INTO role_permissions (role_id, permission_id)
+          INSERT INTO role_permissions (role_id, perm_key)
           ${sql(values.map((v) => sql`${v[0]}, ${v[1]}`))}
         `;
       }

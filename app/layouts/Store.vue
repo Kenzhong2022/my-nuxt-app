@@ -129,9 +129,10 @@ function goHome() {
   navigateTo("/store");
 }
 
+const { login } = useAuth();
+
 function goUser() {
-  const redirect = encodeURIComponent(window.location.href); // 编码当前页面URL，防止特殊字符导致的错误
-  window.location.href = `${process.env.LOGIN_BASE}/login?redirect=${redirect}`;
+  login();
 }
 
 function onSearch({ query, mode }: { query: string; mode: string }) {

@@ -88,14 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { ElMessage } from "element-plus";
 import type { MenuItem } from "~~/app/components/AppMenu.vue";
 
 const showColorPicker = ref(false);
 
+// isLoggedIn 为响应式 ref，登录/登出后模板自动更新
 const { isLoggedIn, login, logout: authLogout } = useAuth();
-
 function handleLogin(): void {
   login();
 }

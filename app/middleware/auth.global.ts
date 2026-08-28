@@ -16,8 +16,8 @@ export default defineNuxtRouteMiddleware((to) => {
   if (!required && !requiredAny) return;
   const authStore = useAuthStore();
   if (!authStore.token) {
-    const { login } = useAuth();
-    login(to.fullPath);
+    const { requireLogin } = useAuth();
+    requireLogin(to.fullPath);
   } else {
     // 弹窗提示用户有权限访问该页面
     ElMessage.success("经过鉴权，您有权限访问该页面");

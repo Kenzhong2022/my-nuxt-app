@@ -17,7 +17,7 @@ export default defineEventHandler(async (): Promise<RoleListResponse> => {
     `;
 
     const permissions = await sql`
-      SELECT role_id, permission_id
+      SELECT role_id, perm_key
       FROM role_permissions
       ORDER BY role_id ASC
     `;
@@ -26,7 +26,7 @@ export default defineEventHandler(async (): Promise<RoleListResponse> => {
     const permMap = new Map<number, PermissionId[]>();
     for (const row of permissions) {
       const list = permMap.get(row.role_id) || [];
-      list.push(row.permission_id as PermissionId);
+      list.push(row.perm_key as PermissionId);
       permMap.set(row.role_id, list);
     }
 

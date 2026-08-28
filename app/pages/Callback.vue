@@ -137,10 +137,10 @@ async function redeemToken(code) {
   }
 }
 
-/** 持久化 token 到 Pinia store（自动写入 localStorage），操作 timeline[1] */
+/** 持久化 token 到 Pinia store（写入 cookie，SSR/CSR 均可读），操作 timeline[1] */
 function persistToken(tokenResponse) {
   activities.value[1].activate();
-  // ✅ 使用 Pinia store 存储 token（自动持久化到 localStorage）
+  // ✅ 使用 Pinia store 存储 token（useCookie 自动持久化）
   // 如果你还想存储 refresh_token，可以扩展 store 添加 refreshToken 字段
   const authStore = useAuthStore();
   const accessToken = tokenResponse?.access_token;

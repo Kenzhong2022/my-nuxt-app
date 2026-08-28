@@ -57,6 +57,10 @@ export default defineNuxtConfig({
       agentBaseUrl: process.env.NUXT_AGENT_BASE_URL,
       /** 登录页地址 */
       loginBase: process.env.LOGIN_BASE,
+      /** OAuth2 客户端标识（需与认证中心注册的 client 一致） */
+      clientId: process.env.OAUTH_CLIENT_ID || "business-a",
+      /** OAuth2 回调地址（需与认证中心注册的 redirect_uri 完全一致） */
+      callbackUrl: process.env.OAUTH_CALLBACK_URL || "http://localhost:3000/CallBack",
     },
   },
   app: {
@@ -124,9 +128,6 @@ export default defineNuxtConfig({
       },
     },
     optimizeDeps: {
-      // 排除 onnxruntime-web 的预构建
-      // 原因：该包体积大且包含 .wasm 文件，预构建会破坏其动态加载机制，导致运行时崩溃
-      exclude: ["onnxruntime-web"],
       include: [
         "@mediapipe/selfie_segmentation",
         "@mediapipe/camera_utils",
