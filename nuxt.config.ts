@@ -9,7 +9,7 @@ const isDev = process.dev;
 /** OAuth2 回调地址按环境区分（需与认证中心 clientDB 白名单注册的 redirect_uri 完全一致） */
 const CALLBACK_URL = isDev
   ? "http://localhost:3000/CallBack"
-  : "https://auth-center.netlify.app/CallBack";
+  : "https://kk-shop-app.netlify.app/CallBack";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",

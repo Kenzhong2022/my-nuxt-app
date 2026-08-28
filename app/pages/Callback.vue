@@ -116,17 +116,18 @@ function getCode() {
   return route.query.code;
 }
 
-/** 用授权码换取 token，操作 timeline[0] */
+/** 用授权码换取 token，操作 timeline[0]（redirect_uri 走运行时配置，须与 authorize 发码时一致） */
 async function redeemToken(code) {
   activities.value[0].activate();
+  const config = useRuntimeConfig();
   try {
     const response = await $fetch("/api/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code,
-        client_id: "business-a",
-        redirect_uri: "http://localhost:3000/CallBack",
+        client_id: config.public.clientId,
+        redirect_uri: config.public.callbackUrl,
       }),
     });
     activities.value[0].markSuccess();
