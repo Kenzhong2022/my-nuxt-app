@@ -94,7 +94,7 @@ export default defineNuxtConfig({
             // 🛑 服务端专用库：绝对不要打包进客户端
             if (
               id.includes("bcryptjs") ||
-              id.includes("jsonwebtoken") ||
+              id.includes("node_modules/jose/") ||
               id.includes("@neondatabase") ||
               id.includes("@upstash") ||
               id.includes("node:")

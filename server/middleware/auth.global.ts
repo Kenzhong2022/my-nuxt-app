@@ -1,7 +1,7 @@
 import { createError, getCookie, getRequestHeader } from "h3";
 import { verifyAccessToken } from "~~/server/utils/jwt";
-import jwt from "jsonwebtoken";
-const { JsonWebTokenError, TokenExpiredError } = jwt;
+import { errors } from "jose";
+const { JWTExpired, JWTInvalid } = errors;
 declare module "h3" {
   interface H3EventContext {
     user?: {
@@ -70,12 +70,13 @@ export default defineEventHandler(async (event) => {
   // 必须在 try 之外触发，否则 401 会被下面的 catch 捕获并包装成 500
   let payload: TokenPayload | null = null;
   try {
-    payload = token ? verifyAccessToken(token) : null;
+    payload = token ? await verifyAccessToken(token) : null;
   } catch (error) {
-    if (error instanceof TokenExpiredError) {
+    // JWTExpired 是 JWTInvalid 的子类，先判过期再判无效（与原 jsonwebtoken 行为一致）
+    if (error instanceof JWTExpired) {
       handleUnauthorized("token已过期，请刷新令牌或重新登录");
     }
-    if (error instanceof JsonWebTokenError) {
+    if (error instanceof JWTInvalid) {
       // 签名不符 / 格式错误 / 缺失等
       handleUnauthorized("token校验失败，请重新登录");
     }
