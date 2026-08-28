@@ -84,11 +84,6 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
   ],
   vite: {
-    build: {
-      cssCodeSplit: false,
-      rollupOptions: {
-      },
-    },
     server: {
       // 开发服务器响应头（仅限开发环境时生效）
       headers: {
