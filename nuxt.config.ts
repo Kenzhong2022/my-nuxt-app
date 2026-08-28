@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
-import { visualizer } from "rollup-plugin-visualizer";
 import viteCompression from "vite-plugin-compression";
 
 /** 环境判定：nuxt dev 为 true，nuxt build（含 Netlify 部署构建）为 false */
@@ -86,6 +85,7 @@ export default defineNuxtConfig({
   ],
   vite: {
     build: {
+      cssCodeSplit: false,
       rollupOptions: {
         output: {
           manualChunks(id: string) {
@@ -146,21 +146,6 @@ export default defineNuxtConfig({
         "vue-draggable-plus",
       ],
     },
-    plugins: [
-      visualizer({
-        filename: ".nuxt/stats.html", // 输出位置
-        open: true, // 构建后自动打开浏览器
-        gzipSize: true,
-        brotliSize: true,
-      }),
-      // Brotli 压缩（压缩率更高，现代浏览器支持）
-      viteCompression({
-        algorithm: "brotliCompress",
-        ext: ".br",
-        threshold: 10240,
-        deleteOriginFile: false,
-      }),
-    ],
   },
   css: [
     "~/assets/css/main.css",
