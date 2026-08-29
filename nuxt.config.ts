@@ -45,7 +45,7 @@ export default defineNuxtConfig({
     // Cloudflare Workers AI 生图
     cloudflare: {
       accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
-      apiToken: process.env.CLOUDFLARE_API_TOKEN,
+      apiToken: process.env.CLOUDFLARE_WORKERS_AI_TOKEN,
     },
     // 阿里百炼多模态生图
     dashscope: {

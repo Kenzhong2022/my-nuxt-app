@@ -35,7 +35,7 @@ function getCloudflareConfig() {
   const config = useRuntimeConfig().cloudflare;
   if (!config?.accountId || !config?.apiToken) {
     throw new Error(
-      "Cloudflare 未配置：请在 .env 中填写 CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN",
+      "Cloudflare 未配置：请在 .env 中填写 CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_WORKERS_AI_TOKEN",
     );
   }
   return config as { accountId: string; apiToken: string };
