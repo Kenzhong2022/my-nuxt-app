@@ -78,7 +78,13 @@ export default defineNuxtConfig({
   pinia: {
     storesDirs: ["./stores"],
   },
-  modules: ["nitro-cloudflare-dev"],
+  modules: [
+    "nitro-cloudflare-dev",
+    "@pinia/nuxt",
+    "@pinia-plugin-persistedstate/nuxt",
+    "@element-plus/nuxt",
+    "@nuxtjs/tailwindcss"
+  ],
   vite: {
     server: {
       // 开发服务器响应头（仅限开发环境时生效）
