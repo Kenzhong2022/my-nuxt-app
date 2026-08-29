@@ -1,0 +1,13 @@
+name = "my-nuxt-app"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-08-29"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers AI
+[ai]
+binding = "AI"
+
+# Hyperdrive - Neon 数据库连接池
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "你的-hyperdrive-id"
