@@ -81,7 +81,6 @@ export default defineNuxtConfig({
   modules: [
     "nitro-cloudflare-dev",
     "@pinia/nuxt",
-    "@pinia-plugin-persistedstate/nuxt",
     "@element-plus/nuxt",
     "@nuxtjs/tailwindcss"
   ],
