@@ -113,21 +113,19 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: "cloudflare_module",
-
-    // 静态资源仍然可以压缩
+    preset: 'cloudflare-pages',        // ← 改回 Pages 预设
+    cloudflare: {
+      deployConfig: false              // ← 禁用自动生成的 wrangler.json
+    },
+    output: {
+      dir: 'dist'
+    },
     compressPublicAssets: true,
-
     devProxy: {
       "/api/ai": {
         target: "https://chief-agent-alpha.vercel.app",
         changeOrigin: true,
       },
     },
-
-    cloudflare: {
-      deployConfig: true,
-      nodeCompat: true
-    }
   },
 });
