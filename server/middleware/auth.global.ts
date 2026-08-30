@@ -23,6 +23,7 @@ const WHITE_LIST = [
   '/api/qrcode/generate',
   '/api/ai/v1/chat/messages',
   '/api/ai/chat',
+  '/api/ai/image',
 ];
 
 /**

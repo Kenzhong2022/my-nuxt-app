@@ -116,7 +116,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'cloudflare_module',
+    preset: 'cloudflare_page',
     cloudflare: {
       deployConfig: false, // ← 禁用自动生成的 wrangler.json
     },
