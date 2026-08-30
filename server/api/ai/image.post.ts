@@ -20,6 +20,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // flux-1-schnell 只懂英文描述，中文 prompt 会生成无意义纹理
+  // 自动中译英（不含中文则原样返回；翻译失败降级用原文，不阻断）
+  const finalPrompt = await translateToEnglish(prompt.trim());
+  if (finalPrompt !== prompt.trim()) {
+    console.log(`[ai/image] prompt 已翻译: "${prompt.trim()}" -> "${finalPrompt}"`);
+  }
+
   const res = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
     {
@@ -29,7 +36,7 @@ export default defineEventHandler(async (event) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: prompt.trim(),
+        prompt: finalPrompt,
         // flux-1-schnell 默认 4 步（1-8 可选），步数越多越慢、细节略增
         steps: Math.min(Math.max(Number(steps) || 4, 1), 8),
       }),
