@@ -52,14 +52,34 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // 成功时 Cloudflare 直接返回 PNG 二进制
-  const imageBuffer = await res.arrayBuffer();
-  console.log(
-    `[ai/image] 生图成功: prompt="${prompt.trim()}" steps=${steps} 返回 ${imageBuffer.byteLength} 字节, Content-Type=${res.headers.get('content-type')}`,
-  );
+  // 成功时 Cloudflare 可能返回两种格式：
+  // 1. flux-1-schnell：JSON {"result":{"image":"<base64>"}}（REST API 包装）
+  // 2. 其他图像模型（SDXL 等）：PNG 二进制（开头为 PNG 魔术字节 89 50 4E 47）
+  const arrayBuf = await res.arrayBuffer();
 
-  // 转为 data URL（base64）返回，前端可直接塞进 <img src>
-  // Buffer.toString('base64') 分块处理，无展开运算符栈溢出风险
-  const base64 = `data:image/png;base64,${Buffer.from(imageBuffer).toString('base64')}`;
-  return { image: base64 };
+  const buf = Buffer.from(arrayBuf);
+  let base64: string;
+
+  if (buf.subarray(0, 4).toString('hex') === '89504e47') {
+    // 二进制 PNG → 转 base64
+    base64 = buf.toString('base64');
+  } else {
+    // JSON 响应 → 解析出 result.image（本身就是 base64）
+    const json = JSON.parse(buf.toString('utf8'));
+    if (json?.errors?.length) {
+      throw createError({
+        statusCode: 502,
+        statusMessage: `Workers AI 业务错误: ${JSON.stringify(json.errors).slice(0, 200)}`,
+      });
+    }
+    base64 = json?.result?.image ?? json?.image;
+    if (!base64) {
+      throw createError({
+        statusCode: 502,
+        statusMessage: `Workers AI 响应中没有图片数据: ${buf.toString('utf8').slice(0, 200)}`,
+      });
+    }
+  }
+
+  return { image: `data:image/png;base64,${base64}` };
 });
