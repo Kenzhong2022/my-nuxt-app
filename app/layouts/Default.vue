@@ -461,38 +461,41 @@ function sortMenu(items: MenuItem[]): MenuItem[] {
 const sortedMenu = computed(() => sortMenu(menuConfig.value));
 
 function handleMenuClick(item: { path: string; name: string }) {
-  // 已完成功能（去重）：仅保留有对应页面文件的路径
-  const completedPaths = [
-    // 菜单项 - 已完成
-    '/dashboard',
-    '/myProjects',
-    '/survey',
-    '/agent',
-    '/canvas',
-    '/canvas/cameraMattingDanmakuView',
-    '/canvas/gsap',
-    '/product/list',
-    '/system/role',
-    '/system/user',
-    '/admin/permissions',
-    // 非菜单页面 - 已完成
-    '/admin',
-    '/store',
-    '/store/cart',
-    '/store/chat',
-    '/agent/chat',
-    '/CallBack',
-    '/qrcode',
-    '/testdynamicForm',
-    '/403',
-  ];
-  // 检查是否已完成
-  if (completedPaths.some((path) => path === item.path || path.startsWith(item.path))) {
-    navigateTo(item.path);
-    return;
-  }
-  // 功能未开放
-  ElMessage.warning(`功能暂未开发：${item.path}`);
+  // TODO: 暂时注释掉"已完成功能"白名单校验，所有菜单直接放行
+  // const completedPaths = [
+  //   // 菜单项 - 已完成
+  //   '/dashboard',
+  //   '/myProjects',
+  //   '/survey',
+  //   '/agent',
+  //   '/canvas',
+  //   '/canvas/cameraMattingDanmakuView',
+  //   '/canvas/gsap',
+  //   '/product/list',
+  //   '/system/role',
+  //   '/system/user',
+  //   '/admin/permissions',
+  //   // 非菜单页面 - 已完成
+  //   '/admin',
+  //   '/store',
+  //   '/store/cart',
+  //   '/store/chat',
+  //   '/agent/chat',
+  //   '/CallBack',
+  //   '/qrcode',
+  //   '/testdynamicForm',
+  //   '/403',
+  // ];
+  // // 检查是否已完成
+  // if (completedPaths.some((path) => path === item.path || path.startsWith(item.path))) {
+  //   navigateTo(item.path);
+  //   return;
+  // }
+  // // 功能未开放
+  // ElMessage.warning(`功能暂未开发：${item.path}`);
+
+  // 所有菜单直接跳转
+  navigateTo(item.path);
 }
 
 const showMobileMenu = ref(false);
