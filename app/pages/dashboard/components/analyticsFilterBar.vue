@@ -183,6 +183,14 @@ onUnmounted(() => {
   if (cleanup) cleanup();
 });
 
+// keepalive 页面失活时，若下拉菜单还开着则补一次清理，避免监听残留
+onDeactivated(() => {
+  if (cleanup) {
+    cleanup();
+    cleanup = null;
+  }
+});
+
 // ============ 方法 ============
 // 记录用户点击的第一个日期
 const selectedFirstDate = ref<Date | null>(null);

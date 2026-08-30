@@ -1,1 +1,63 @@
-{}
+{
+  // ===== 保存自动格式化（仅本项目生效）=====
+  "editor.formatOnSave": true,
+  // 默认格式化工具：Prettier
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // 按语言指定格式化工具
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ===== Prettier 规则 =====
+  "prettier.printWidth": 120,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
+  "prettier.semi": true,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  "prettier.arrowParens": "always",
+  "prettier.endOfLine": "auto",
+  "prettier.htmlWhitespaceSensitivity": "css",
+
+  // ===== 搜索/监听排除，提升 Trae 索引与 AI 上下文质量 =====
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.nuxt": true,
+    "**/.output": true,
+    "**/dist": true
+  },
+  "files.watcherExclude": {
+    "**/.nuxt/**": true,
+    "**/.output/**": true,
+    "**/node_modules/**": true
+  },
+  // 关联 .scss 使用对应语言服务
+  "files.associations": {
+    "*.scss": "scss"
+  }
+}

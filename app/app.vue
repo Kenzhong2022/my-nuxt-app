@@ -6,27 +6,27 @@
       <KeepAlive>
         <NuxtPage />
       </KeepAlive>
-      <!-- 过场动画覆盖层 -->
-      <ClientOnly>
-        <div v-if="loadingStore.isRouteChanging" class="transition-overlay">
-          <div class="slide-container">
-            <div class="slide-block" style="background: #3b82f6" />
-            <div class="slide-block" style="background: #ef4444" />
-            <div class="slide-block" style="background: #10b981" />
-            <div class="slide-block" style="background: #f59e0b" />
-            <!-- 加载 -->
-            <div class="loading-block">
-              <div class="loading-block-after"></div>
-            </div>
+    </NuxtLayout>
+    <!-- 过场动画覆盖层 -->
+    <ClientOnly>
+      <div v-if="loadingStore.isRouteChanging" class="transition-overlay">
+        <div class="slide-container">
+          <div class="slide-block" style="background: #3b82f6" />
+          <div class="slide-block" style="background: #ef4444" />
+          <div class="slide-block" style="background: #10b981" />
+          <div class="slide-block" style="background: #f59e0b" />
+          <!-- 加载 -->
+          <div class="loading-block">
+            <div class="loading-block-after"></div>
           </div>
         </div>
-      </ClientOnly>
-    </NuxtLayout>
+      </div>
+    </ClientOnly>
   </div>
 </template>
 
 <script setup>
-import gsap from "gsap";
+import gsap from 'gsap';
 
 const loadingStore = useLoadingStore();
 
@@ -43,28 +43,28 @@ watch(
       return;
     }
     await nextTick();
-    gsap.set(".slide-block", { y: 0 });
+    gsap.set('.slide-block', { y: 0 });
     tl = gsap.timeline(); // 不再需要 repeat:-1
-    tl.to(".slide-block", {
+    tl.to('.slide-block', {
       y: -100,
       stagger: 0.12,
       duration: 0.6,
       opacity: 1,
-      ease: "power2.out",
+      ease: 'power2.out',
       yoyo: true,
       repeat: -1, // 每个元素独立无限往复
     });
     tl.to(
-      ".loading-block-after",
+      '.loading-block-after',
       {
-        left: "calc(100% - 50px)",
-        width: "100px",
+        left: 'calc(100% - 50px)',
+        width: '100px',
         duration: 0.6,
-        ease: "power2.inOut",
+        ease: 'power2.inOut',
         yoyo: true,
         repeat: -1,
       },
-      "-=0.5",
+      '-=0.5',
     );
   },
 );
@@ -72,7 +72,7 @@ watch(
 
 <style lang="scss">
 .iconfont {
-  font-family: "iconfont" !important;
+  font-family: 'iconfont' !important;
 }
 ::-webkit-scrollbar {
   width: 8px;

@@ -32,13 +32,13 @@ type GenerateFn = (
 const CF_API_BASE = "https://api.cloudflare.com/client/v4/accounts";
 
 function getCloudflareConfig() {
-  const config = useRuntimeConfig().cloudflare;
-  if (!config?.accountId || !config?.apiToken) {
+  const { accountId, workersAi } = useRuntimeConfig().cloudflare || {};
+  if (!accountId || !workersAi?.apiToken) {
     throw new Error(
-      "Cloudflare 未配置：请在 .env 中填写 CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_WORKERS_AI_TOKEN",
+      "Cloudflare 未配置：请在 .env 中填写 NUXT_CLOUDFLARE_ACCOUNT_ID / NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN",
     );
   }
-  return config as { accountId: string; apiToken: string };
+  return { accountId, apiToken: workersAi.apiToken };
 }
 
 /** Flux schnell 仅支持 prompt / steps / seed，无宽高参数（固定 1024×1024） */

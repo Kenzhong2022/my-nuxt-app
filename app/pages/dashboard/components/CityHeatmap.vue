@@ -4,8 +4,8 @@
 </template>
 
 <script setup lang="ts">
-import * as echarts from "echarts";
-import type { CityHeatmapResponse } from "~~/types/analytics";
+import * as echarts from 'echarts';
+import type { CityHeatmapResponse } from '~~/types/analytics';
 
 const props = defineProps<{
   data: CityHeatmapResponse | null;
@@ -18,8 +18,8 @@ async function initChart() {
   if (!chartRef.value || !props.data) return;
 
   // 1. 加载中国地图 geoJSON
-  const chinaJson = (await $fetch("/geo/china-city.json")) as any;
-  echarts.registerMap("china", chinaJson);
+  const chinaJson = (await $fetch('/geo/china-city.json')) as any;
+  echarts.registerMap('china', chinaJson);
 
   // 2. 初始化图表
   chart = echarts.init(chartRef.value);
@@ -29,10 +29,10 @@ async function initChart() {
     title: {
       text: `${props.data.regionName}城市访问热力`,
       subtext: `总访问量: ${props.data.totalVisits}`,
-      left: "center",
+      left: 'center',
     },
     tooltip: {
-      trigger: "item",
+      trigger: 'item',
       formatter: (params: any) => {
         const d = params.data;
         return `${d.name}<br/>PV: ${d.value}<br/>UV: ${d.uv}<br/>占比: ${d.percent}%`;
@@ -41,25 +41,25 @@ async function initChart() {
     visualMap: {
       min: 0,
       max: props.data.maxValue,
-      left: "left",
-      top: "bottom",
-      text: ["高", "低"],
+      left: 'left',
+      top: 'bottom',
+      text: ['高', '低'],
       calculable: true,
       inRange: {
-        color: ["#e0f3f8", "#abd9e9", "#74add1", "#4575b4", "#313695"],
+        color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'],
       },
     },
     series: [
       {
-        name: "访问量",
-        type: "map",
-        map: "china",
+        name: '访问量',
+        type: 'map',
+        map: 'china',
         roam: true, // 允许缩放拖拽
         zoom: 1.2,
         emphasis: {
           label: { show: true },
           itemStyle: {
-            areaColor: "#ffd700",
+            areaColor: '#ffd700',
           },
         },
         data: props.data.cities.map((c) => ({
@@ -78,11 +78,27 @@ async function initChart() {
 // 响应式
 watch(() => props.data, initChart, { immediate: true });
 
-onMounted(() => {
-  window.addEventListener("resize", () => chart?.resize());
-});
+// 具名函数引用，保证 add/remove 的是同一个监听器
+const handleResize = () => chart?.resize();
 
+function addResizeListener() {
+  // 先删除旧监听再重新注册，避免重复（removeEventListener 对不存在的监听是无害操作）
+  window.removeEventListener('resize', handleResize);
+  window.addEventListener('resize', handleResize);
+}
+
+function removeResizeListener() {
+  window.removeEventListener('resize', handleResize);
+}
+
+onMounted(addResizeListener);
+// keepalive 页面激活回来时重新监听
+onActivated(addResizeListener);
+// 离开页面（缓存失活）时卸载监听
+onDeactivated(removeResizeListener);
+// 组件真正销毁时卸载监听并释放图表
 onUnmounted(() => {
+  removeResizeListener();
   chart?.dispose();
 });
 
@@ -90,11 +106,7 @@ onUnmounted(() => {
 function exportCsv(): boolean {
   if (!props.data) return false;
   const { cities, totalVisits } = props.data;
-  downloadCsv("城市访问分布", [
-    ["城市", "访问量"],
-    ...cities.map((c) => [c.name, c.value]),
-    ["总计", totalVisits],
-  ]);
+  downloadCsv('城市访问分布', [['城市', '访问量'], ...cities.map((c) => [c.name, c.value]), ['总计', totalVisits]]);
   return true;
 }
 

@@ -138,9 +138,6 @@ importers:
       '@webgpu/types':
         specifier: ^0.1.71
         version: 0.1.72
-      nitro-cloudflare-dev:
-        specifier: ^0.2.2
-        version: 0.2.2
       nitropack:
         specifier: ^2.13.4
         version: 2.13.4(@parcel/watcher@2.6.0)(@upstash/redis@1.38.2)(rolldown@1.2.5)(srvx@0.11.22)(vite@8.2.2(@types/node@25.9.5)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.103.1)(terser@5.50.0)(yaml@2.9.0))
@@ -3215,9 +3212,6 @@ packages:
   negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
-
-  nitro-cloudflare-dev@0.2.2:
-    resolution: {integrity: sha512-aZfNTVdgXPQeAmXW0Tw8hm3usAHr4qVG4Bg3WhHBGeZYuXr9OyT04Ztb+STkMzhyaXvfMHViAaPUPg06iAYqag==}
 
   nitropack@2.13.4:
     resolution: {integrity: sha512-tX7bT6zxNeMwkc6hxHiZeUoTOjVrcjoh1Z3cmxOlodIqjl4HISgqfGOmkWSayky3Nv9Z5+KQH52F8nmXJY5AAA==}
@@ -7811,12 +7805,6 @@ snapshots:
   nanotar@0.3.0: {}
 
   negotiator@0.6.3: {}
-
-  nitro-cloudflare-dev@0.2.2:
-    dependencies:
-      consola: 3.4.2
-      mlly: 1.8.2
-      pkg-types: 2.3.1
 
   nitropack@2.13.4(@parcel/watcher@2.6.0)(@upstash/redis@1.38.2)(rolldown@1.2.5)(srvx@0.11.22)(vite@8.2.2(@types/node@25.9.5)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.103.1)(terser@5.50.0)(yaml@2.9.0)):
     dependencies:

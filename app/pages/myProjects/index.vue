@@ -145,24 +145,37 @@ const { isDesktop } = useDevice(); // 监听鼠标移动事件，更新卡片位
 /**注册GSAP时间线 */
 let tl: ReturnType<typeof gsap.timeline> | null = gsap.timeline();
 
+// 先删后加，防止重复注册（removeEventListener 对不存在的监听是无害操作）
+function addMouseMoveListener() {
+  if (!isDesktop.value) return;
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mousemove", handleMouseMove);
+}
+
+function removeMouseMoveListener() {
+  document.removeEventListener("mousemove", handleMouseMove);
+}
+
 onMounted(() => {
   console.log("projectShowcase组件挂载时");
 
   animationCardTitle();
 
-  if (isDesktop.value) {
-    document.addEventListener("mousemove", handleMouseMove);
-  }
+  addMouseMoveListener();
 });
 
 onActivated(() => {
   console.log("组件激活时，播放GSAP时间线");
   tl?.play();
+  // keepalive 缓存页面激活回来时重新监听
+  addMouseMoveListener();
 });
 
 onDeactivated(() => {
   console.log("组件停用时，暂停GSAP时间线");
   tl?.pause();
+  // 失活时卸载监听，避免离开页面后仍触发
+  removeMouseMoveListener();
 });
 
 onUnmounted(() => {
@@ -170,7 +183,7 @@ onUnmounted(() => {
   // 清理GSAP时间线
   tl?.kill();
   tl = null;
-  document.removeEventListener("mousemove", handleMouseMove);
+  removeMouseMoveListener();
 });
 </script>
 

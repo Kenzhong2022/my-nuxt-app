@@ -5,8 +5,8 @@ export default defineEventHandler(async (event) => {
   const { code, client_id, redirect_uri } = body;
 
   try {
-    const LOGIN_BASE = process.env.LOGIN_BASE;
-    // 请求认证中心 localhost:3001 兑换令牌
+    const LOGIN_BASE = "https://auth-center.netlify.app";
+    // 请求线上认证中心兑换令牌
     const tokenInfo = await $fetch(LOGIN_BASE + "/api/auth/token", {
       method: "POST",
       headers: {
