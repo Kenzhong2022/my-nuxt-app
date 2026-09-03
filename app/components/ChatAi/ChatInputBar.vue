@@ -74,7 +74,7 @@
 import { IconSend } from '~/assets/svg'
 import { Picture, CircleCloseFilled } from '@element-plus/icons-vue'
 // 模型筛选参考 pages/llmModels/components/ModelFilterSelect 的实现
-import { BADGE_UI, CHAT_TASKS } from '../../pages/llmModels/constants/chat'
+import { BADGE_UI, CHAT_TASKS, isDeprecatedModel } from '../../pages/llmModels/constants/chat'
 import type { LlmModel, LlmModelBadge, LlmModelCatalog } from '~~/types/llmModel'
 
 // 输入文本 / 上传图片（base64）/ 选中模型名（LlmModel.name），均支持父级 v-model 绑定
@@ -87,17 +87,28 @@ const emit = defineEmits<{ send: [] }>()
 // ===================== 模型选择 =====================
 const catalog = ref<LlmModelCatalog | null>(null)
 const badgeUi = (b: LlmModelBadge) => BADGE_UI.find((x) => x.key === b)!
+// 服务端登记的不可用模型名单（CF 账号无权调用，选择器摘除）
+const { names: unavailableNames, load: loadUnavailable } = useUnavailableModels()
 
 // 加载失败的 logo URL 集合（COEP/防盗链等被拦截时），命中则显示图标兜底
 const failedLogos = ref(new Set<string>())
 
 onMounted(async () => {
   catalog.value = await $fetch<LlmModelCatalog>('/allModels/llm-modules.json')
+  loadUnavailable()
 })
 
-/** 对话可用模型（文本生成 / 图生文），平铺各任务分组 */
+/** 对话可用模型（文本生成 / 图生文，排除已弃用与不可用名单），平铺各任务分组 */
 const chatModels = computed<LlmModel[]>(
-  () => catalog.value?.taskTypes.flatMap((g) => g.models).filter((m) => CHAT_TASKS.includes(m.taskType)) ?? [],
+  () =>
+    catalog.value?.taskTypes
+      .flatMap((g) => g.models)
+      .filter(
+        (m) =>
+          CHAT_TASKS.includes(m.taskType) &&
+          !isDeprecatedModel(m) &&
+          !unavailableNames.value.has(m.name),
+      ) ?? [],
 )
 
 // 目录加载后若未选模型则默认选第一个（同 ModelFilterSelect 的自动选中逻辑）

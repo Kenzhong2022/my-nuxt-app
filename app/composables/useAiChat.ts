@@ -1,6 +1,6 @@
 import type { Ref } from "vue";
 // 模型目录反查 / Workers AI ID 拼装复用纯对话页的常量
-import { CHAT_TASKS, toModelId } from "~/pages/llmModels/constants/chat";
+import { CHAT_TASKS, isDeprecatedModel, toModelId } from "~/pages/llmModels/constants/chat";
 import type { LlmModel, LlmModelCatalog } from "~~/types/llmModel";
 import type { TextContent, ImageUrlContent } from "~~/types/agent";
 // SSE 规范级解析（AI SDK 同源依赖）：处理 data: 无空格 / CRLF / 多行 data / 事件字段等边角
@@ -89,11 +89,14 @@ export function useAiChat() {
 
   /** CF 官方模型 ID 列表（@cf/{org}/{name}，org 为 HF 组织名，无法从目录 author 拼出） */
   const cfModels = ref<{ id: string }[] | null>(null);
+  // 服务端登记的不可用模型名单（403 自动入库，共享状态不重复请求）
+  const { names: unavailableNames, load: loadUnavailable } = useUnavailableModels();
 
   onMounted(async () => {
     catalog.value = await $fetch<LlmModelCatalog>("/allModels/llm-modules.json");
     // 列表失败不阻断对话（resolveChatModelId 兜底走 slug 拼接 / API 默认模型）
     cfModels.value = await $fetch<{ id: string }[]>("/api/ai/models").catch(() => null);
+    loadUnavailable();
   });
 
   /** 按模型名反查目录中的模型 */
@@ -112,6 +115,8 @@ export function useAiChat() {
   function resolveChatModelId(modelName: string): string | undefined {
     const selected = findModel(modelName);
     if (!selected || !CHAT_TASKS.includes(selected.taskType)) return undefined;
+    // 已弃用 / 不可用名单（403）中的模型回退 API 默认模型
+    if (isDeprecatedModel(selected) || unavailableNames.value.has(modelName)) return undefined;
     return cfModels.value?.find((m) => m.id.endsWith(`/${modelName}`))?.id
       ?? toModelId(selected.author, selected.name);
   }

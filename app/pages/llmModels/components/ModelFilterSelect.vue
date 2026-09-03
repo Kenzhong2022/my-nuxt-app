@@ -3,7 +3,7 @@
 // 通过 v-model:modelId 双向绑定当前选中的模型名（LlmModel.name）
 import { LlmTaskType } from '~~/types/llmModel';
 import type { LlmModel, LlmModelBadge, LlmModelCatalog } from '~~/types/llmModel';
-import { BADGE_UI } from '../constants/chat';
+import { BADGE_UI, isDeprecatedModel } from '../constants/chat';
 
 const props = defineProps<{
   /** 当前选中模型名（LlmModel.name），空串表示未选 */
@@ -20,9 +20,13 @@ const catalog = ref<LlmModelCatalog | null>(null);
 
 onMounted(async () => {
   catalog.value = await $fetch<LlmModelCatalog>('/allModels/llm-modules.json');
+  loadUnavailable();
 });
 
 const badgeUi = (b: LlmModelBadge) => BADGE_UI.find((x) => x.key === b)!;
+
+// 服务端登记的不可用模型名单（CF 账号无权调用，选择器摘除）
+const { names: unavailableNames, load: loadUnavailable } = useUnavailableModels();
 
 // 三级筛选条件（'' / 空数组 = 不限）
 const taskFilter = ref<LlmTaskType | ''>('');
@@ -30,8 +34,12 @@ const authorFilter = ref('');
 const badgeFilter = ref<LlmModelBadge[]>([]);
 
 // JSON 结构：{ taskTypes: [{ taskType, models: [...] }] }，models 在每个分组内，顶层没有
+// 排除已弃用模型（CF 已下线）与不可用名单（账号无权调用，403）
 const allModels = computed<LlmModel[]>(
-  () => catalog.value?.taskTypes.flatMap((g) => g.models) ?? [],
+  () =>
+    catalog.value?.taskTypes
+      .flatMap((g) => g.models)
+      .filter((m) => !isDeprecatedModel(m) && !unavailableNames.value.has(m.name)) ?? [],
 );
 
 /** 任务类型选项（带数量，按数量降序） */

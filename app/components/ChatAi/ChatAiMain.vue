@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
-    <!-- 欢迎首页（出现正文或思维链后隐藏；手机端媒体查询隐藏） -->
-      <ChatAiWelcome v-if="!output && !reasoning" class="welcome" />
+    <!-- 欢迎首页（仅首次发送前展示，发送过一次消息后永久隐藏；手机端媒体查询隐藏） -->
+    <ChatAiWelcome v-if="!hasStarted" class="welcome" />
     <!-- 流式回复展示 -->
     <div v-else class="reply-preview">
       <!-- 推理模型的思维链（流式期间自动展开实时展示，完成后自动收起，普通模型无此区域） -->
@@ -49,6 +49,9 @@ watch(loading, (v) => {
 // 多轮对话历史（本地维护，每次请求全量携带作为上下文）
 const history = ref<BaseMessageLike[]>([])
 
+// 是否已发送过消息（首次发送后欢迎页不再展示，避免每轮清空输出时闪回）
+const hasStarted = ref(false)
+
 async function onSend() {
   const prompt = text.value.trim()
   if (!prompt) {
@@ -56,6 +59,7 @@ async function onSend() {
     return
   }
   if (loading.value) return
+  hasStarted.value = true
 
   // 先暂存图片再清空输入
   const img = image.value
@@ -75,7 +79,13 @@ async function onSend() {
   } catch (err) {
     // 失败的消息回滚，避免脏数据进入后续上下文
     history.value.pop()
-    ElMessage.error(`发送失败: ${err instanceof Error ? err.message : err}`)
+    console.error("[ai/chat] 发送失败:", err)
+    // CF Free 计划无权调用该模型（403 / 错误码 5035，已弃用模型已被前置筛除）→ 映射为友好文案
+    const raw = err instanceof Error ? err.message : String(err)
+    const msg = raw.startsWith('Workers AI API error (403 Forbidden)')
+      ? '当前会员等级不足，该模型需要 Cloudflare 付费计划'
+      : raw
+    ElMessage.error(`发送失败: ${msg}`)
   }
 }
 </script>

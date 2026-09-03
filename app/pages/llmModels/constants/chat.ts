@@ -33,6 +33,11 @@ export function slugAuthor(author: string): string {
   return author.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/** 已弃用模型（CF 已下线，账号无权调用，直接请求会 403） */
+export function isDeprecatedModel(m: import('~~/types/llmModel').LlmModel): boolean {
+  return m.badges.includes('deprecated');
+}
+
 /** 拼装 Workers AI 完整调用 ID；按 @cf/{厂商slug}/{name} 约定拼接 */
 export function toModelId(author: string, name: string): string {
   return `@cf/${slugAuthor(author)}/${name}`;

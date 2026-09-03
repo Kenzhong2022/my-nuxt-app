@@ -25,6 +25,7 @@ const WHITE_LIST = [
   '/api/ai/chat',
   '/api/ai/image',
   '/api/ai/models',
+  '/api/ai/unavailable-models',
 ];
 
 /**
