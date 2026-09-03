@@ -1,6 +1,6 @@
 // server/api/ai.post.ts - Cloudflare Workers AI 聊天（REST API + 流式输出）
 export default defineEventHandler(async (event) => {
-  const { messages } = await readBody(event)
+  const { messages, model } = await readBody(event)
 
   if (!messages || !Array.isArray(messages)) {
     throw createError({
@@ -8,6 +8,13 @@ export default defineEventHandler(async (event) => {
       statusMessage: "messages 参数必须是数组",
     })
   }
+
+  // 前端可选下发模型 ID（@cf/{厂商slug}/{名称}），严格校验格式防注入，非法回退默认模型
+  const MODEL_RE = /^@cf\/[a-z0-9][a-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/
+  const modelId =
+    typeof model === "string" && MODEL_RE.test(model)
+      ? model
+      : "@cf/meta/llama-3.2-3b-instruct"
 
   const { cloudflare } = useRuntimeConfig()
   const { accountId, workersAi } = cloudflare
@@ -21,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-3b-instruct`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${modelId}`,
     {
       method: "POST",
       headers: {

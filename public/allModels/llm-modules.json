@@ -1,0 +1,1141 @@
+{
+  "source": "https://developers.cloudflare.com/workers-ai/models/",
+  "lastUpdated": "2026-08-12",
+  "total": 86,
+  "taskTypes": [
+    {
+      "taskType": "Text-to-Speech",
+      "models": [
+        {
+          "name": "aura-1",
+          "author": "Deepgram",
+          "taskType": "Text-to-Speech",
+          "description": "Aura is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/aura-1/",
+          "logo": "https://developers.cloudflare.com/_astro/deepgram.BYzW8KfF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "partner",
+            "realtime"
+          ]
+        },
+        {
+          "name": "aura-2-en",
+          "author": "Deepgram",
+          "taskType": "Text-to-Speech",
+          "description": "Aura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/aura-2-en/",
+          "logo": "https://developers.cloudflare.com/_astro/deepgram.BYzW8KfF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "partner",
+            "realtime"
+          ]
+        },
+        {
+          "name": "aura-2-es",
+          "author": "Deepgram",
+          "taskType": "Text-to-Speech",
+          "description": "Aura-2 is a context-aware text-to-speech (TTS) model that applies natural pacing, expressiveness, and fillers based on the context of the provided text. The quality of your text input directly impacts the naturalness of the audio output.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/aura-2-es/",
+          "logo": "https://developers.cloudflare.com/_astro/deepgram.BYzW8KfF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "partner",
+            "realtime"
+          ]
+        },
+        {
+          "name": "melotts",
+          "author": "MyShell",
+          "taskType": "Text-to-Speech",
+          "description": "MeloTTS is a high-quality multi-lingual text-to-speech library by MyShell.ai.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/melotts/",
+          "logo": "https://developers.cloudflare.com/_astro/myshell.6ROagMV2.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Summarization",
+      "models": [
+        {
+          "name": "bart-large-cnn",
+          "author": "Meta",
+          "taskType": "Summarization",
+          "description": "BART is a transformer encoder-encoder (seq2seq) model with a bidirectional (BERT-like) encoder and an autoregressive (GPT-like) decoder. You can use this model for text summarization.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bart-large-cnn/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Text Embeddings",
+      "models": [
+        {
+          "name": "bge-base-en-v1.5",
+          "author": "BAAI",
+          "taskType": "Text Embeddings",
+          "description": "BAAI general embedding (Base) model that transforms any given text into a 768-dimensional vector",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bge-base-en-v1.5/",
+          "logo": "https://developers.cloudflare.com/_astro/baai.BooZR_xF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch"
+          ]
+        },
+        {
+          "name": "bge-large-en-v1.5",
+          "author": "BAAI",
+          "taskType": "Text Embeddings",
+          "description": "BAAI general embedding (Large) model that transforms any given text into a 1024-dimensional vector",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bge-large-en-v1.5/",
+          "logo": "https://developers.cloudflare.com/_astro/baai.BooZR_xF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch"
+          ]
+        },
+        {
+          "name": "bge-m3",
+          "author": "BAAI",
+          "taskType": "Text Embeddings",
+          "description": "Multi-Functionality, Multi-Linguality, and Multi-Granularity embeddings model.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bge-m3/",
+          "logo": "https://developers.cloudflare.com/_astro/baai.BooZR_xF.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "bge-small-en-v1.5",
+          "author": "BAAI",
+          "taskType": "Text Embeddings",
+          "description": "BAAI general embedding (Small) model that transforms any given text into a 384-dimensional vector",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bge-small-en-v1.5/",
+          "logo": "https://developers.cloudflare.com/_astro/baai.BooZR_xF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch"
+          ]
+        },
+        {
+          "name": "embeddinggemma-300m",
+          "author": "Google",
+          "taskType": "Text Embeddings",
+          "description": "EmbeddingGemma is a 300M parameter, state-of-the-art for its size, open embedding model from Google, built from Gemma 3 (with T5Gemma initialization) and the same research and technology used to create Gemini models. EmbeddingGemma produces vector representations of text, making it well-suited for search and retrieval tasks, including classification, clustering, and semantic similarity search. This model was trained with data in 100+ spoken languages.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/embeddinggemma-300m/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "plamo-embedding-1b",
+          "author": "pfnet",
+          "taskType": "Text Embeddings",
+          "description": "PLaMo-Embedding-1B is a Japanese text embedding model developed by Preferred Networks, Inc. It can convert Japanese text input into numerical vectors and can be used for a wide range of applications, including information retrieval, text classification, and clustering.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/plamo-embedding-1b/",
+          "logo": null,
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "qwen3-embedding-0.6b",
+          "author": "Qwen",
+          "taskType": "Text Embeddings",
+          "description": "The Qwen3 Embedding model series is the latest proprietary model of the Qwen family, specifically designed for text embedding and ranking tasks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/qwen3-embedding-0.6b/",
+          "logo": "https://developers.cloudflare.com/_astro/qwen.ByCZjtXU.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Text Classification",
+      "models": [
+        {
+          "name": "bge-reranker-base",
+          "author": "BAAI",
+          "taskType": "Text Classification",
+          "description": "Different from embedding model, reranker uses question and document as input and directly output similarity instead of embedding. You can get a relevance score by inputting query and passage to the reranker. And the score can be mapped to a float value in \\[0,1\\] by sigmoid function.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/bge-reranker-base/",
+          "logo": "https://developers.cloudflare.com/_astro/baai.BooZR_xF.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "distilbert-sst-2-int8",
+          "author": "HuggingFace",
+          "taskType": "Text Classification",
+          "description": "Distilled BERT model that was finetuned on SST-2 for sentiment classification",
+          "url": "https://developers.cloudflare.com/workers-ai/models/distilbert-sst-2-int8/",
+          "logo": "https://developers.cloudflare.com/_astro/huggingface.DMS-v5TA.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Text Generation",
+      "models": [
+        {
+          "name": "deepseek-r1-distill-qwen-32b",
+          "author": "DeepSeek",
+          "taskType": "Text Generation",
+          "description": "DeepSeek-R1-Distill-Qwen-32B is a model distilled from DeepSeek-R1 based on Qwen2.5\\. It outperforms OpenAI-o1-mini across various benchmarks, achieving new state-of-the-art results for dense models.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/deepseek-r1-distill-qwen-32b/",
+          "logo": "https://developers.cloudflare.com/_astro/deepseek.CkzAgvN6.svg",
+          "badges": [
+            "cloudflareHosted",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "deepseek-v4-flash-0731",
+          "author": "DeepSeek",
+          "taskType": "Text Generation",
+          "description": "DeepSeek-V4-Flash-0731 is the official release of DeepSeek-V4-Flash, superseding the preview version, with substantially enhanced agentic capabilities.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/deepseek-v4-flash-0731/",
+          "logo": "https://developers.cloudflare.com/_astro/deepseek.CkzAgvN6.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "deepseek-v4-pro-0813",
+          "author": "DeepSeek",
+          "taskType": "Text Generation",
+          "description": "DeepSeek V4 Pro is a high-capability reasoning model from DeepSeek with a one million token context window, built for long-horizon agentic workflows and complex, multi-step problem-solving",
+          "url": "https://developers.cloudflare.com/workers-ai/models/deepseek-v4-pro-0813/",
+          "logo": "https://developers.cloudflare.com/_astro/deepseek.CkzAgvN6.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "gemma-2b-it-lora",
+          "author": "Google",
+          "taskType": "Text Generation",
+          "description": "This is a Gemma-2B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-2b-it-lora/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "gemma-3-12b-it",
+          "author": "Google",
+          "taskType": "Text Generation",
+          "description": "Gemma 3 models are well-suited for a variety of text generation and image understanding tasks, including question answering, summarization, and reasoning. Gemma 3 models are multimodal, handling text and image input and generating text output, with a large, 128K context window, multilingual support in over 140 languages, and is available in more sizes than previous versions.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-3-12b-it/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "gemma-4-26b-a4b-it",
+          "author": "Google",
+          "taskType": "Text Generation",
+          "description": "Gemma 4 is Google's most intelligent family of open models, built from Gemini 3 research to maximize intelligence-per-parameter.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning",
+            "vision"
+          ]
+        },
+        {
+          "name": "gemma-7b-it",
+          "author": "Google",
+          "taskType": "Text Generation",
+          "description": "Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models. They are text-to-text, decoder-only large language models, available in English, with open weights, pre-trained variants, and instruction-tuned variants.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-7b-it/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "gemma-7b-it-lora",
+          "author": "Google",
+          "taskType": "Text Generation",
+          "description": "This is a Gemma-7B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-7b-it-lora/",
+          "logo": "https://developers.cloudflare.com/_astro/google.DyXKPTPP.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "gemma-sea-lion-v4-27b-it",
+          "author": "aisingapore",
+          "taskType": "Text Generation",
+          "description": "SEA-LION stands for Southeast Asian Languages In One Network, which is a collection of Large Language Models (LLMs) which have been pretrained and instruct-tuned for the Southeast Asia (SEA) region.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gemma-sea-lion-v4-27b-it/",
+          "logo": null,
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "glm-4.7-flash",
+          "author": "Zhipu AI",
+          "taskType": "Text Generation",
+          "description": "GLM-4.7-Flash is a fast and efficient multilingual text generation model with a 131,072 token context window. Optimized for dialogue, instruction-following, and multi-turn tool calling across 100+ languages.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/glm-4.7-flash/",
+          "logo": "https://developers.cloudflare.com/_astro/zai-org.Dj2vcayE.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "glm-5.2",
+          "author": "Zhipu AI",
+          "taskType": "Text Generation",
+          "description": "Z.ai's flagship agentic coding model",
+          "url": "https://developers.cloudflare.com/workers-ai/models/glm-5.2/",
+          "logo": "https://developers.cloudflare.com/_astro/zai-org.Dj2vcayE.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "glm-5.3",
+          "author": "Zhipu AI",
+          "taskType": "Text Generation",
+          "description": "GLM-5.3 is Z.ai's flagship agentic coding model, pairing a 1M-token context window with reasoning, function calling, and structured outputs to power multi-step, tool-driven development workflows.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/glm-5.3/",
+          "logo": "https://developers.cloudflare.com/_astro/zai-org.Dj2vcayE.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "glm-5.3-flash",
+          "author": "Zhipu AI",
+          "taskType": "Text Generation",
+          "description": "The first natively multimodal model in the GLM-5 series. With 320B total parameters and just 18B active parameters, it outperforms GLM-5.2 across benchmarks and real-world workloads at one-tenth the price, while approaching Claude Opus 4.8 on coding and agentic benchmarks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/glm-5.3-flash/",
+          "logo": "https://developers.cloudflare.com/_astro/zai-org.Dj2vcayE.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning",
+            "vision"
+          ]
+        },
+        {
+          "name": "gpt-oss-120b",
+          "author": "OpenAI",
+          "taskType": "Text Generation",
+          "description": "OpenAI's open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-120b is for production, general purpose, high reasoning use-cases.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gpt-oss-120b/",
+          "logo": "https://developers.cloudflare.com/_astro/openai.BBwNKzBb.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "gpt-oss-20b",
+          "author": "OpenAI",
+          "taskType": "Text Generation",
+          "description": "OpenAI's open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-20b is for lower latency, and local or specialized use-cases.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/gpt-oss-20b/",
+          "logo": "https://developers.cloudflare.com/_astro/openai.BBwNKzBb.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "granite-4.0-h-micro",
+          "author": "IBM",
+          "taskType": "Text Generation",
+          "description": "Granite 4.0 instruct models deliver strong performance across benchmarks, achieving industry-leading results in key agentic tasks like instruction following and function calling. These efficiencies make the models well-suited for a wide range of use cases like retrieval-augmented generation (RAG), multi-agent workflows, and edge deployments.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/granite-4.0-h-micro/",
+          "logo": "https://developers.cloudflare.com/_astro/ibm.CYdLt4EI.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling"
+          ]
+        },
+        {
+          "name": "hermes-2-pro-mistral-7b",
+          "author": "nousresearch",
+          "taskType": "Text Generation",
+          "description": "Hermes 2 Pro on Mistral 7B is the new flagship 7B Hermes! Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/hermes-2-pro-mistral-7b/",
+          "logo": null,
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "functionCalling",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "kimi-k2.5",
+          "author": "Moonshot AI",
+          "taskType": "Text Generation",
+          "description": "Kimi K2.5 is a frontier-scale open-source model with a 256k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/kimi-k2.5/",
+          "logo": "https://developers.cloudflare.com/_astro/moonshotai.DjWMkXUS.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "deprecated",
+            "reasoning",
+            "vision"
+          ]
+        },
+        {
+          "name": "kimi-k2.6",
+          "author": "Moonshot AI",
+          "taskType": "Text Generation",
+          "description": "Kimi K2.6 is a frontier-scale open-source 1T parameter model with a 262.1k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/kimi-k2.6/",
+          "logo": "https://developers.cloudflare.com/_astro/moonshotai.DjWMkXUS.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning",
+            "vision"
+          ]
+        },
+        {
+          "name": "kimi-k2.7-code",
+          "author": "Moonshot AI",
+          "taskType": "Text Generation",
+          "description": "Kimi K2.7 is a frontier-scale open-source 1T parameter model with a 262.1k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/kimi-k2.7-code/",
+          "logo": "https://developers.cloudflare.com/_astro/moonshotai.DjWMkXUS.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning",
+            "vision"
+          ]
+        },
+        {
+          "name": "llama-2-7b-chat-fp16",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Full precision (fp16) generative text model with 7 billion parameters from Meta",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-fp16/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-2-7b-chat-hf-lora",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "This is a Llama2 base model that Cloudflare dedicated for inference with LoRA adapters. Llama 2 is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. This is the repository for the 7B fine-tuned model, optimized for dialogue use cases and converted for the Hugging Face Transformers format.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-hf-lora/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "llama-2-7b-chat-int8",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Quantized (int8) generative text model with 7 billion parameters from Meta",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-2-7b-chat-int8/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3-8b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Generation over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3-8b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3-8b-instruct-awq",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Quantized (int4) generative text model with 8 billion parameters from Meta.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3-8b-instruct-awq/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3.1-70b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-70b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3.1-8b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3.1-8b-instruct-awq",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Quantized (int4) generative text model with 8 billion parameters from Meta.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-awq/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "llama-3.1-8b-instruct-fast",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "\\[Fast version\\] The Meta Llama 3.1 collection of multilingual large language models (LLMs) is a collection of pretrained and instruction tuned generative models. The Llama 3.1 instruction tuned text only models are optimized for multilingual dialogue use cases and outperform many of the available open source and closed chat models on common industry benchmarks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fast/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "llama-3.1-8b-instruct-fp8",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Llama 3.1 8B quantized to FP8 precision",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "llama-3.2-11b-vision-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "The Llama 3.2-Vision instruction-tuned models are optimized for visual recognition, image reasoning, captioning, and answering general questions about an image.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.2-11b-vision-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora",
+            "vision"
+          ]
+        },
+        {
+          "name": "llama-3.2-1b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.2-1b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "llama-3.2-3b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "llama-3.3-70b-instruct-fp8-fast",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Llama 3.3 70B quantized to fp8 precision, optimized to be faster.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "functionCalling"
+          ]
+        },
+        {
+          "name": "llama-4-scout-17b-16e-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Meta's Llama 4 Scout is a 17 billion parameter model with 16 experts that is natively multimodal. These models leverage a mixture-of-experts architecture to offer industry-leading performance in text and image understanding.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-4-scout-17b-16e-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "functionCalling",
+            "vision"
+          ]
+        },
+        {
+          "name": "llama-guard-3-8b",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Llama Guard 3 is a Llama-3.1-8B pretrained model, fine-tuned for content safety classification. Similar to previous versions, it can be used to classify content in both LLM inputs (prompt classification) and in LLM responses (response classification). It acts as an LLM – it generates text in its output that indicates whether a given prompt or response is safe or unsafe, and if unsafe, it also lists the content categories violated.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llama-guard-3-8b/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "meta-llama-3-8b-instruct",
+          "author": "Meta",
+          "taskType": "Text Generation",
+          "description": "Generation over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/meta-llama-3-8b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "mistral-7b-instruct-v0.1",
+          "author": "MistralAI",
+          "taskType": "Text Generation",
+          "description": "Instruct fine-tuned version of the Mistral-7b generative text model with 7 billion parameters",
+          "url": "https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.1/",
+          "logo": "https://developers.cloudflare.com/_astro/mistralai.Bn9UMUMu.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "mistral-7b-instruct-v0.2",
+          "author": "MistralAI",
+          "taskType": "Text Generation",
+          "description": "The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2\\. Mistral-7B-v0.2 has the following changes compared to Mistral-7B-v0.1: 32k context window (vs 8k context in v0.1), rope-theta = 1e6, and no Sliding-Window Attention.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.2/",
+          "logo": "https://developers.cloudflare.com/_astro/mistralai.Bn9UMUMu.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "mistral-7b-instruct-v0.2-lora",
+          "author": "MistralAI",
+          "taskType": "Text Generation",
+          "description": "The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.2-lora/",
+          "logo": "https://developers.cloudflare.com/_astro/mistralai.Bn9UMUMu.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "mistral-small-3.1-24b-instruct",
+          "author": "MistralAI",
+          "taskType": "Text Generation",
+          "description": "Building upon Mistral Small 3 (2501), Mistral Small 3.1 (2503) adds state-of-the-art vision understanding and enhances long context capabilities up to 128k tokens without compromising text performance. With 24 billion parameters, this model achieves top-tier capabilities in both text and vision tasks.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/mistral-small-3.1-24b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/mistralai.Bn9UMUMu.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling"
+          ]
+        },
+        {
+          "name": "nemotron-3-120b-a12b",
+          "author": "NVIDIA",
+          "taskType": "Text Generation",
+          "description": "NVIDIA Nemotron 3 Super is a hybrid MoE model with leading accuracy for multi-agent applications and specialized agentic AI systems.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/nemotron-3-120b-a12b/",
+          "logo": "https://developers.cloudflare.com/_astro/nvidia.DI1bb8hH.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "phi-2",
+          "author": "Microsoft",
+          "taskType": "Text Generation",
+          "description": "Phi-2 is a Transformer-based model with a next-word prediction objective, trained on 1.4T tokens from multiple passes on a mixture of Synthetic and Web datasets for NLP and coding.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/phi-2/",
+          "logo": "https://developers.cloudflare.com/_astro/microsoft.LujcDJ--.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder-32b-instruct",
+          "author": "Qwen",
+          "taskType": "Text Generation",
+          "description": "Qwen2.5-Coder is the latest series of Code-Specific Qwen large language models (formerly known as CodeQwen). As of now, Qwen2.5-Coder has covered six mainstream model sizes, 0.5, 1.5, 3, 7, 14, 32 billion parameters, to meet the needs of different developers. Qwen2.5-Coder brings the following improvements upon CodeQwen1.5:",
+          "url": "https://developers.cloudflare.com/workers-ai/models/qwen2.5-coder-32b-instruct/",
+          "logo": "https://developers.cloudflare.com/_astro/qwen.ByCZjtXU.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora"
+          ]
+        },
+        {
+          "name": "qwen3-30b-a3b-fp8",
+          "author": "Qwen",
+          "taskType": "Text Generation",
+          "description": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models. Built upon extensive training, Qwen3 delivers groundbreaking advancements in reasoning, instruction-following, agent capabilities, and multilingual support.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/qwen3-30b-a3b-fp8/",
+          "logo": "https://developers.cloudflare.com/_astro/qwen.ByCZjtXU.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "functionCalling",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "qwq-32b",
+          "author": "Qwen",
+          "taskType": "Text Generation",
+          "description": "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. QwQ-32B is the medium-sized reasoning model, which is capable of achieving competitive performance against state-of-the-art reasoning models, e.g., DeepSeek-R1, o1-mini.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/qwq-32b/",
+          "logo": "https://developers.cloudflare.com/_astro/qwen.ByCZjtXU.svg",
+          "badges": [
+            "cloudflareHosted",
+            "lora",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "sqlcoder-7b-2",
+          "author": "Defog",
+          "taskType": "Text Generation",
+          "description": "This model is intended to be used by non-technical users to understand data inside their SQL databases.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/sqlcoder-7b-2/",
+          "logo": "https://developers.cloudflare.com/_astro/defog.C0vfV4et.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Object Detection",
+      "models": [
+        {
+          "name": "detr-resnet-50",
+          "author": "Meta",
+          "taskType": "Object Detection",
+          "description": "DEtection TRansformer (DETR) model trained end-to-end on COCO 2017 object detection (118k annotated images).",
+          "url": "https://developers.cloudflare.com/workers-ai/models/detr-resnet-50/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Text-to-Image",
+      "models": [
+        {
+          "name": "dreamshaper-8-lcm",
+          "author": "lykon",
+          "taskType": "Text-to-Image",
+          "description": "Stable Diffusion model that has been fine-tuned to be better at photorealism without sacrificing range.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/dreamshaper-8-lcm/",
+          "logo": null,
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "flux-1-schnell",
+          "author": "Black Forest Labs",
+          "taskType": "Text-to-Image",
+          "description": "FLUX.1 \\[schnell\\] is a 12 billion parameter rectified flow transformer capable of generating images from text descriptions.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/",
+          "logo": "https://developers.cloudflare.com/_astro/blackforestlabs.Ccs-Y4-D.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "flux-2-dev",
+          "author": "Black Forest Labs",
+          "taskType": "Text-to-Image",
+          "description": "FLUX.2 \\[dev\\] is an image model from Black Forest Labs where you can generate highly realistic and detailed images, with multi-reference support.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/flux-2-dev/",
+          "logo": "https://developers.cloudflare.com/_astro/blackforestlabs.Ccs-Y4-D.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner"
+          ]
+        },
+        {
+          "name": "flux-2-klein-4b",
+          "author": "Black Forest Labs",
+          "taskType": "Text-to-Image",
+          "description": "FLUX.2 \\[klein\\] is an ultra-fast, distilled image model. It unifies image generation and editing in a single model, delivering state-of-the-art quality enabling interactive workflows, real-time previews, and latency-critical applications.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/",
+          "logo": "https://developers.cloudflare.com/_astro/blackforestlabs.Ccs-Y4-D.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner"
+          ]
+        },
+        {
+          "name": "flux-2-klein-9b",
+          "author": "Black Forest Labs",
+          "taskType": "Text-to-Image",
+          "description": "FLUX.2 \\[klein\\] 9B is an ultra-fast, distilled image model with enhanced quality. It unifies image generation and editing in a single model, delivering state-of-the-art quality enabling interactive workflows, real-time previews, and latency-critical applications.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/flux-2-klein-9b/",
+          "logo": "https://developers.cloudflare.com/_astro/blackforestlabs.Ccs-Y4-D.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner"
+          ]
+        },
+        {
+          "name": "lucid-origin",
+          "author": "Leonardo",
+          "taskType": "Text-to-Image",
+          "description": "Lucid Origin from Leonardo.AI is their most adaptable and prompt-responsive model to date. Whether you're generating images with sharp graphic design, stunning full-HD renders, or highly specific creative direction, it adheres closely to your prompts, renders text with accuracy, and supports a wide array of visual styles and aesthetics – from stylized concept art to crisp product mockups.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/lucid-origin/",
+          "logo": "https://developers.cloudflare.com/_astro/leonardo.JZysY-g3.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner"
+          ]
+        },
+        {
+          "name": "phoenix-1.0",
+          "author": "Leonardo",
+          "taskType": "Text-to-Image",
+          "description": "Phoenix 1.0 is a model by Leonardo.Ai that generates images with exceptional prompt adherence and coherent text.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/phoenix-1.0/",
+          "logo": "https://developers.cloudflare.com/_astro/leonardo.JZysY-g3.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner"
+          ]
+        },
+        {
+          "name": "stable-diffusion-v1-5-img2img",
+          "author": "RunwayML",
+          "taskType": "Text-to-Image",
+          "description": "Stable Diffusion is a latent text-to-image diffusion model capable of generating photo-realistic images. Img2img generate a new image from an input image with Stable Diffusion.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/stable-diffusion-v1-5-img2img/",
+          "logo": "https://developers.cloudflare.com/_astro/runway.Cq8Cjov4.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "stable-diffusion-v1-5-inpainting",
+          "author": "RunwayML",
+          "taskType": "Text-to-Image",
+          "description": "Stable Diffusion Inpainting is a latent text-to-image diffusion model capable of generating photo-realistic images given any text input, with the extra capability of inpainting the pictures by using a mask.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/stable-diffusion-v1-5-inpainting/",
+          "logo": "https://developers.cloudflare.com/_astro/runway.Cq8Cjov4.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "stable-diffusion-xl-base-1.0",
+          "author": "Stability.ai",
+          "taskType": "Text-to-Image",
+          "description": "Diffusion-based text-to-image generative model by Stability AI. Generates and modify images based on text prompts.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/stable-diffusion-xl-base-1.0/",
+          "logo": "https://developers.cloudflare.com/_astro/stabilityai.VsBx3CKv.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "stable-diffusion-xl-lightning",
+          "author": "ByteDance",
+          "taskType": "Text-to-Image",
+          "description": "SDXL-Lightning is a lightning-fast text-to-image generation model. It can generate high-quality 1024px images in a few steps.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/stable-diffusion-xl-lightning/",
+          "logo": "https://developers.cloudflare.com/_astro/bytedance.T1uiROQ6.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Automatic Speech Recognition",
+      "models": [
+        {
+          "name": "flux",
+          "author": "Deepgram",
+          "taskType": "Automatic Speech Recognition",
+          "description": "Flux is the first conversational speech recognition model built specifically for voice agents.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/flux/",
+          "logo": "https://developers.cloudflare.com/_astro/deepgram.BYzW8KfF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "partner",
+            "realtime"
+          ]
+        },
+        {
+          "name": "nova-3",
+          "author": "Deepgram",
+          "taskType": "Automatic Speech Recognition",
+          "description": "Transcribe audio using Deepgram’s speech-to-text model",
+          "url": "https://developers.cloudflare.com/workers-ai/models/nova-3/",
+          "logo": "https://developers.cloudflare.com/_astro/deepgram.BYzW8KfF.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "partner",
+            "realtime"
+          ]
+        },
+        {
+          "name": "whisper",
+          "author": "OpenAI",
+          "taskType": "Automatic Speech Recognition",
+          "description": "Whisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse audio and is also a multitasking model that can perform multilingual speech recognition, speech translation, and language identification.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/whisper/",
+          "logo": "https://developers.cloudflare.com/_astro/openai.BBwNKzBb.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "whisper-large-v3-turbo",
+          "author": "OpenAI",
+          "taskType": "Automatic Speech Recognition",
+          "description": "Whisper is a pre-trained model for automatic speech recognition (ASR) and speech translation.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/",
+          "logo": "https://developers.cloudflare.com/_astro/openai.BBwNKzBb.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch"
+          ]
+        },
+        {
+          "name": "whisper-tiny-en",
+          "author": "OpenAI",
+          "taskType": "Automatic Speech Recognition",
+          "description": "Whisper is a pre-trained model for automatic speech recognition (ASR) and speech translation. Trained on 680k hours of labelled data, Whisper models demonstrate a strong ability to generalize to many datasets and domains without the need for fine-tuning. This is the English-only version of the Whisper Tiny model which was trained on the task of speech recognition.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/whisper-tiny-en/",
+          "logo": "https://developers.cloudflare.com/_astro/openai.BBwNKzBb.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Translation",
+      "models": [
+        {
+          "name": "indictrans2-en-indic-1B",
+          "author": "ai4bharat",
+          "taskType": "Translation",
+          "description": "IndicTrans2 is the first open-source transformer-based multilingual NMT model that supports high-quality translations across all the 22 scheduled Indic languages",
+          "url": "https://developers.cloudflare.com/workers-ai/models/indictrans2-en-indic-1B/",
+          "logo": null,
+          "badges": [
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "m2m100-1.2b",
+          "author": "Meta",
+          "taskType": "Translation",
+          "description": "Multilingual encoder-decoder (seq-to-seq) model trained for Many-to-Many multilingual translation",
+          "url": "https://developers.cloudflare.com/workers-ai/models/m2m100-1.2b/",
+          "logo": "https://developers.cloudflare.com/_astro/meta.CTzB_ysm.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Image-to-Text",
+      "models": [
+        {
+          "name": "llava-1.5-7b-hf",
+          "author": "llava-hf",
+          "taskType": "Image-to-Text",
+          "description": "LLaVA is an open-source chatbot trained by fine-tuning LLaMA/Vicuna on GPT-generated multimodal instruction-following data. It is an auto-regressive language model, based on the transformer architecture.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/llava-1.5-7b-hf/",
+          "logo": null,
+          "badges": [
+            "beta",
+            "cloudflareHosted"
+          ]
+        },
+        {
+          "name": "moondream3.1-9B-A2B",
+          "author": "moondream",
+          "taskType": "Image-to-Text",
+          "description": "Moondream 3 is a fast, efficient 9B mixture-of-experts vision language model (2B active parameters) that delivers frontier-level visual reasoning for tasks like object detection, pointing, OCR, and structured output.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/moondream3.1-9B-A2B/",
+          "logo": null,
+          "badges": [
+            "cloudflareHosted",
+            "vision"
+          ]
+        },
+        {
+          "name": "uform-gen2-qwen-500m",
+          "author": "Unum",
+          "taskType": "Image-to-Text",
+          "description": "UForm-Gen is a small generative vision-language model primarily designed for Image Captioning and Visual Question Answering. The model was pre-trained on the internal image captioning dataset and fine-tuned on public instructions datasets: SVIT, LVIS, VQAs datasets.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/uform-gen2-qwen-500m/",
+          "logo": "https://developers.cloudflare.com/_astro/unum.CWYcwnUh.svg",
+          "badges": [
+            "beta",
+            "cloudflareHosted",
+            "deprecated"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Image-Text-to-Text",
+      "models": [
+        {
+          "name": "qwen3.8-27b",
+          "author": "Qwen",
+          "taskType": "Image-Text-to-Text",
+          "description": "Qwen 3.8 27B is a 27-billion-parameter instruction-tuned language model from Alibaba's Qwen family, designed for vision, efficient general-purpose text generation and agentic workloads.",
+          "url": "https://developers.cloudflare.com/workers-ai/models/qwen3.8-27b/",
+          "logo": "https://developers.cloudflare.com/_astro/qwen.ByCZjtXU.svg",
+          "badges": [
+            "cloudflareHosted",
+            "functionCalling",
+            "reasoning",
+            "vision"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Image Classification",
+      "models": [
+        {
+          "name": "resnet-50",
+          "author": "Microsoft",
+          "taskType": "Image Classification",
+          "description": "50 layers deep image classification CNN trained on more than 1M images from ImageNet",
+          "url": "https://developers.cloudflare.com/workers-ai/models/resnet-50/",
+          "logo": "https://developers.cloudflare.com/_astro/microsoft.LujcDJ--.svg",
+          "badges": [
+            "cloudflareHosted"
+          ]
+        }
+      ]
+    },
+    {
+      "taskType": "Voice Activity Detection",
+      "models": [
+        {
+          "name": "smart-turn-v2",
+          "author": "Pipecat",
+          "taskType": "Voice Activity Detection",
+          "description": "An open source, community-driven, native audio turn detection model in 2nd version",
+          "url": "https://developers.cloudflare.com/workers-ai/models/smart-turn-v2/",
+          "logo": "https://developers.cloudflare.com/_astro/pipecat.B-PNBdef.svg",
+          "badges": [
+            "cloudflareHosted",
+            "batch",
+            "realtime"
+          ]
+        }
+      ]
+    }
+  ]
+}

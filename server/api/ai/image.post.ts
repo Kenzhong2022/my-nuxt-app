@@ -1,6 +1,6 @@
-// server/api/ai/image.post.ts - Cloudflare Workers AI 文生图（flux-1-schnell）
+// server/api/ai/image.post.ts - Cloudflare Workers AI 文生图
 export default defineEventHandler(async (event) => {
-  const { prompt, steps } = await readBody(event);
+  const { prompt, steps, model } = await readBody(event);
 
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
     throw createError({
@@ -8,6 +8,13 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'prompt 参数必须是非空字符串',
     });
   }
+
+  // 前端可选下发模型 ID（@cf/{厂商slug}/{名称}），严格校验格式防注入，非法回退默认模型
+  const MODEL_RE = /^@cf\/[a-z0-9][a-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/;
+  const modelId =
+    typeof model === 'string' && MODEL_RE.test(model)
+      ? model
+      : '@cf/black-forest-labs/flux-1-schnell';
 
   const { cloudflare } = useRuntimeConfig();
   const { accountId, workersAi } = cloudflare;
@@ -28,7 +35,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${modelId}`,
     {
       method: 'POST',
       headers: {
@@ -37,8 +44,10 @@ export default defineEventHandler(async (event) => {
       },
       body: JSON.stringify({
         prompt: finalPrompt,
-        // flux-1-schnell 默认 4 步（1-8 可选），步数越多越慢、细节略增
-        steps: Math.min(Math.max(Number(steps) || 4, 1), 8),
+        // steps 是 flux-1-schnell 专属参数（1-8 步），其他模型传了会 400，仅默认模型下发
+        ...(modelId === '@cf/black-forest-labs/flux-1-schnell'
+          ? { steps: Math.min(Math.max(Number(steps) || 4, 1), 8) }
+          : {}),
       }),
     },
   );

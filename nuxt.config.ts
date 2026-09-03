@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-
 import viteCompression from 'vite-plugin-compression';
+import svgLoader from 'vite-svg-loader';
 
 /** 环境判定：nuxt dev 为 true，nuxt build（含 Netlify 部署构建）为 false */
 const isDev = process.dev;
@@ -82,6 +82,7 @@ export default defineNuxtConfig({
   },
   modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/tailwindcss'],
   vite: {
+    plugins: [svgLoader({ defaultImport: 'component' })],
     server: {
       // 开发服务器响应头（仅限开发环境时生效）
       headers: {

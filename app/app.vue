@@ -1,6 +1,17 @@
 <!-- app.vue -->
 <template>
   <div class="app-container">
+      <!-- 传入自定义水印内容 -->
+  <Watermark
+    v-if="0"
+    text="张三｜用户ID：2026001｜内部文档，严禁截图外传"
+    :font-size="14"
+    color="#666666"
+    :opacity="0.15"
+    :rotate="-25"
+    :gap-x="240"
+    :gap-y="160"
+  />
     <!-- 页面内容 -->
     <NuxtLayout>
       <KeepAlive>
@@ -23,12 +34,24 @@
       </div>
     </ClientOnly>
   </div>
+
 </template>
 
 <script setup>
 import gsap from 'gsap';
-
 const loadingStore = useLoadingStore();
+
+// ---------- 用户信息（RuoYi 规范：getInfo + getRouters）SSR 拉取 ----------
+// callOnce：SSR 期间执行一次，客户端水合时跳过；
+// pinia 状态随 Nuxt payload 序列化下发，v-hasPermi/v-hasRole 指令两端读到一致数据
+const userInfoStore = useUserInfoStore();
+await callOnce('user-info', async () => {
+  await Promise.all([userInfoStore.getInfo(), userInfoStore.getRouters()]);
+});
+
+// TODO: 临时调试 —— 根组件 setup 只执行一次，此时 Nuxt 已按文件系统把 pages 全部注册进 router
+const router = useRouter();
+const routes = router.getRoutes();
 
 let tl = null;
 

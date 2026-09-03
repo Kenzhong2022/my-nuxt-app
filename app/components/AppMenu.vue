@@ -4,40 +4,12 @@
     :default-openeds="defaultOpeneds"
     class="border-none menu-container"
   >
-    <template v-for="menu in menuData">
-      <el-sub-menu
-        v-if="menu.children?.length"
-        :key="menu.id + '-sub'"
-        :index="menu.path"
-      >
-        <template #title>
-          <el-icon>
-            <component :is="menu.icon" />
-          </el-icon>
-          <span>{{ menu.name }}</span>
-        </template>
-        <el-menu-item
-          v-for="child in menu.children"
-          :key="child.id"
-          :index="child.path"
-          @click="handleItemClick(child)"
-        >
-          {{ child.name }}
-        </el-menu-item>
-      </el-sub-menu>
-
-      <el-menu-item
-        v-else
-        :key="menu.id + '-item'"
-        :index="menu.path"
-        @click="handleItemClick(menu)"
-      >
-        <el-icon>
-          <component :is="menu.icon" />
-        </el-icon>
-        {{ menu.name }}
-      </el-menu-item>
-    </template>
+    <AppMenuItem
+      v-for="menu in menuData"
+      :key="menu.id"
+      :item="menu"
+      @select="handleItemClick"
+    />
   </el-menu>
 </template>
 

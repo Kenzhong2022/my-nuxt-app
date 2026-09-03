@@ -17,8 +17,16 @@
     border-color 0.4s ease,
     color 0.4s ease,
     fill 0.4s ease,
+    stroke 0.4s ease,
     box-shadow 0.4s ease,
     outline-color 0.4s ease !important;
+}
+
+/* ===== 暗色模式基础文字色 ===== */
+/* SVG 图标描边为 currentColor，跟随文字色；此处兜底无显式设色的元素，
+   使图标及普通文字在暗色下默认可见（组件内显式设色不受影响） */
+html.dark {
+  color: var(--el-text-color-primary);
 }
 
 /* ===== v-loading 指令样式 ===== */

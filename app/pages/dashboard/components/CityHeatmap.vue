@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import * as echarts from 'echarts';
 import type { CityHeatmapResponse } from '~~/types/analytics';
+import type { ChinaCityGeoJSON } from '~~/types/geo/chinaCity';
 
 const props = defineProps<{
   data: CityHeatmapResponse | null;
@@ -13,13 +14,30 @@ const props = defineProps<{
 
 const chartRef = ref<HTMLDivElement>();
 let chart: echarts.ECharts | null = null;
+// 中断 geoJSON 加载的控制器：离开页面/卸载时 abort
+let mapAbort: AbortController | null = null;
+
+/** 判断是否为主动中止（AbortController.abort 触发的中断，可静默忽略） */
+function isAbortError(e: unknown): boolean {
+  return e instanceof DOMException && e.name === 'AbortError';
+}
 
 async function initChart() {
   if (!chartRef.value || !props.data) return;
 
-  // 1. 加载中国地图 geoJSON
-  const chinaJson = (await $fetch('/geo/china-city.json')) as any;
-  echarts.registerMap('china', chinaJson);
+  // 1. 加载中国地图 geoJSON（中断后立即 return，避免注册已取消的请求）
+  mapAbort?.abort(); // 数据变化重跑时，先取消上一次未完成的加载
+  mapAbort = new AbortController();
+  try {
+    const chinaJson = (await $fetch<ChinaCityGeoJSON>('/geo/china-city.json', {
+      signal: mapAbort.signal,
+    }));
+    if (mapAbort.signal.aborted) return; // 已被中断，丢弃本次结果
+    echarts.registerMap('china', chinaJson);
+  } catch (e) {
+    if (isAbortError(e)) return; // 主动取消，不做任何提示
+    throw e;
+  }
 
   // 2. 初始化图表
   chart = echarts.init(chartRef.value);
@@ -94,11 +112,15 @@ function removeResizeListener() {
 onMounted(addResizeListener);
 // keepalive 页面激活回来时重新监听
 onActivated(addResizeListener);
-// 离开页面（缓存失活）时卸载监听
-onDeactivated(removeResizeListener);
-// 组件真正销毁时卸载监听并释放图表
+// 离开页面（缓存失活）时卸载监听并中断未完成的地图加载
+onDeactivated(() => {
+  removeResizeListener();
+  mapAbort?.abort();
+});
+// 组件真正销毁时卸载监听、中断加载并释放图表
 onUnmounted(() => {
   removeResizeListener();
+  mapAbort?.abort();
   chart?.dispose();
 });
 

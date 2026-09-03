@@ -112,13 +112,34 @@ watch(
   },
 );
 /**
- * 计算默认打开的菜单
- * @returns {string[]} 包含父菜单路径的数组，如果当前路由是子菜单则返回父菜单路径，否则返回空数组
+ * 菜单祖先链索引：叶子 path → 全部祖先 path 数组
+ * menuConfig 为静态数据，索引仅构建一次（O(n)），路由切换时查找 O(1)
  */
-const defaultOpeneds = computed(() => {
-  const parent = menuConfig.value.find((m) => m.children?.some((c) => c.path === route.path));
-  return parent ? [parent.path] : [];
+const menuAncestorsMap = computed(() => {
+  const map = new Map<string, string[]>();
+  /**
+   * 深度优先遍历建索引
+   * @param items 当前层菜单
+   * @param trail 已走过的父级 path 链
+   */
+  function walk(items: MenuItem[], trail: string[]) {
+    for (const item of items) {
+      if (item.children?.length) {
+        walk(item.children, [...trail, item.path]);
+      } else {
+        map.set(item.path, trail);
+      }
+    }
+  }
+  walk(menuConfig.value, []);
+  return map;
 });
+
+/**
+ * 计算默认打开的菜单：O(1) 哈希查找当前路由的全部祖先 path
+ * @returns {string[]} 祖先菜单 path 数组，无匹配返回空数组
+ */
+const defaultOpeneds = computed(() => menuAncestorsMap.value.get(route.path) ?? []);
 
 const menuConfig = ref<MenuItem[]>([
   {
@@ -424,6 +445,16 @@ const menuConfig = ref<MenuItem[]>([
         path: '/agent/history',
         sort: 1,
       },
+      {
+        id: 103,
+        parentId: 10,
+        name: '模型对话',
+        path: '/llmModels',
+        sort: 2,
+        children: [
+          { id: 1031, parentId: 103, name: '模型对话', path: '/llmModels/chat', sort: 0 },
+        ],
+      },
     ],
   },
   {
@@ -507,6 +538,10 @@ function toggleMobileMenu() {
 <style scoped lang="scss">
 :deep(.switchDark .el-switch__action) {
   background: transparent !important;
+}
+
+.el-container {
+  overflow: hidden;
 }
 
 /* 头部导航内容行：等价于 flex items-center justify-between h-full gap-4 whitespace-nowrap overflow-hidden */

@@ -9,6 +9,7 @@
   font-size: 16px; /* 根字体基准，1rem = 16px */
 
   /* 字号层级（从大到小） */
+  --kk-font-size-extra-extra-large: 2.125rem; /* 34px - 欢迎页超级主标题 H1 */
   --kk-font-size-extra-large: 1.25rem; /* 20px - 页面主标题 H1 */
   --kk-font-size-large: 1.125rem; /* 18px - 二级标题 H2、卡片标题 */
   --kk-font-size-medium: 1rem; /* 16px - 三级标题 H3、正文、按钮 */
