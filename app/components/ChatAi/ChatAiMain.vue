@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
-    <!-- 欢迎首页（有对话历史后隐藏；手机端媒体查询隐藏） -->
-    <ChatAiWelcome v-if="!output" class="welcome" />
+    <!-- 欢迎首页（出现正文或思维链后隐藏；手机端媒体查询隐藏） -->
+      <ChatAiWelcome v-if="!output && !reasoning" class="welcome" />
     <!-- 流式回复展示 -->
     <div v-else class="reply-preview">
       <!-- 推理模型的思维链（流式期间自动展开实时展示，完成后自动收起，普通模型无此区域） -->
@@ -44,7 +44,7 @@ const { output, reasoning, loading, resolveChatModelId, sendChat } = useAiChat()
 const activeReasoning = ref<string[]>([])
 watch(loading, (v) => {
   activeReasoning.value = v ? ['think'] : []
-})
+}, { immediate: true })
 
 // 多轮对话历史（本地维护，每次请求全量携带作为上下文）
 const history = ref<BaseMessageLike[]>([])
@@ -89,7 +89,7 @@ async function onSend() {
   justify-content: start;
   align-items: center;
   position: relative;
-
+  overflow: auto;
   .input-wrap {
     position: absolute;
     bottom: 1.875rem;
@@ -112,6 +112,7 @@ async function onSend() {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 0.75rem;
+  overflow: auto;
 }
 
 // 思维链折叠区（弱化视觉，与正文区分）

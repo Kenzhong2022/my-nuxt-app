@@ -151,7 +151,7 @@ export function useAgentApi() {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value, { stream: true });// 解码为字符串，支持流模式
           parser.feed(chunk);
         }
 

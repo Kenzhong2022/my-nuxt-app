@@ -3,6 +3,8 @@ import type { Ref } from "vue";
 import { CHAT_TASKS, toModelId } from "~/pages/llmModels/constants/chat";
 import type { LlmModel, LlmModelCatalog } from "~~/types/llmModel";
 import type { TextContent, ImageUrlContent } from "~~/types/agent";
+// SSE 规范级解析（AI SDK 同源依赖）：处理 data: 无空格 / CRLF / 多行 data / 事件字段等边角
+import { createParser } from "eventsource-parser";
 
 /** 多模态内容分片（文本 / 图片，OpenAI 风格，对应 LangChain 的 MessageContentComplex） */
 export type MessageContentComplex = TextContent | ImageUrlContent;
@@ -141,39 +143,34 @@ export function useAiChat() {
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
+
+      // eventsource-parser：feed 任意大小的 chunk，凑成完整事件后回调 onEvent
+      // （跨 chunk 半包、CRLF 换行、data: 无空格等规范边角均由其处理）
+      const parser = createParser({
+        onEvent(event) {
+          let json: any;
+          try {
+            json = JSON.parse(event.data);
+          } catch {
+            console.warn("[ai-chat] 无法解析的 SSE data:", event.data);
+            return; // 忽略无法解析的脏数据
+          }
+          // AI SDK UI 消息流协议：按 type 分流（模型差异已由服务端 provider 归一化）
+          // text-delta 正文 / reasoning-delta 思维链 / error 服务端透传的错误
+          if (json.type === "text-delta" && typeof json.delta === "string") {
+            output.value += json.delta;
+          } else if (json.type === "reasoning-delta" && typeof json.delta === "string") {
+            reasoning.value += json.delta;
+          } else if (json.type === "error") {
+            throw new Error(json.errorText || "模型返回错误");
+          }
+        },
+      });
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        // SSE 按行切分，最后一段可能不完整，留到下一轮
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const json = JSON.parse(line.slice(6));
-            // 兼容不同模型的 SSE 载荷结构（注意互斥：部分模型 response 与
-            // delta.content 同时存在且内容相同，双重累加会导致全文重复一遍）：
-            // 1) choices[0].delta.content（OpenAI chat.completion.chunk 标准正文，优先）
-            // 2) 顶层 response（无 choices 结构模型的快照字段，兜底）
-            // 3) choices[0].delta.reasoning / reasoning_content（推理模型的思维链）
-            const delta = json.choices?.[0]?.delta;
-            const content = typeof delta?.content === "string"
-              ? delta.content
-              : typeof json.response === "string"
-                ? json.response
-                : "";
-            output.value += content;
-            const think = delta?.reasoning ?? delta?.reasoning_content;
-            if (typeof think === "string") reasoning.value += think;
-          } catch {
-            // 忽略无法解析的残缺行
-          }
-        }
+        parser.feed(decoder.decode(value, { stream: true }));
       }
     } finally {
       loading.value = false;

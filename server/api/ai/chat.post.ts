@@ -1,4 +1,9 @@
-// server/api/ai/chat.post.ts - Cloudflare Workers AI 聊天（REST API + 流式输出，支持图片多模态）
+// server/api/ai/chat.post.ts - Cloudflare Workers AI 聊天
+// 官方推荐链路：Vercel AI SDK（ai 包）+ workers-ai-provider（REST 模式，无需 Workers 运行时 binding，
+// 本地 nuxt dev（Node）与生产（CF Pages）同一套代码），支持图片多模态与推理模型（reasoning 分离）
+import { createWorkersAI } from "workers-ai-provider"
+import { createUIMessageStreamResponse, streamText, toUIMessageStream, type ModelMessage } from "ai"
+
 export default defineEventHandler(async (event) => {
   const { messages, model } = await readBody(event)
 
@@ -49,41 +54,30 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${modelId}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ messages, stream: true }),
-    },
-  )
+  // OpenAI 风格分片 → AI SDK 消息（image_url → image，AI SDK 的 image 接受 base64 data URL）
+  const mapped: ModelMessage[] = messages.map((m: any) => ({
+    role: m.role,
+    content:
+      typeof m.content === "string"
+        ? m.content
+        : m.content.map((p: any) =>
+            p.type === "image_url"
+              ? { type: "image" as const, image: p.image_url.url }
+              : { type: "text" as const, text: p.text },
+          ),
+  }))
 
-  if (!res.ok || !res.body) {
-    throw createError({
-      statusCode: 502,
-      statusMessage: `Workers AI 请求失败: ${res.status} ${(await res.text()).slice(0, 200)}`,
-    })
-  }
+  // REST 模式创建 provider（也可换 binding 模式：createWorkersAI({ binding: env.AI })）
+  const workersai = createWorkersAI({ accountId, apiKey: apiToken })
 
-  // 部分模型（如 llava）不支持流式，stream:true 仍返回整体 JSON：
-  // 统一转成单条 SSE data 事件，前端解析逻辑保持一致
-  const contentType = res.headers.get("content-type") || ""
-  if (contentType.includes("application/json")) {
-    const json: any = await res.json().catch(() => null)
-    const response = json?.response ?? json?.result?.response
-    if (typeof response !== "string") {
-      throw createError({
-        statusCode: 502,
-        statusMessage: `Workers AI 响应格式异常: ${JSON.stringify(json)?.slice(0, 200)}`,
-      })
-    }
-    setResponseHeader(event, "content-type", "text/event-stream")
-    return sendStream(event, new Response(`data: ${JSON.stringify({ response })}\n\n`).body!)
-  }
-
-  // SSE 原样透传给客户端（打字机效果由前端解析 data: {"response": "..."} 实现）
-  return sendStream(event, res.body)
+  const result = streamText({
+    model: workersai(modelId),
+    messages: mapped,
+  })
+  // UI 消息流（SSE）：输出结构化分片（text-delta 正文 / reasoning-delta 思维链 / error），
+  // 前端按 type 分流；模型差异（llava 整体 JSON、GLM 的 reasoning_content）由 provider 归一化
+  // ai@7：实例方法 toUIMessageStreamResponse 已废弃，改用独立辅助函数 + result.stream
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+  })
 })
