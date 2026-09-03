@@ -134,5 +134,24 @@ onUnmounted(() => observer?.disconnect());
       flex: 1;
     }
   }
+
+  // ===================== 手机端适配（≤768px） =====================
+  @media (max-width: 768px) {
+    .welcome-title {
+      font-size: var(--kk-font-size-extra-large);
+      margin: 1rem 0 1.5rem;
+    }
+
+    // 单列纵排，提示卡跟随各功能块换行堆叠
+    .content-row {
+      .content-col {
+        flex-direction: column;
+
+        .prompt-col {
+          flex-direction: column;
+        }
+      }
+    }
+  }
 }
 </style>

@@ -34,3 +34,5 @@ export const IconExplore = icons.IconExplore
 export const IconCapability = icons.IconCapability
 export const IconLimitation = icons.IconLimitation
 export const IconMessage = icons.IconMessage
+export const IconClose = icons.IconClose
+export const IconHistory = icons.IconHistory

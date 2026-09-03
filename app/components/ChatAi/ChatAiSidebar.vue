@@ -1,7 +1,11 @@
 <template>
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2 class="title">CHAT A.I+</h2>
+      <div class="title-row">
+        <h2 class="title">CHAT A.I+</h2>
+        <!-- 关闭侧边栏（手机端抽屉 / 桌面折叠） -->
+        <el-button class="close-btn" :icon="IconClose" text circle aria-label="关闭侧边栏" @click="emit('close')" />
+      </div>
       <div class="action-row">
         <el-button type="primary">
           新建对话
@@ -40,7 +44,8 @@
 
 <script setup lang="ts">
 import SidebarConversationList from './SidebarConversationList.vue'
-import { IconPlus, IconSettings } from '~/assets/svg'
+import { IconPlus, IconSettings,IconClose } from '~/assets/svg'
+const emit = defineEmits(['close'])
 </script>
 
 <style scoped lang="scss">
@@ -53,8 +58,17 @@ import { IconPlus, IconSettings } from '~/assets/svg'
   flex-direction: column;
   // ===================== 头部 =====================
   .sidebar-header {
+    // 标题行：标题 + 关闭按钮
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
     h2 {
-      margin: 0 0 1rem 0;
+      margin: 0;
       font-size: var(--kk-font-size-extra-large);
     }
 

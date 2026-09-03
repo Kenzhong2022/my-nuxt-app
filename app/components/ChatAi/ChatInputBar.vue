@@ -226,4 +226,12 @@ async function onFileChange(e: Event) {
   font-size: var(--kk-font-size-extra-small);
   color: var(--el-text-color-secondary);
 }
+
+// ===================== 手机端适配（≤768px） =====================
+@media (max-width: 768px) {
+  // 模型选择器缩窄，优先保证发送按钮可见
+  .model-select {
+    width: 7.5rem;
+  }
+}
 </style>

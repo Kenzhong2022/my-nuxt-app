@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
-    <!-- 欢迎首页（收到回复后隐藏） -->
-    <ChatAiWelcome v-if="!output" />
+    <!-- 欢迎首页（收到回复后隐藏；手机端媒体查询隐藏） -->
+    <ChatAiWelcome v-if="!output" class="welcome" />
     <!-- 流式回复展示 -->
     <div v-else class="reply-preview">{{ output }}</div>
     <!-- 底部输入框 -->
@@ -80,5 +80,22 @@ async function onSend() {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 0.75rem;
+}
+
+// ===================== 手机端适配（≤768px） =====================
+@media (max-width: 768px) {
+  // 欢迎页在手机端隐藏，仅保留输入栏
+  .welcome {
+    display: none;
+  }
+
+  .input-wrap {
+    width: 100%;
+  }
+
+  .reply-preview {
+    width: 100%;
+    margin-bottom: 6rem;
+  }
 }
 </style>
