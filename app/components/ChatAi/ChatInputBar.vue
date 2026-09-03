@@ -59,8 +59,6 @@
               <el-tag v-for="b in m.badges" :key="b" size="small" :type="badgeUi(b).tag" effect="plain">
                 {{ badgeUi(b).label }}
               </el-tag>
-
-              {{ m.logo }}
             </div>
           </el-option>
         </el-select>

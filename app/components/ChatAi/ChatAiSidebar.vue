@@ -31,11 +31,13 @@
 
     <div class="sidebar-footer">
       <div class="footer-item">
-        <IconSettings />
+        <div class="icon-settings">
+          <IconSettings />
+        </div>
         设置
       </div>
       <div class="user-item">
-        <div class="avatar-placeholder"></div>
+        <el-avatar />
         <span>张三</span>
       </div>
     </div>
@@ -128,6 +130,16 @@ const emit = defineEmits(['close'])
       svg {
         // 图标跟随次要文字色，视觉弱于文字
         color: var(--el-text-color-secondary);
+      }
+
+      .icon-settings {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: var(--el-fill-color);
       }
     }
 

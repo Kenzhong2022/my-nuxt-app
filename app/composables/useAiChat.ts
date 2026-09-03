@@ -64,6 +64,8 @@ class HumanMessageMultimodal extends HumanMessage {
 }
 
 export { SystemMessage, HumanMessage, AIMessage, HumanMessageMultimodal };
+/** 消息实例类型（调用方维护历史列表用） */
+export type BaseMessageLike = InstanceType<typeof BaseMessage>;
 
 /**
  * Workers AI 对话组合式函数
@@ -75,14 +77,21 @@ export { SystemMessage, HumanMessage, AIMessage, HumanMessageMultimodal };
 export function useAiChat() {
   /** 流式回复文本（逐块累加） */
   const output = ref("");
+  /** 思维链文本（推理模型 delta.reasoning 累加，普通模型为空） */
+  const reasoning = ref("");
   /** 是否请求中（含流式接收阶段） */
   const loading = ref(false);
 
   /** 模型目录（仅用于反查所选模型的厂商与名称） */
   const catalog = ref<LlmModelCatalog | null>(null);
 
+  /** CF 官方模型 ID 列表（@cf/{org}/{name}，org 为 HF 组织名，无法从目录 author 拼出） */
+  const cfModels = ref<{ id: string }[] | null>(null);
+
   onMounted(async () => {
     catalog.value = await $fetch<LlmModelCatalog>("/allModels/llm-modules.json");
+    // 列表失败不阻断对话（resolveChatModelId 兜底走 slug 拼接 / API 默认模型）
+    cfModels.value = await $fetch<{ id: string }[]>("/api/ai/models").catch(() => null);
   });
 
   /** 按模型名反查目录中的模型 */
@@ -93,14 +102,16 @@ export function useAiChat() {
   }
 
   /**
-   * 模型名 → Workers AI 调用 ID（@cf/{厂商slug}/{名称}）
-   * 选中模型为对话类（文本生成/图生文）时返回 ID，否则 undefined 走 API 默认模型
+   * 模型名 → Workers AI 真实调用 ID
+   * 优先从 CF 官方模型列表按 ID 尾段精确匹配（目录 name 即 slug）；
+   * 列表不可用时退回 author slug 拼接（meta/google 等多数厂商恰好成立）；
+   * 选中模型非对话类时返回 undefined 走 API 默认模型
    */
   function resolveChatModelId(modelName: string): string | undefined {
     const selected = findModel(modelName);
-    return selected && CHAT_TASKS.includes(selected.taskType)
-      ? toModelId(selected.author, selected.name)
-      : undefined;
+    if (!selected || !CHAT_TASKS.includes(selected.taskType)) return undefined;
+    return cfModels.value?.find((m) => m.id.endsWith(`/${modelName}`))?.id
+      ?? toModelId(selected.author, selected.name);
   }
 
   /**
@@ -115,6 +126,7 @@ export function useAiChat() {
     if (loading.value) return;
     loading.value = true;
     output.value = "";
+    reasoning.value = "";
 
     try {
       const res = await fetch("/api/ai/chat", {
@@ -134,8 +146,8 @@ export function useAiChat() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
         // SSE 按行切分，最后一段可能不完整，留到下一轮
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
@@ -144,7 +156,20 @@ export function useAiChat() {
           if (!line.startsWith("data: ")) continue;
           try {
             const json = JSON.parse(line.slice(6));
-            if (json.response) output.value += json.response;
+            // 兼容不同模型的 SSE 载荷结构（注意互斥：部分模型 response 与
+            // delta.content 同时存在且内容相同，双重累加会导致全文重复一遍）：
+            // 1) choices[0].delta.content（OpenAI chat.completion.chunk 标准正文，优先）
+            // 2) 顶层 response（无 choices 结构模型的快照字段，兜底）
+            // 3) choices[0].delta.reasoning / reasoning_content（推理模型的思维链）
+            const delta = json.choices?.[0]?.delta;
+            const content = typeof delta?.content === "string"
+              ? delta.content
+              : typeof json.response === "string"
+                ? json.response
+                : "";
+            output.value += content;
+            const think = delta?.reasoning ?? delta?.reasoning_content;
+            if (typeof think === "string") reasoning.value += think;
           } catch {
             // 忽略无法解析的残缺行
           }
@@ -157,6 +182,7 @@ export function useAiChat() {
 
   return {
     output: output as Ref<string>,
+    reasoning: reasoning as Ref<string>,
     loading: loading as Ref<boolean>,
     catalog,
     findModel,

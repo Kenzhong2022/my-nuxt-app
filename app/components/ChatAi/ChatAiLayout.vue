@@ -56,19 +56,6 @@ const sidebarOpen = ref(false);
   overflow: hidden;
 }
 
-// ===================== 抽屉侧边栏（手机端） =====================
-// el-drawer 传送至 body，scoped 样式需 :deep 透传（此处只设 padding，内部样式由 ChatAiSidebar 自带）
-:global(.chat-ai-drawer) {
-  .el-drawer__body {
-    padding: 0.5rem;
-  }
-}
-
-// ===================== 主区域 =====================
-.chat-ai-main {
-  padding: 0.75rem;
-}
-
 // 手机端打开侧边栏按钮（默认隐藏，窄屏显示）
 .mobile-menu-btn {
   display: none;
