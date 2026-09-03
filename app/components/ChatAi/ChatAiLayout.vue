@@ -27,7 +27,6 @@
     </el-main>
     <!-- 右侧悬浮按钮 升级专业版 -->
     <div class="pro-float-btn cursor-pointer">升级专业版
-      <IconHistory />
     </div>
   </el-container>
 </template>
