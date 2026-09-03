@@ -84,7 +84,7 @@ const text = defineModel<string>('text', { default: '' })
 const image = defineModel<string>('image', { default: '' })
 const modelId = defineModel<string>('modelId', { default: '' })
 
-const emit = defineEmits<{ (e: 'send'): void }>()
+const emit = defineEmits<{ send: [] }>()
 
 // ===================== 模型选择 =====================
 const catalog = ref<LlmModelCatalog | null>(null)

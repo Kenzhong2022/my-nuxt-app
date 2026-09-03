@@ -1,97 +1,44 @@
 <script setup lang="ts">
-// 纯对话模型页：单次对话（无历史记忆），调用 POST /api/ai/chat（Cloudflare Workers AI 流式）
+// 纯对话模型页：单次对话（无历史记忆），AI 调用逻辑见 composables/useAiChat
 // pages/**/components 不在 Nuxt 自动注册范围（仅扫描 app/components/），需显式导入
 import PromptDialog from './components/PromptDialog.vue';
 import ModelFilterSelect from './components/ModelFilterSelect.vue';
 import ImageUpload from './components/ImageUpload.vue';
-import { CHAT_TASKS, toModelId } from './constants/chat.ts';
+import { CHAT_TASKS } from './constants/chat.ts';
 import { SYSTEM_PROMPT } from './constants/prompt.ts';
-import type { ChatMessage } from './constants/chat.ts';
-import type { LlmModelCatalog } from '~~/types/llmModel';
+import { SystemMessage, HumanMessage, HumanMessageMultimodal } from '~/composables/useAiChat';
 
 const input = ref('');
-const output = ref('');
-const loading = ref(false);
 
 // 当前选中模型名（ModelFilterSelect 内部解析为 LlmModel）
 const modelName = ref('');
-const catalog = ref<LlmModelCatalog | null>(null);
 
 // 用户上传的图片 base64 / 提示词弹窗
 const uploadedImage = ref('');
 const promptVisible = ref(false);
 
-onMounted(async () => {
-  // 目录仅用于 send() 时反查所选模型的厂商与名称（筛选组件内部也会各自加载）
-  catalog.value = await $fetch<LlmModelCatalog>('/allModels/llm-modules.json');
-});
-
-/** 按模型名反查目录中的模型（作者名拼 Workers AI 调用 ID 用） */
-function findSelectedModel() {
-  return (
-    catalog.value?.taskTypes.flatMap((g) => g.models).find((m) => m.name === modelName.value) ?? null
-  );
-}
+// AI 对话（流式输出 / 加载状态 / 模型 ID 反查）
+const { output, loading, resolveChatModelId, sendChat } = useAiChat();
 
 async function send() {
   const text = input.value.trim();
   if (!text || loading.value) return;
 
-  loading.value = true;
-  output.value = '';
+  // 先暂存图片再清空输入
+  const img = uploadedImage.value;
   input.value = '';
+  uploadedImage.value = '';
 
-  // 单次对话：每次只带 system + 本次输入，不带历史
-  const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: text },
+  // 单次对话：每次只带 system + 本次输入，不带历史；带图时构造多模态消息
+  const messages = [
+    new SystemMessage(SYSTEM_PROMPT),
+    img ? new HumanMessageMultimodal(text, img) : new HumanMessage(text),
   ];
 
-  // 选中模型为对话类（文本生成/图生文）时随请求下发，否则缺省走 API 默认模型
-  const selected = findSelectedModel();
-  const chatModel = selected && CHAT_TASKS.includes(selected.taskType)
-    ? toModelId(selected.author, selected.name)
-    : undefined;
-
   try {
-    // 流式必须用原生 fetch（$fetch/useFetch 会等整个响应结束）
-    const res = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, model: chatModel }),
-    });
-    if (!res.ok || !res.body) {
-      const detail = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status} ${detail.slice(0, 120)}`);
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      // SSE 按行切分，最后一段可能不完整，留到下一轮
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const json = JSON.parse(line.slice(6));
-          if (json.response) output.value += json.response;
-        } catch {
-          // 忽略无法解析的残缺行
-        }
-      }
-    }
+    await sendChat(messages, resolveChatModelId(modelName.value));
   } catch (err) {
     output.value += `\n[请求失败: ${err instanceof Error ? err.message : err}]`;
-  } finally {
-    loading.value = false;
   }
 }
 </script>

@@ -4,11 +4,11 @@
     <h1 class="welcome-title">你好！今天我能帮你做些什么？</h1>
 
     <!-- 第一列：功能块；第二、三列：提示卡循环平铺 -->
-    <div class="content-row" v-for="group in featureGroups" :key="group.key">
-      <div class="content-col">
+    <div class="content-row">
+      <div class="content-col" v-for="group in featureGroups" :key="group.key">
         <ChatFeatureBlock :key="group.key" :icon="group.icon" :title="group.title" :desc="group.desc" />
-        <div class="prompt-row">
-          <ChatPromptCard v-for="p in group.prompts" :key="p.key" :title="p.title" :desc="p.desc" />
+        <div class="prompt-col">
+          <ChatPromptCard class="prompt-card" v-for="p in group.prompts" :key="p.key" :title="p.title" :desc="p.desc" />
         </div>
       </div>
     </div>
@@ -105,16 +105,22 @@ onUnmounted(() => observer?.disconnect());
 
   // 第一列功能块 + 右侧提示卡网格（行距与卡片网格一致，保证水平对齐）
   .content-row {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
-    align-items: stretch;
     .content-col {
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       gap: 0.875rem;
+      .prompt-col {
+        display: flex;
+        flex-direction: row;
+        gap: 0.875rem;
+        .prompt-card {
+          flex: 1;
+        }
+      }
     }
   }
 
