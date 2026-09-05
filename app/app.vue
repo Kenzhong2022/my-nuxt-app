@@ -60,18 +60,21 @@ let tl = null;
 
 // ---------- PWA 版本更新提示（registerType: 'prompt'，见 docs/PWA.md 第五节）----------
 // 新 SW 安装完成进入 waiting → needRefresh 变 true → 用户点击通知 → skipWaiting + 自动刷新
-const { needRefresh, updateServiceWorker } = useRegisterSW();
-watch(needRefresh, (v) => {
-  // 开发模式 SW 随 HMR 频繁更新，不弹通知（生产环境才提示）
-  if (!v || import.meta.dev) return;
-  ElNotification({
-    title: '发现新版本',
-    message: '部分功能已更新，点击立即刷新生效',
-    type: 'info',
-    duration: 0, // 不自动关闭
-    onClick: () => updateServiceWorker(true), // true = 触发 skipWaiting 并刷新页面
+// import.meta.client 守卫：SSR 阶段无 navigator，useRegisterSW 内部 'serviceWorker' in navigator 会抛 TypeError
+if (import.meta.client) {
+  const { needRefresh, updateServiceWorker } = useRegisterSW();
+  watch(needRefresh, (v) => {
+    // 开发模式 SW 随 HMR 频繁更新，不弹通知（生产环境才提示）
+    if (!v || import.meta.dev) return;
+    ElNotification({
+      title: '发现新版本',
+      message: '部分功能已更新，点击立即刷新生效',
+      type: 'info',
+      duration: 0, // 不自动关闭
+      onClick: () => updateServiceWorker(true), // true = 触发 skipWaiting 并刷新页面
+    });
   });
-});
+}
 
 
 watch(
