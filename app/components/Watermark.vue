@@ -28,16 +28,16 @@ const props = withDefaults(defineProps<WatermarkProps>(), {
   fontSize: 16,
   color: '#999999',
   opacity: 0.18,
-  rotate: -20,
-  gapX: 220,
-  gapY: 140,
+  rotate: -20, // 旋转角度（度，负值为逆时针）
+  gapX: 220, // 水平间距（px）
+  gapY: 140, // 垂直间距（px）
 });
 
-let watermarkCanvas: HTMLCanvasElement | null = null;
-let observer: MutationObserver | null = null;
-let timerCheck: number | null = null;
-let enableCheck = false;
-let lastSnapshot: Record<string, string> | null = null;
+let watermarkCanvas: HTMLCanvasElement | null = null; // 水印 canvas 元素
+let observer: MutationObserver | null = null; // 监听水印 canvas 变化
+let timerCheck: number | null = null; // 定时检查水印 canvas 变化
+let enableCheck = false; // 是否启用检查水印 canvas 变化
+let lastSnapshot: StyleSnapshot | null = null; // 上一份样式快照（基准）
 
 const BASE_STYLE = {
   position: 'fixed',
@@ -51,15 +51,21 @@ const BASE_STYLE = {
 };
 
 /**
+ * 水印受保护样式的快照类型（CSSStyleDeclaration 的简单版）：
+ * 仅取 BASE_STYLE 涉及的键，全部可选——未采集到的属性视为未设置（空串）
+ */
+type StyleSnapshot = Partial<Record<keyof typeof BASE_STYLE, string>>;
+
+/**
  * 采集元素受保护的内联样式快照（BASE_STYLE 涉及的属性）
  * 用于防篡改比对
  * @param el - 目标元素（水印 canvas）
  * @returns 形如 { position: 'fixed', zIndex: '9998', ... } 的样式键值快照
  */
-function getStyleSnapshot(el: HTMLElement) {
-  const snapshot: Record<string, string> = {};
-  Object.keys(BASE_STYLE).forEach((key) => {
-    snapshot[key] = (el.style as any)[key] ?? '';
+function getStyleSnapshot(el: HTMLElement): StyleSnapshot {
+  const snapshot: StyleSnapshot = {};
+  (Object.keys(BASE_STYLE) as (keyof typeof BASE_STYLE)[]).forEach((key) => {
+    snapshot[key] = el.style[key] ?? '';
   });
   return snapshot;
 }
@@ -70,8 +76,8 @@ function getStyleSnapshot(el: HTMLElement) {
  * @param curr - 当前快照
  * @returns true 表示任一受保护属性被修改（疑似篡改）
  */
-function isSnapshotDiff(prev: Record<string, string>, curr: Record<string, string>) {
-  for (const key in BASE_STYLE) {
+function isSnapshotDiff(prev: StyleSnapshot, curr: StyleSnapshot) {
+  for (const key of Object.keys(BASE_STYLE) as (keyof typeof BASE_STYLE)[]) {
     if (prev[key] !== curr[key]) {
       return true;
     }
@@ -102,32 +108,33 @@ function renderWatermark() {
   const ctx = watermarkCanvas.getContext('2d');
   if (!ctx) return;
   const dpr = window.devicePixelRatio || 1;
-  const viewW = window.innerWidth;
-  const viewH = window.innerHeight;
+  const viewW = window.innerWidth; // 全屏宽度
+  const viewH = window.innerHeight; // 全屏高度
 
-  watermarkCanvas.width = viewW * dpr;
-  watermarkCanvas.height = viewH * dpr;
-  watermarkCanvas.style.width = `${viewW}px`;
-  watermarkCanvas.style.height = `${viewH}px`;
+  watermarkCanvas.width = viewW * dpr; // 设为全屏宽度（考虑 dpr）
+  watermarkCanvas.height = viewH * dpr; // 设为全屏高度（考虑 dpr）
+  watermarkCanvas.style.width = `${viewW}px`; // 设置 canvas 宽度（px）
+  watermarkCanvas.style.height = `${viewH}px`; // 设置 canvas 高度（px）
 
   ctx.save();
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, viewW, viewH);
+  ctx.scale(dpr, dpr); // 缩放 canvas 到设备像素比（考虑 dpr）
+  ctx.clearRect(0, 0, viewW, viewH); // 清除 canvas 内容
 
-  ctx.fillStyle = props.color;
-  ctx.globalAlpha = props.opacity;
-  ctx.font = `${props.fontSize}px Microsoft YaHei`;
+  ctx.fillStyle = props.color; // 设置填充颜色
+  ctx.globalAlpha = props.opacity; // 设置不透明度
+  ctx.font = `${props.fontSize}px Microsoft YaHei`; // 设置字体（px）
 
-  const gapX = props.gapX;
-  const gapY = props.gapY;
-  const rotateRad = (props.rotate * Math.PI) / 180;
+  const gapX = props.gapX; // 水平间距（px）
+  const gapY = props.gapY; // 垂直间距（px）
+  const rotateRad = (props.rotate * Math.PI) / 180; // 旋转角度（弧度）90 * Math.PI / 180
 
-  for (let x = -gapX; x < viewW + gapX; x += gapX) {
-    for (let y = -gapY; y < viewH + gapY; y += gapY) {
+  /** 绘制水印图案（按 gapX/gapY 网格铺满旋转文字） */
+  for (let x = -gapX; x < viewW + gapX; x = x + gapX) {
+    for (let y = -gapY; y < viewH + gapY; y = y + gapY) {
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotateRad);
-      ctx.fillText(props.text, 0, 0);
+      ctx.translate(x, y); 
+      ctx.rotate(rotateRad); // 旋转到当前网格角度
+      ctx.fillText(props.text, 0, 0); // 绘制文字（居中对齐）
       ctx.restore();
     }
   }
