@@ -59,6 +59,7 @@
     "@types/geoip-lite": "^1.4.4",
     "@types/node": "^25.9.2",
     "@types/ua-parser-js": "^0.7.39",
+    "@vite-pwa/nuxt": "^1.1.1",
     "@webgpu/types": "^0.1.71",
     "nitropack": "^2.13.4",
     "nuxt": "^4.5.2",

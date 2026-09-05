@@ -75,12 +75,98 @@ export default defineNuxtConfig({
   },
   app: {
     keepalive: true, // 或配置 include/exclude
-    head: {},
+    head: {
+      // PWA 可安装性 head（manifest link 由 app.vue 的 <VitePwaManifest /> 注入）
+      meta: [
+        { name: 'theme-color', content: '#409eff' }, // 移动端地址栏/状态栏颜色
+        // iOS Safari 不支持安装横幅，需手动引导"添加到主屏幕"；以下 meta 控制其行为
+        { name: 'apple-mobile-web-app-capable', content: 'yes' }, // 主屏图标独立窗口打开（无 Safari 工具栏）
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }, // 状态栏样式
+        { name: 'apple-mobile-web-app-title', content: 'NuxtApp' }, // 主屏图标名称
+      ],
+      link: [{ rel: 'apple-touch-icon', href: '/pwa-192x192.png' }], // iOS 主屏图标（无此项会截屏当图标）
+    },
   },
   pinia: {
     storesDirs: ['./stores'],
   },
-  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/tailwindcss'],
+  modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/tailwindcss','@vite-pwa/nuxt'],
+
+  // ===================== PWA（方案与决策记录见 docs/PWA.md）=====================
+  pwa: {
+    // 新版本就绪后弹提示（app.vue 的 ElNotification），用户确认才刷新生效
+    registerType: 'prompt',
+
+    manifest: {
+      name: 'My Nuxt App',
+      short_name: 'NuxtApp',
+      description: 'AI 对话 / 数据看板 / 商城一体化工作台',
+      lang: 'zh-CN',
+      theme_color: '#409eff', // Element Plus 主蓝（标题栏/任务栏颜色）
+      background_color: '#ffffff',
+      display: 'standalone', // 独立窗口，无浏览器地址栏
+      scope: '/',
+      start_url: '/dashboard', // 与 routeRules 的 / → /dashboard 重定向一致
+      icons: [
+        { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+        { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+        { src: 'pwa-512x512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+
+    client: {
+      installPrompt: true, // 注入 useRegisterSW（virtual 模块）
+    },
+
+    workbox: {
+      cleanupOutdatedCaches: true,
+
+      // 预缓存构建产物（js/css 带 hash 内容不变，字体图标在 assets 内同样属于构建产物）
+      globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+
+      // SSR 站点不设 navigateFallback：HTML 由 CF Pages Worker 实时渲染，
+      // 构建产物中没有可预缓存的静态页，设了反而在离线时返回错误缓存
+      runtimeCaching: [
+        // Cloudinary 商品图：缓存优先（图片不变，30 天 / 上限 80 张）
+        {
+          urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'cloudinary-images',
+            expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] }, // 0 = opaque 响应也缓存
+          },
+        },
+        // 模型目录：立即回缓存 + 后台更新（350KB+ 低频变化，秒开收益最大）
+        {
+          urlPattern: /\/allModels\/llm-modules\.json$/,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'llm-modules',
+            expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 },
+          },
+        },
+        // 公开只读 API：网络优先，4s 超时回缓存
+        // （鉴权 /api/* 与 SSE /api/ai/chat 不配置 = NetworkOnly，Workbox 默认只缓存 GET）
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith('/api/public/'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'public-api',
+            networkTimeoutSeconds: 4,
+            expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 2 },
+            cacheableResponse: { statuses: [200] },
+          },
+        },
+      ],
+    },
+
+    devOptions: {
+      enabled: true, // 开发模式也注册 SW，方便本地调试
+      type: 'module',
+    },
+  },
+
   vite: {
     plugins: [svgLoader({ defaultImport: 'component' })],
     server: {
