@@ -1,6 +1,5 @@
 <template>
   <div class="default-layout isolate">
-    <div class="theme-btn iconfont icon-yanse-zhutise" @click="showColorPicker = !showColorPicker"></div>
     <ThemeColorPicker v-if="showColorPicker" class="fixed z-[1] top-[calc(10%+4rem+0.5rem)] right-4 w-64" />
     <el-container class="h-screen">
       <!-- 头部导航：文字不能换行 -->
@@ -34,7 +33,8 @@
             </template>
           </el-switch>
           <el-button class="mobile-menu-btn" icon="Menu" @click="toggleMobileMenu"></el-button>
-          <div class="ml-auto login-btn">
+          <div class="ml-auto login-btn flex items-center justify-center gap-2">
+            <div class="theme-btn iconfont icon-yanse-zhutise" @click="showColorPicker = !showColorPicker"></div>
             <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin"> 登录 </el-button>
             <el-button v-else type="danger" @click="handleLogout"> 退出登录 </el-button>
           </div>
@@ -451,9 +451,7 @@ const menuConfig = ref<MenuItem[]>([
         name: '模型对话',
         path: '/llmModels',
         sort: 2,
-        children: [
-          { id: 1031, parentId: 103, name: '模型对话', path: '/llmModels/chat', sort: 0 },
-        ],
+        children: [{ id: 1031, parentId: 103, name: '模型对话', path: '/llmModels/chat', sort: 0 }],
       },
     ],
   },
@@ -558,10 +556,6 @@ function toggleMobileMenu() {
 }
 
 .theme-btn {
-  position: fixed;
-  top: 10%;
-  right: 1%;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;

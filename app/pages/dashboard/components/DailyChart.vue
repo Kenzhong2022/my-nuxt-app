@@ -3,9 +3,9 @@
 </template>
 
 <script setup lang="ts">
-import * as echarts from "echarts";
-import type { DailyResponse } from "~~/types/analytics/responses";
-import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
+import * as echarts from 'echarts';
+import type { DailyResponse } from '~~/types/analytics/responses';
+import { GRID_CONFIG, TOOLTIP_STYLE } from '~/constants/echarts';
 import {
   createLinearGradient,
   roundUpToNiceNumber,
@@ -13,60 +13,55 @@ import {
   getYAxisBase,
   getMarkLineConfig,
   buildTooltip,
-} from "~/utils/chart-config";
+} from '~/utils/chart-config';
 
 const props = defineProps<{
   data: DailyResponse | null;
 }>();
 
 const emit = defineEmits<{
-  (e: "chartReady"): void;
-  (e: "resize"): void;
+  (e: 'chartReady'): void;
+  (e: 'resize'): void;
 }>();
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let chart: echarts.ECharts | null = null;
 const chartTheme = useChartTheme();
 
-function buildDayOption(
-  dailyData: number[],
-  dates?: string[],
-): echarts.EChartsOption {
+function buildDayOption(dailyData: number[], dates?: string[]): echarts.EChartsOption {
   const maxVal = Math.max(...dailyData, 10);
   const roundedMax = roundUpToNiceNumber(maxVal);
   const theme = chartTheme.value;
 
-  const todayStr = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Shanghai",
+  const todayStr = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Asia/Shanghai',
   });
 
   const dayLabels: string[] = dates
     ? dates.map((d) =>
-        new Date(d).toLocaleDateString("zh-CN", {
-          month: "2-digit",
-          day: "2-digit",
+        new Date(d).toLocaleDateString('zh-CN', {
+          month: '2-digit',
+          day: '2-digit',
         }),
       )
     : Array.from({ length: 7 }, (_, i) => {
         const d = new Date(Date.now() - (6 - i) * 86400000);
-        return d.toLocaleDateString("zh-CN", {
-          timeZone: "Asia/Shanghai",
-          month: "2-digit",
-          day: "2-digit",
+        return d.toLocaleDateString('zh-CN', {
+          timeZone: 'Asia/Shanghai',
+          month: '2-digit',
+          day: '2-digit',
         });
       });
 
   return {
     tooltip: buildTooltip((params: any) => {
       const p = params[0];
-      const isToday = dates
-        ? dates[p.dataIndex] === todayStr
-        : p.dataIndex === 6;
-      return `<b>${p.axisValue}</b>${isToday ? " ⭐ 今天" : ""}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${p.value} 次</b>`;
+      const isToday = dates ? dates[p.dataIndex] === todayStr : p.dataIndex === 6;
+      return `<b>${p.axisValue}</b>${isToday ? ' ⭐ 今天' : ''}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${p.value} 次</b>`;
     }, TOOLTIP_STYLE),
     grid: GRID_CONFIG,
     xAxis: {
-      type: "category",
+      type: 'category',
       data: dayLabels,
       ...getAxisBaseStyle(theme),
       axisLabel: {
@@ -80,27 +75,21 @@ function buildDayOption(
     },
     series: [
       {
-        type: "line",
+        type: 'line',
         smooth: 0.4,
-        symbol: "circle",
+        symbol: 'circle',
         symbolSize: (_: number, params: any) =>
-          dates
-            ? dates[params.dataIndex] === todayStr
-              ? 14
-              : 10
-            : params.dataIndex === 6
-              ? 14
-              : 10,
+          dates ? (dates[params.dataIndex] === todayStr ? 14 : 10) : params.dataIndex === 6 ? 14 : 10,
         lineStyle: {
           width: 3,
           color: createLinearGradient(0, 0, 1, 0, [
-            [0, theme.lineStyle_color[0] || "#000"],
-            [1, theme.lineStyle_color[1] || "#000"],
+            [0, theme.lineStyle_color[0] || '#000'],
+            [1, theme.lineStyle_color[1] || '#000'],
           ]),
           shadowBlur: 8,
           shadowColor: theme.lineStyle_shadowColor,
-          cap: "round",
-          join: "round",
+          cap: 'round',
+          join: 'round',
         },
         itemStyle: {
           color: theme.lineStyle_color[0],
@@ -111,9 +100,9 @@ function buildDayOption(
         },
         areaStyle: {
           color: createLinearGradient(0, 0, 0, 1, [
-            [0, theme.areaStyle_color[0] || "#000"],
-            [0.6, theme.areaStyle_color[1] || "#000"],
-            [1, theme.areaStyle_color[2] || "#000"],
+            [0, theme.areaStyle_color[0] || '#000'],
+            [0.6, theme.areaStyle_color[1] || '#000'],
+            [1, theme.areaStyle_color[2] || '#000'],
           ]),
         },
         markLine: getMarkLineConfig(roundedMax, theme),
@@ -135,7 +124,7 @@ function buildDayOption(
 function initChart() {
   if (!chartRef.value) return;
   chart = echarts.init(chartRef.value);
-  emit("chartReady");
+  emit('chartReady');
 }
 
 function updateChart() {
@@ -147,7 +136,6 @@ function updateChart() {
 
 function handleResize() {
   chart?.resize();
-  emit("resize");
 }
 
 watch(
@@ -177,15 +165,15 @@ function exportCsv(): boolean {
   if (!props.data) return false;
   const { dates, dailyVisits, total } = props.data;
   downloadCsv(`每日访问趋势_${dates[0]}_至_${dates[dates.length - 1]}`, [
-    ["日期", "访问量"],
+    ['日期', '访问量'],
     ...dates.map((d, i) => [d, dailyVisits[i] ?? 0]),
-    ["总计", total],
+    ['总计', total],
   ]);
   return true;
 }
 
 defineExpose({
-  resize: handleResize,
+  handleResize,
   exportCsv,
 });
 </script>

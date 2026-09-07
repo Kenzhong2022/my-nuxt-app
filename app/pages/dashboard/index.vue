@@ -6,7 +6,7 @@
       <el-card class="stat-card">
         <div class="stat-label">今日访问量</div>
         <div class="stat-value" ref="todayValueRef">
-          {{ hourlyToday?.total ?? "--" }}
+          {{ hourlyToday?.total ?? '--' }}
         </div>
         <div class="stat-sub" :class="todayDiffClass">
           {{ todayDiffText }}
@@ -16,14 +16,14 @@
       <el-card class="stat-card">
         <div class="stat-label">昨日访问量</div>
         <div class="stat-value">
-          {{ hourlyYesterday?.total ?? "--" }}
+          {{ hourlyYesterday?.total ?? '--' }}
         </div>
         <div class="stat-sub">已归档</div>
       </el-card>
 
       <el-card class="stat-card">
         <div class="stat-label">近7天总计</div>
-        <div class="stat-value">{{ daily?.total ?? "--" }}</div>
+        <div class="stat-value">{{ daily?.total ?? '--' }}</div>
         <div class="stat-sub">日均 {{ avgDaily }} 次</div>
       </el-card>
     </div>
@@ -31,40 +31,40 @@
     <!-- 图表行 -->
     <div class="charts-row" ref="chartsRowRef">
       <el-card class="chart-card" v-custom-loading="hourlyLoading">
-        <!-- 操作行 -->
-        <AnalyticsFilterBar
-          key="hourChartFilterBar"
-          v-model:timeRange="hourChartTimeRange"
-          v-model:customDate="customDate"
-          :timeRangeOptions="hourChartTimeRangeOptions"
-          picker-type="single"
-          @export="handleExport('hourly')"
-        />
-        <div class="chart-title">{{ hourChartTitle }}</div>
-        <HourlyChart
-          ref="hourlyChartRef"
-          :data="hourlyChartData"
-          :isToday="hourChartTimeRange === 'today'"
-          @chart-ready="handleHourlyChartReady"
-        />
+        <div class="chart-content">
+          <!-- 操作行 -->
+          <AnalyticsFilterBar
+            key="hourChartFilterBar"
+            v-model:timeRange="hourChartTimeRange"
+            v-model:customDate="customDate"
+            :timeRangeOptions="hourChartTimeRangeOptions"
+            picker-type="single"
+            @export="handleExport('hourly')"
+          />
+          <div class="chart-title">{{ hourChartTitle }}</div>
+          <HourlyChart
+            ref="hourlyChartRef"
+            :data="hourlyChartData"
+            :isToday="hourChartTimeRange === 'today'"
+            @chart-ready="handleHourlyChartReady"
+          />
+        </div>
       </el-card>
 
       <el-card class="chart-card" v-custom-loading="dailyLoading">
-        <!-- 操作行 -->
-        <AnalyticsFilterBar
-          key="dayChartFilterBar"
-          ref="filterBarRef"
-          v-model:timeRange="timeRange"
-          v-model:customDateRange="customDateRange"
-          picker-type="range"
-          @export="handleExport('daily')"
-        />
-        <div class="chart-title">{{ dailyChartTitle }}</div>
-        <DailyChart
-          ref="dailyChartRef"
-          :data="dailyChartData"
-          @chart-ready="handleDailyChartReady"
-        />
+        <div class="chart-content">
+          <!-- 操作行 -->
+          <AnalyticsFilterBar
+            key="dayChartFilterBar"
+            ref="filterBarRef"
+            v-model:timeRange="timeRange"
+            v-model:customDateRange="customDateRange"
+            picker-type="range"
+            @export="handleExport('daily')"
+          />
+          <div class="chart-title">{{ dailyChartTitle }}</div>
+          <DailyChart ref="dailyChartRef" :data="dailyChartData" @chart-ready="handleDailyChartReady" />
+        </div>
       </el-card>
     </div>
 
@@ -82,9 +82,7 @@
         />
         <div class="chart-title">{{ heatmapChartTitle }}</div>
         <div class="chart-desc">
-          基于访问者 IP
-          归属地统计的城市访问分布，颜色越深代表访问量越大。本地开发的访问虽会被记录并计入访问量，但其
-          IP
+          基于访问者 IP 归属地统计的城市访问分布，颜色越深代表访问量越大。本地开发的访问虽会被记录并计入访问量，但其 IP
           为局域网地址，无法解析出城市归属地，故不参与地域分布统计。可切换时间范围查看不同周期内的地域热度变化，辅助判断核心用户区域与推广落地效果。
         </div>
         <CityHeatmap ref="cityHeatmapRef" :data="cityHeatmapData" />
@@ -92,38 +90,31 @@
     </div>
 
     <!-- 更新时间 -->
-    <div
-      class="text-center text-[var(--el-text-color-secondary)]"
-      v-if="updatedAt"
-    >
+    <div class="text-center text-[var(--el-text-color-secondary)]" v-if="updatedAt">
       数据更新于 {{ formatUpdateTime(updatedAt) }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useResizeObserver, useDebounceFn } from "@vueuse/core";
-import { ElMessage } from "element-plus";
-import type {
-  HourlyResponse,
-  DailyResponse,
-  CityHeatmapResponse,
-} from "~~/types/analytics/responses";
-import AnalyticsFilterBar from "./components/analyticsFilterBar.vue";
-import HourlyChart from "./components/HourlyChart.vue";
-import DailyChart from "./components/DailyChart.vue";
-import CityHeatmap from "./components/CityHeatmap.vue";
+import { useResizeObserver, useDebounceFn } from '@vueuse/core';
+import { ElMessage } from 'element-plus';
+import type { HourlyResponse, DailyResponse, CityHeatmapResponse } from '~~/types/analytics/responses';
+import AnalyticsFilterBar from './components/analyticsFilterBar.vue';
+import HourlyChart from './components/HourlyChart.vue';
+import DailyChart from './components/DailyChart.vue';
+import CityHeatmap from './components/CityHeatmap.vue';
 
 definePageMeta({
-  name: "Dashboard", // 页面名称
-  title: "仪表盘", // 页面标题
-  layout: "default", // 指定布局
+  name: 'Dashboard', // 页面名称
+  title: '仪表盘', // 页面标题
+  layout: 'default', // 指定布局
   keepalive: true, // KeepAlive 缓存
-  key: "dashboard", // 路由 key
+  key: 'dashboard', // 路由 key
   pageTransition: {
     // 页面过渡动画
-    name: "slide",
-    mode: "out-in",
+    name: 'slide',
+    mode: 'out-in',
   },
 });
 
@@ -144,33 +135,33 @@ const heatmapLoading = ref(true);
 /** 图表行容器引用，用于监听尺寸变化统一更新图表 */
 const chartsRowRef = ref<HTMLDivElement | null>(null);
 /** 日图表时间范围 */
-const timeRange = ref<string>("7d");
+const timeRange = ref<string>('7d');
 /** 小时图表时间范围 */
-const hourChartTimeRange = ref<string>("today");
+const hourChartTimeRange = ref<string>('today');
 /** 小时图表自定义日期（单日期） */
 const customDate = ref<Date | null>(null);
 
 /** 小时图表时间范围选项 */
 const hourChartTimeRangeOptions = ref([
-  { label: "今天", value: "today" },
-  { label: "昨日", value: "yesterday" },
-  { label: "自定义范围", value: "custom" },
+  { label: '今天', value: 'today' },
+  { label: '昨日', value: 'yesterday' },
+  { label: '自定义范围', value: 'custom' },
 ]);
 /** 日图表自定义日期范围 */
 const customDateRange = ref<[Date, Date] | null>(null);
 
 /** 城市热力图时间范围（默认全部时间） */
-const heatmapTimeRange = ref<string>("all");
+const heatmapTimeRange = ref<string>('all');
 /** 城市热力图自定义日期范围 */
 const heatmapCustomDateRange = ref<[Date, Date] | null>(null);
 /** 城市热力图时间范围选项（4个月为单位） */
 const heatmapTimeRangeOptions = ref([
-  { label: "全部时间", value: "all" },
-  { label: "近 4 个月", value: "4m" },
-  { label: "近 8 个月", value: "8m" },
-  { label: "近 12 个月", value: "12m" },
-  { label: "今年", value: "year" },
-  { label: "自定义范围", value: "custom" },
+  { label: '全部时间', value: 'all' },
+  { label: '近 4 个月', value: '4m' },
+  { label: '近 8 个月', value: '8m' },
+  { label: '近 12 个月', value: '12m' },
+  { label: '今年', value: 'year' },
+  { label: '自定义范围', value: 'custom' },
 ]);
 
 const hourlyChartRef = ref<InstanceType<typeof HourlyChart> | null>(null);
@@ -189,23 +180,18 @@ const chartRefMap = ref({
  * @param key 图表标识，见 chartRefMap
  */
 function handleExport(key: keyof typeof chartRefMap.value): void {
-  const exported = myTryCatch(
-    () => chartRefMap.value?.[key]?.exportCsv() ?? false,
-    "导出",
-  );
-  exported
-    ? ElMessage.success("导出成功")
-    : ElMessage.warning("暂无可导出的数据");
+  const exported = myTryCatch(() => chartRefMap.value?.[key]?.exportCsv() ?? false, '导出');
+  exported ? ElMessage.success('导出成功') : ElMessage.warning('暂无可导出的数据');
 }
 
 const chartTheme = useChartTheme();
 
 function handleHourlyChartReady() {
-  console.log("小时图组件已准备就绪");
+  console.log('小时图组件已准备就绪');
 }
 
 function handleDailyChartReady() {
-  console.log("日图组件已准备就绪");
+  console.log('日图组件已准备就绪');
 }
 
 watch(chartTheme, () => {
@@ -213,84 +199,85 @@ watch(chartTheme, () => {
 });
 // ============ 计算属性 ============
 const todayDiffText = computed(() => {
-  if (!hourlyToday.value || !hourlyYesterday.value) return "--";
+  if (!hourlyToday.value || !hourlyYesterday.value) return '--';
   const diff = hourlyToday.value.total - hourlyYesterday.value.total;
   if (diff > 0) return `较昨日 ▲ +${diff}`;
   if (diff < 0) return `较昨日 ▼ ${diff}`;
-  return "与昨日持平";
+  return '与昨日持平';
 });
 
 const todayDiffClass = computed(() => {
-  if (!hourlyToday.value || !hourlyYesterday.value) return "";
+  if (!hourlyToday.value || !hourlyYesterday.value) return '';
   const diff = hourlyToday.value.total - hourlyYesterday.value.total;
-  if (diff > 0) return "up";
-  if (diff < 0) return "down";
-  return "";
+  if (diff > 0) return 'up';
+  if (diff < 0) return 'down';
+  return '';
 });
 
 const avgDaily = computed(() => {
-  if (!daily.value) return "--";
+  if (!daily.value) return '--';
   return Math.round(daily.value.total / 7);
 });
 
 /** 小时图表标题 */
 const hourChartTitle = computed(() => {
-  if (hourChartTimeRange.value === "today") return "今日每小时访问分布";
-  if (hourChartTimeRange.value === "yesterday") return "昨日每小时访问分布";
-  if (hourChartTimeRange.value === "custom" && hourlyChartData.value) {
+  if (hourChartTimeRange.value === 'today') return '今日每小时访问分布';
+  if (hourChartTimeRange.value === 'yesterday') return '昨日每小时访问分布';
+  if (hourChartTimeRange.value === 'custom' && hourlyChartData.value) {
     return `${hourlyChartData.value.date} 每小时访问分布`;
   }
-  return "每小时访问分布";
+  return '每小时访问分布';
 });
 
 /** 日图表标题 */
 const dailyChartTitle = computed(() => {
   const rangeLabels: Record<string, string> = {
-    "7d": "近7天每日访问趋势",
-    "30d": "近30天每日访问趋势",
-    "90d": "近90天每日访问趋势",
-    year: "今年每日访问趋势",
+    '7d': '近7天每日访问趋势',
+    '30d': '近30天每日访问趋势',
+    '90d': '近90天每日访问趋势',
+    year: '今年每日访问趋势',
   };
-  if (timeRange.value === "custom" && dailyChartData.value) {
+  if (timeRange.value === 'custom' && dailyChartData.value) {
     return `${dailyChartData.value.startDate} 至 ${dailyChartData.value.endDate} 每日访问趋势`;
   }
-  return rangeLabels[timeRange.value] ?? "每日访问趋势";
+  return rangeLabels[timeRange.value] ?? '每日访问趋势';
 });
 
 /** 城市热力图标题 */
 const heatmapChartTitle = computed(() => {
   const rangeLabels: Record<string, string> = {
-    all: "全部时间城市访问分布",
-    "4m": "近 4 个月城市访问分布",
-    "8m": "近 8 个月城市访问分布",
-    "12m": "近 12 个月城市访问分布",
-    year: "今年城市访问分布",
+    all: '全部时间城市访问分布',
+    '4m': '近 4 个月城市访问分布',
+    '8m': '近 8 个月城市访问分布',
+    '12m': '近 12 个月城市访问分布',
+    year: '今年城市访问分布',
   };
-  if (heatmapTimeRange.value === "custom" && heatmapCustomDateRange.value) {
+  if (heatmapTimeRange.value === 'custom' && heatmapCustomDateRange.value) {
     const [start, end] = heatmapCustomDateRange.value;
     return `${formatDate(start)} 至 ${formatDate(end)} 城市访问分布`;
   }
-  return rangeLabels[heatmapTimeRange.value] ?? "城市访问分布";
+  return rangeLabels[heatmapTimeRange.value] ?? '城市访问分布';
 });
 
 // ============ 方法 ============
 function formatUpdateTime(isoStr: string): string {
   const d = new Date(isoStr);
-  return d.toLocaleString("zh-CN", { hour12: false });
+  return d.toLocaleString('zh-CN', { hour12: false });
 }
 
 /**
  * 更新图表
  */
 function updateCharts() {
-  dailyChartRef.value?.resize();
+  dailyChartRef.value?.handleResize();
+  hourlyChartRef.value?.handleResize();
 }
 
-const updatedAt = ref<string>("");
+const updatedAt = ref<string>('');
 
 /** 格式化日期为 YYYY-MM-DD（北京时间） */
 function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
 }
 
 /**
@@ -299,11 +286,11 @@ function formatDate(date: Date): string {
 async function fetchHourlyChart() {
   let dateStr: string | undefined;
 
-  if (hourChartTimeRange.value === "today") {
+  if (hourChartTimeRange.value === 'today') {
     dateStr = undefined;
-  } else if (hourChartTimeRange.value === "yesterday") {
+  } else if (hourChartTimeRange.value === 'yesterday') {
     dateStr = formatDate(new Date(Date.now() - 86400000));
-  } else if (hourChartTimeRange.value === "custom" && customDate.value) {
+  } else if (hourChartTimeRange.value === 'custom' && customDate.value) {
     dateStr = formatDate(customDate.value);
   } else {
     return; // 自定义模式但未选择日期
@@ -311,12 +298,12 @@ async function fetchHourlyChart() {
 
   hourlyLoading.value = true;
   try {
-    const res = await $fetch<HourlyResponse>("/api/public/analytics/hourly", {
+    const res = await $fetch<HourlyResponse>('/api/public/analytics/hourly', {
       query: dateStr ? { date: dateStr } : {},
     });
     hourlyChartData.value = res;
   } catch (err) {
-    console.error("获取小时访问数据失败:", err);
+    console.error('获取小时访问数据失败:', err);
   } finally {
     hourlyLoading.value = false;
   }
@@ -328,16 +315,16 @@ async function fetchHourlyChart() {
 async function fetchDailyChart() {
   const query: Record<string, string> = {};
 
-  if (timeRange.value === "custom" && customDateRange.value) {
+  if (timeRange.value === 'custom' && customDateRange.value) {
     query.startDate = formatDate(customDateRange.value[0]);
     query.endDate = formatDate(customDateRange.value[1]);
-  } else if (timeRange.value === "7d") {
+  } else if (timeRange.value === '7d') {
     // API 默认近 7 天，无需传参
-  } else if (timeRange.value === "30d") {
+  } else if (timeRange.value === '30d') {
     query.startDate = formatDate(new Date(Date.now() - 29 * 86400000));
-  } else if (timeRange.value === "90d") {
+  } else if (timeRange.value === '90d') {
     query.startDate = formatDate(new Date(Date.now() - 89 * 86400000));
-  } else if (timeRange.value === "year") {
+  } else if (timeRange.value === 'year') {
     const now = new Date();
     query.startDate = `${now.getFullYear()}-01-01`;
   } else {
@@ -347,12 +334,12 @@ async function fetchDailyChart() {
   dailyLoading.value = true;
 
   try {
-    const res = await $fetch<DailyResponse>("/api/public/analytics/daily", {
+    const res = await $fetch<DailyResponse>('/api/public/analytics/daily', {
       query,
     });
     dailyChartData.value = res;
   } catch (err) {
-    console.error("获取日期访问数据失败:", err);
+    console.error('获取日期访问数据失败:', err);
   } finally {
     dailyLoading.value = false;
   }
@@ -364,22 +351,19 @@ async function fetchDailyChart() {
 async function fetchCityHeatmap() {
   const query: Record<string, string> = {};
 
-  if (heatmapTimeRange.value === "custom" && heatmapCustomDateRange.value) {
-    query.timeRange = "custom";
+  if (heatmapTimeRange.value === 'custom' && heatmapCustomDateRange.value) {
+    query.timeRange = 'custom';
     query.startDate = formatDate(heatmapCustomDateRange.value[0]);
     query.endDate = formatDate(heatmapCustomDateRange.value[1]);
-  } else if (heatmapTimeRange.value !== "all") {
+  } else if (heatmapTimeRange.value !== 'all') {
     query.timeRange = heatmapTimeRange.value;
   }
 
   try {
-    const res = await $fetch<CityHeatmapResponse>(
-      "/api/public/analytics/city-heatmap",
-      { query },
-    );
+    const res = await $fetch<CityHeatmapResponse>('/api/public/analytics/city-heatmap', { query });
     cityHeatmapData.value = res;
   } catch (err) {
-    console.error("获取城市热力图数据失败:", err);
+    console.error('获取城市热力图数据失败:', err);
   }
 }
 
@@ -393,12 +377,12 @@ async function fetchData() {
     const yesterdayStr = formatDate(new Date(Date.now() - 86400000));
 
     const [todayRes, yesterdayRes, dailyRes, heatmapRes] = await Promise.all([
-      $fetch<HourlyResponse>("/api/public/analytics/hourly"),
-      $fetch<HourlyResponse>("/api/public/analytics/hourly", {
+      $fetch<HourlyResponse>('/api/public/analytics/hourly'),
+      $fetch<HourlyResponse>('/api/public/analytics/hourly', {
         query: { date: yesterdayStr },
       }),
-      $fetch<DailyResponse>("/api/public/analytics/daily"),
-      $fetch<CityHeatmapResponse>("/api/public/analytics/city-heatmap"),
+      $fetch<DailyResponse>('/api/public/analytics/daily'),
+      $fetch<CityHeatmapResponse>('/api/public/analytics/city-heatmap'),
     ]);
 
     hourlyToday.value = todayRes;
@@ -410,13 +394,11 @@ async function fetchData() {
     hourlyChartData.value = todayRes;
     dailyChartData.value = dailyRes;
 
-    updatedAt.value = new Date(Date.now() + 8 * 60 * 60 * 1000)
-      .toISOString()
-      .replace("Z", "+08:00");
+    updatedAt.value = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().replace('Z', '+08:00');
 
     updateCharts();
   } catch (err) {
-    console.error("获取仪表盘数据失败:", err);
+    console.error('获取仪表盘数据失败:', err);
   } finally {
     hourlyLoading.value = false;
     dailyLoading.value = false;
@@ -448,9 +430,10 @@ onMounted(() => {
 });
 
 const debouncedResize = useDebounceFn(() => {
-  hourlyChartRef.value?.resize();
-  dailyChartRef.value?.resize();
-}, 500);
+  hourlyChartRef.value?.handleResize();
+  dailyChartRef.value?.handleResize();
+  cityHeatmapRef.value?.handleResize();
+}, 100);
 
 useResizeObserver(chartsRowRef, debouncedResize);
 </script>
@@ -515,6 +498,10 @@ useResizeObserver(chartsRowRef, debouncedResize);
     }
 
     .chart-card {
+      .chart-content {
+        width: 100%;
+      }
+
       .custom-date-picker {
         display: flex;
         flex-direction: column;

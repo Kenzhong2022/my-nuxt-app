@@ -29,9 +29,9 @@ async function initChart() {
   mapAbort?.abort(); // 数据变化重跑时，先取消上一次未完成的加载
   mapAbort = new AbortController();
   try {
-    const chinaJson = (await $fetch<ChinaCityGeoJSON>('/geo/china-city.json', {
+    const chinaJson = await $fetch<ChinaCityGeoJSON>('/geo/china-city.json', {
       signal: mapAbort.signal,
-    }));
+    });
     if (mapAbort.signal.aborted) return; // 已被中断，丢弃本次结果
     echarts.registerMap('china', chinaJson);
   } catch (e) {
@@ -99,31 +99,6 @@ watch(() => props.data, initChart, { immediate: true });
 // 具名函数引用，保证 add/remove 的是同一个监听器
 const handleResize = () => chart?.resize();
 
-function addResizeListener() {
-  // 先删除旧监听再重新注册，避免重复（removeEventListener 对不存在的监听是无害操作）
-  window.removeEventListener('resize', handleResize);
-  window.addEventListener('resize', handleResize);
-}
-
-function removeResizeListener() {
-  window.removeEventListener('resize', handleResize);
-}
-
-onMounted(addResizeListener);
-// keepalive 页面激活回来时重新监听
-onActivated(addResizeListener);
-// 离开页面（缓存失活）时卸载监听并中断未完成的地图加载
-onDeactivated(() => {
-  removeResizeListener();
-  mapAbort?.abort();
-});
-// 组件真正销毁时卸载监听、中断加载并释放图表
-onUnmounted(() => {
-  removeResizeListener();
-  mapAbort?.abort();
-  chart?.dispose();
-});
-
 /** 导出当前图表数据为 CSV */
 function exportCsv(): boolean {
   if (!props.data) return false;
@@ -133,6 +108,7 @@ function exportCsv(): boolean {
 }
 
 defineExpose({
+  handleResize,
   exportCsv,
 });
 </script>

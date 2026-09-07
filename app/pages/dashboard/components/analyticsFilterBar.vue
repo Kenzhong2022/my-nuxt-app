@@ -16,11 +16,7 @@
         </div>
       </el-button>
 
-      <div
-        v-if="dropdownVisible"
-        class="filter-menu cursor-pointer"
-        :style="{ left: menuLeft, top: menuTop }"
-      >
+      <div v-if="dropdownVisible" class="filter-menu cursor-pointer" :style="{ left: menuLeft, top: menuTop }">
         <div>
           <div
             class="filter-item"
@@ -63,16 +59,14 @@
       </div>
     </div>
 
-    <el-button type="primary" class="export-btn" @click="onExport">
-      导出
-    </el-button>
+    <el-button type="primary" class="export-btn" @click="onExport"> 导出 </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from "vue";
-import type { ElButton, ElDatePicker } from "element-plus";
-import { ArrowDown, Check, ArrowUp } from "@element-plus/icons-vue";
+import { ref, computed, watch, nextTick } from 'vue';
+import type { ElButton, ElDatePicker } from 'element-plus';
+import { ArrowDown, Check, ArrowUp } from '@element-plus/icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -81,27 +75,27 @@ const props = withDefaults(
     customDateRange?: [Date, Date] | null;
     timeRangeOptions?: { label: string; value: string }[];
     /** 选择器类型：single=单日期，range=日期范围 */
-    pickerType?: "single" | "range";
+    pickerType?: 'single' | 'range';
   }>(),
   {
-    timeRange: "30d",
+    timeRange: '30d',
     customDate: null,
     customDateRange: null,
-    pickerType: "range",
+    pickerType: 'range',
     timeRangeOptions: () => [
-      { label: "近 7 天", value: "7d" },
-      { label: "近 30 天", value: "30d" },
-      { label: "近 90 天", value: "90d" },
-      { label: "今年", value: "year" },
-      { label: "自定义范围", value: "custom" },
+      { label: '近 7 天', value: '7d' },
+      { label: '近 30 天', value: '30d' },
+      { label: '近 90 天', value: '90d' },
+      { label: '今年', value: 'year' },
+      { label: '自定义范围', value: 'custom' },
     ],
   },
 );
 
 const emit = defineEmits<{
-  "update:customDate": [value: Date | null];
-  "update:timeRange": [value: string];
-  "update:customDateRange": [value: [Date, Date] | null];
+  'update:customDate': [value: Date | null];
+  'update:timeRange': [value: string];
+  'update:customDateRange': [value: [Date, Date] | null];
   export: [];
 }>();
 
@@ -116,7 +110,7 @@ const localCustomDateRange = computed({
   get: () => props.customDateRange,
   set: (val: [Date, Date] | null) => {
     if (!val) return;
-    emit("update:customDateRange", val);
+    emit('update:customDateRange', val);
   },
 });
 
@@ -125,7 +119,7 @@ const localCustomDate = computed({
   get: () => props.customDate,
   set: (val: Date | null) => {
     if (!val) return;
-    emit("update:customDate", val);
+    emit('update:customDate', val);
   },
 });
 
@@ -134,22 +128,20 @@ const localTimeRange = computed({
   get: () => props.timeRange,
   set: (val) => {
     if (!val) return;
-    emit("update:timeRange", val);
+    emit('update:timeRange', val);
   },
 });
 
 /** 显示标签响应式数据 */
 const displayLabel = computed(() => {
-  if (props.pickerType === "single" && localCustomDate.value) {
+  if (props.pickerType === 'single' && localCustomDate.value) {
     return localCustomDate.value.toLocaleDateString();
   }
   if (localCustomDateRange.value && localCustomDateRange.value.length >= 2) {
     return `${localCustomDateRange.value[0].toLocaleDateString()} 至 ${localCustomDateRange.value[1].toLocaleDateString()}`;
   }
-  const item = props.timeRangeOptions.find(
-    (i) => i.value === localTimeRange.value,
-  );
-  return item?.label ?? "选择时间范围";
+  const item = props.timeRangeOptions.find((i) => i.value === localTimeRange.value);
+  return item?.label ?? '选择时间范围';
 });
 
 // ============ 监听外部 prop 变化 ============
@@ -164,11 +156,11 @@ watch(dropdownVisible, async (visible) => {
       if (!dropdownVisible.value) return;
       updateMenuPosition();
     };
-    window.addEventListener("scroll", handleUpdate, true);
-    window.addEventListener("resize", handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+    window.addEventListener('resize', handleUpdate);
     cleanup = () => {
-      window.removeEventListener("scroll", handleUpdate, true);
-      window.removeEventListener("resize", handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
     };
   } else {
     if (cleanup) {
@@ -208,21 +200,9 @@ const disabledDateFn = (time: Date) => {
 
   // 将待判断的日期转换为纯日期（忽略时间）
   const date = new Date(time);
-  const dateOnly = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
-  const minOnly = new Date(
-    minDate.getFullYear(),
-    minDate.getMonth(),
-    minDate.getDate(),
-  );
-  const maxOnly = new Date(
-    maxDate.getFullYear(),
-    maxDate.getMonth(),
-    maxDate.getDate(),
-  );
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const minOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+  const maxOnly = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
 
   // 如果日期在范围外，则禁用
   return dateOnly < minOnly || dateOnly > maxOnly;
@@ -253,41 +233,41 @@ function onSingleDateChange(val: unknown) {
 /** 清空选择 */
 function onClear() {
   selectedFirstDate.value = null;
-  if (props.pickerType === "single") {
-    emit("update:customDate", null);
+  if (props.pickerType === 'single') {
+    emit('update:customDate', null);
   } else {
-    emit("update:customDateRange", null);
+    emit('update:customDateRange', null);
   }
 }
 
-const menuLeft = ref("0px");
-const menuTop = ref("0px");
+const menuLeft = ref('0px');
+const menuTop = ref('0px');
 
 function updateMenuPosition() {
   const btn = triggerBtnRef.value?.$el;
   if (!btn) return;
   const rect = btn.getBoundingClientRect();
-  menuLeft.value = rect.left + "px";
-  menuTop.value = rect.bottom + 4 + "px";
+  menuLeft.value = rect.left + 'px';
+  menuTop.value = rect.bottom + 4 + 'px';
 }
-const curOption = ref("");
+const curOption = ref('');
 /** 选择选项 */
 function onSelectOption(value: string) {
   curOption.value = value;
 
-  if (value !== "custom") {
+  if (value !== 'custom') {
     // 是普通时间范围
     triggerDropdownMenu(false);
-    emit("update:timeRange", value);
+    emit('update:timeRange', value);
     // 清空对应的自定义数据
-    if (props.pickerType === "single") {
-      emit("update:customDate", null);
+    if (props.pickerType === 'single') {
+      emit('update:customDate', null);
     } else {
-      emit("update:customDateRange", null);
+      emit('update:customDateRange', null);
     }
   } else {
     customOptionVisible.value = true;
-    emit("update:timeRange", "custom");
+    emit('update:timeRange', 'custom');
   }
 }
 
@@ -299,7 +279,7 @@ async function triggerDropdownMenu(visible?: boolean): Promise<void> {
   if (visible === undefined) {
     // 未传参 → 切换
     dropdownVisible.value = !dropdownVisible.value;
-    if (dropdownVisible.value && curOption.value === "custom") {
+    if (dropdownVisible.value && curOption.value === 'custom') {
       await nextTick(); // 等待 DOM 更新
       customDatePickerRef.value?.focus();
     }
@@ -319,7 +299,7 @@ function handleClose() {
 
 /** 导出 */
 function onExport() {
-  emit("export");
+  emit('export');
 }
 
 defineExpose({
@@ -330,6 +310,7 @@ defineExpose({
 
 <style scoped lang="scss">
 .analytics-filter-bar {
+  max-width: inherit;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -342,7 +323,6 @@ defineExpose({
       flex-grow: 1;
       display: flex;
       align-items: center;
-      min-width: 180px;
       justify-content: flex-start;
       gap: 8px;
     }

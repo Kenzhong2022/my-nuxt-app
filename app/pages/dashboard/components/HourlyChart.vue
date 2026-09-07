@@ -3,9 +3,9 @@
 </template>
 
 <script setup lang="ts">
-import * as echarts from "echarts";
-import type { HourlyResponse } from "~~/types/analytics/responses";
-import { GRID_CONFIG, TOOLTIP_STYLE } from "~/constants/echarts";
+import * as echarts from 'echarts';
+import type { HourlyResponse } from '~~/types/analytics/responses';
+import { GRID_CONFIG, TOOLTIP_STYLE } from '~/constants/echarts';
 import {
   createLinearGradient,
   roundUpToNiceNumber,
@@ -13,7 +13,7 @@ import {
   getYAxisBase,
   getMarkLineConfig,
   buildTooltip,
-} from "~/utils/chart-config";
+} from '~/utils/chart-config';
 
 const props = defineProps<{
   data: HourlyResponse | null;
@@ -21,23 +21,31 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "chartReady"): void;
-  (e: "resize"): void;
+  (e: 'chartReady'): void;
+  (e: 'resize'): void;
 }>();
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let chart: echarts.ECharts | null = null;
 const chartTheme = useChartTheme();
-
+const xAxisInterval = ref(2); // 默认值，后续根据宽度计算
+/**
+ * 根据容器宽度计算合适的 axisLabel.interval
+ * @param containerWidth 容器宽度（px）
+ * @returns 建议的间隔值
+ */
+function calcIntervalByWidth(containerWidth: number): number {
+  if (containerWidth < 400) return 4; // 很窄，只显示 0,4,8,...
+  if (containerWidth < 600) return 3; // 较窄，显示 0,3,6,...
+  if (containerWidth < 900) return 2; // 中等，显示 0,2,4,...
+  return 1; // 宽屏，显示所有或间隔1（即每2个显示一个？实际上 interval=1 表示间隔为1，显示所有）
+}
 /**
  * 构建小时访问图表选项
  * @param hourlyData 小时访问数据
  * @param isToday 是否为今日数据
  */
-function buildOption(
-  hourlyData: number[],
-  isToday: boolean,
-): echarts.EChartsOption {
+function buildOption(hourlyData: number[], isToday: boolean): echarts.EChartsOption {
   const currentHour = isToday ? new Date().getHours() : -1;
   const maxVal = Math.max(...hourlyData, 10);
   const roundedMax = roundUpToNiceNumber(maxVal);
@@ -48,17 +56,17 @@ function buildOption(
       const p = params[0];
       const h = p.axisValue;
       const v = p.value;
-      const label = parseInt(h) === currentHour ? " ⭐ 当前时段" : "";
+      const label = parseInt(h) === currentHour ? ' ⭐ 当前时段' : '';
       return `<b>${h}:00 - ${h}:59</b>${label}<br/>访问量：<b style="font-size:15px;color:${theme.itemStyle_color[1]};">${v} 次</b>`;
     }, TOOLTIP_STYLE),
     grid: GRID_CONFIG,
     xAxis: {
-      type: "category",
+      type: 'category',
       data: Array.from({ length: 24 }, (_, i) => `${i}:00`),
       ...getAxisBaseStyle(theme),
       axisLabel: {
         ...getAxisBaseStyle(theme).axisLabel,
-        interval: 2, // 间隔2个标签 相当于显示0 3 6 ... 21
+        interval: xAxisInterval.value, // 使用动态值,
       },
     },
     yAxis: {
@@ -67,8 +75,8 @@ function buildOption(
     },
     series: [
       {
-        type: "bar",
-        barWidth: "55%",
+        type: 'bar',
+        barWidth: '55%',
         markLine: getMarkLineConfig(roundedMax, theme),
         data: hourlyData.map((v, i) => {
           const isCurrent = i === currentHour;
@@ -77,20 +85,20 @@ function buildOption(
           let gradient: echarts.graphic.LinearGradient;
           if (isCurrent) {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.active_itemStyle_color[0] || "#000"],
-              [0.4, theme.active_itemStyle_color[1] || "#000"],
-              [1, theme.active_itemStyle_color[2] || "#000"],
+              [0, theme.active_itemStyle_color[0] || '#000'],
+              [0.4, theme.active_itemStyle_color[1] || '#000'],
+              [1, theme.active_itemStyle_color[2] || '#000'],
             ]);
           } else if (isFuture) {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.inactive_itemStyle_color[0] || "#000"],
-              [1, theme.inactive_itemStyle_color[1] || "#000"],
+              [0, theme.inactive_itemStyle_color[0] || '#000'],
+              [1, theme.inactive_itemStyle_color[1] || '#000'],
             ]);
           } else {
             gradient = createLinearGradient(0, 0, 0, 1, [
-              [0, theme.itemStyle_color[0] || "#000"],
-              [0.45, theme.itemStyle_color[1] || "#000"],
-              [1, theme.itemStyle_color[2] || "#000"],
+              [0, theme.itemStyle_color[0] || '#000'],
+              [0.45, theme.itemStyle_color[1] || '#000'],
+              [1, theme.itemStyle_color[2] || '#000'],
             ]);
           }
 
@@ -99,11 +107,11 @@ function buildOption(
             itemStyle:
               v === 0
                 ? {
-                    color: "transparent",
+                    color: 'transparent',
                     shadowBlur: 0,
-                    shadowColor: "transparent",
+                    shadowColor: 'transparent',
                     shadowOffsetY: 0,
-                    borderColor: "transparent",
+                    borderColor: 'transparent',
                     borderWidth: 0,
                     borderRadius: 0,
                   }
@@ -111,13 +119,9 @@ function buildOption(
                     color: gradient,
                     borderRadius: [7, 7, 0, 0],
                     shadowBlur: isCurrent ? 18 : 6,
-                    shadowColor: isCurrent
-                      ? theme.active_itemStyle_shadowColor
-                      : theme.itemStyle_shadowColor,
+                    shadowColor: isCurrent ? theme.active_itemStyle_shadowColor : theme.itemStyle_shadowColor,
                     shadowOffsetY: 3,
-                    borderColor: isCurrent
-                      ? theme.active_itemStyle_borderColor
-                      : theme.itemStyle_borderColor,
+                    borderColor: isCurrent ? theme.active_itemStyle_borderColor : theme.itemStyle_borderColor,
                     borderWidth: isCurrent ? 2 : 0.8,
                   },
           };
@@ -141,7 +145,7 @@ function buildOption(
 function initChart() {
   if (!chartRef.value) return;
   chart = echarts.init(chartRef.value);
-  emit("chartReady");
+  emit('chartReady');
 }
 
 function updateChart() {
@@ -150,10 +154,14 @@ function updateChart() {
     notMerge: true,
   });
 }
-
 function handleResize() {
+  const width = chartRef.value?.clientWidth || 0;
+  const newInterval = calcIntervalByWidth(width);
+  if (newInterval !== xAxisInterval.value) {
+    xAxisInterval.value = newInterval;
+    updateChart();
+  }
   chart?.resize();
-  emit("resize");
 }
 
 watch(
@@ -168,12 +176,33 @@ watch(chartTheme, () => {
   updateChart();
 });
 
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   initChart();
   updateChart();
+
+  // 监听容器尺寸变化
+  if (chartRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      const width = chartRef.value?.clientWidth || 0;
+      const newInterval = calcIntervalByWidth(width);
+      if (newInterval !== xAxisInterval.value) {
+        xAxisInterval.value = newInterval;
+        // 宽度变化导致间隔变化，重新设置图表
+        updateChart();
+      }
+      // 同时调用 chart.resize() 保持自适应
+      chart?.resize();
+      emit('resize');
+    });
+    resizeObserver.observe(chartRef.value);
+  }
 });
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
   chart?.dispose();
   chart = null;
 });
@@ -183,18 +212,15 @@ function exportCsv(): boolean {
   if (!props.data) return false;
   const { date, hourlyVisits, total } = props.data;
   downloadCsv(`每小时访问分布_${date}`, [
-    ["时段", "访问量"], // 表头
-    ...hourlyVisits.map((v, i) => [
-      `${String(i).padStart(2, "0")}:00-${String(i).padStart(2, "0")}:59`,
-      v,
-    ]),
-    ["总计", total],
+    ['时段', '访问量'], // 表头
+    ...hourlyVisits.map((v, i) => [`${String(i).padStart(2, '0')}:00-${String(i).padStart(2, '0')}:59`, v]),
+    ['总计', total],
   ]);
   return true;
 }
 
 defineExpose({
-  resize: handleResize,
+  handleResize,
   exportCsv,
 });
 </script>
