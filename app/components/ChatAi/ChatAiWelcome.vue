@@ -7,7 +7,7 @@
     <div class="content-row">
       <div class="content-col" v-for="group in featureGroups" :key="group.key">
         <ChatFeatureBlock :key="group.key" :icon="group.icon" :title="group.title" :desc="group.desc" />
-        <div class="prompt-col">
+        <div class="prompt-col flex-1">
           <ChatPromptCard class="prompt-card" v-for="p in group.prompts" :key="p.key" :title="p.title" :desc="p.desc" />
         </div>
       </div>

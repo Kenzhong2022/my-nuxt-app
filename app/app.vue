@@ -1,17 +1,17 @@
 <!-- app.vue -->
 <template>
   <div class="app-container">
-      <!-- 传入自定义水印内容 -->
-  <Watermark
-    v-if="0"
-    text="张三｜用户ID：2026001｜内部文档，严禁截图外传"
-    :font-size="14"
-    color="#666666"
-    :opacity="0.15"
-    :rotate="-25"
-    :gap-x="240"
-    :gap-y="160"
-  />
+    <!-- 传入自定义水印内容 -->
+    <Watermark
+      v-if="0"
+      text="张三｜用户ID：2026001｜内部文档，严禁截图外传"
+      :font-size="14"
+      color="#666666"
+      :opacity="0.15"
+      :rotate="-25"
+      :gap-x="240"
+      :gap-y="160"
+    />
     <!-- 页面内容 -->
     <NuxtLayout>
       <KeepAlive>
@@ -34,7 +34,6 @@
       </div>
     </ClientOnly>
   </div>
-
 </template>
 
 <script setup>
@@ -94,6 +93,13 @@ watch(
 </script>
 
 <style lang="scss">
+.container-scroll {
+  // 声明变量
+  --el-main-padding: 40px;
+  height: calc(100vh - 60px - var(--el-main-padding));
+  overflow: auto;
+}
+
 .iconfont {
   font-family: 'iconfont' !important;
 }

@@ -16,21 +16,21 @@
       </div>
     </div>
 
-  <div class="sidebar-content">
+    <div class="sidebar-content">
       <!-- 对话分组1 -->
-    <div class="group-title">
-      <span>你的对话</span>
-      <el-link type="danger">清空全部</el-link>
-    </div>
-    <SidebarConversationList />
+      <div class="group-title">
+        <span>你的对话</span>
+        <el-link type="danger">清空全部</el-link>
+      </div>
+      <SidebarConversationList />
 
-    <!-- 对话分组2 -->
-    <div class="group-title">近 7 天</div>
-    <SidebarConversationList />
-  </div>
+      <!-- 对话分组2 -->
+      <div class="group-title">近 7 天</div>
+      <SidebarConversationList />
+    </div>
 
     <div class="sidebar-footer">
-      <div class="footer-item">
+      <div class="setting-item">
         <div class="icon-settings">
           <IconSettings />
         </div>
@@ -45,9 +45,9 @@
 </template>
 
 <script setup lang="ts">
-import SidebarConversationList from './SidebarConversationList.vue'
-import { IconPlus, IconSettings,IconClose } from '~/assets/svg'
-const emit = defineEmits(['close'])
+import SidebarConversationList from './SidebarConversationList.vue';
+import { IconPlus, IconSettings, IconClose } from '~/assets/svg';
+const emit = defineEmits(['close']);
 </script>
 
 <style scoped lang="scss">
@@ -86,7 +86,7 @@ const emit = defineEmits(['close'])
     flex: 1;
     overflow: auto;
     scrollbar-gutter: stable;
-      // ===================== 分组标题 =====================
+    // ===================== 分组标题 =====================
     .group-title {
       display: flex;
       justify-content: space-between;
@@ -97,14 +97,16 @@ const emit = defineEmits(['close'])
     }
   }
 
-
-
   // ===================== 底部 =====================
   .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     margin-top: auto;
 
-    .footer-item,
+    .setting-item,
     .user-item {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: start;
@@ -117,7 +119,9 @@ const emit = defineEmits(['close'])
       color: var(--el-text-color-primary);
       cursor: pointer;
       // hover 浅填充 → active 默认填充，过渡平滑
-      transition: background-color 0.2s, color 0.2s;
+      transition:
+        background-color 0.2s,
+        color 0.2s;
 
       &:hover {
         background: var(--el-fill-color-light);
@@ -136,8 +140,8 @@ const emit = defineEmits(['close'])
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: var(--el-fill-color);
       }
