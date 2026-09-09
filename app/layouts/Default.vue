@@ -57,7 +57,7 @@
           />
         </el-aside>
         <el-main>
-          <div class="mx-auto h-full relative z-0">
+          <div class="mx-auto h-full relative z-0 max-w-[100%]">
             <slot />
           </div>
         </el-main>

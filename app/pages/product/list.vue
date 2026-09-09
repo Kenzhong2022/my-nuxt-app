@@ -8,25 +8,19 @@
       :columns="columns"
       :data="sortedProducts"
       :loading="loading"
+      :showPagination="true"
+      :show-search="{
+        items: searchConfig,
+      }"
+      v-model:pageSize="pageSize"
+      v-model:currentPage="currentPage"
+      :total="total"
       fit
       border
       empty-text="暂无商品数据"
-      @search="handleSearch"
-      @reset="handleReset"
+      @fetch="fetchData"
+      @search="(form) => handleSearch(form as SearchForm)"
     >
-      <!-- 自定义搜索栏（完全保留原样式和逻辑） -->
-      <template #search-bar>
-        <el-input
-          v-model="searchText"
-          placeholder="搜索商品名称 / 标题"
-          clearable
-          style="width: 300px"
-          @keyup.enter="handleSearch"
-        />
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </template>
-
       <!-- 自定义列：商品图片 -->
       <template #imageSlot="{ row }">
         <el-image
@@ -85,22 +79,8 @@
       </template>
     </BaseTable>
 
-    <!-- 分页（放在 BaseTable 外部，保持灵活性） -->
-    <div class="pagination-wrapper">
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 30, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        background
-        @current-change="fetchProducts"
-        @size-change="onPageSizeChange"
-      />
-    </div>
-
     <!-- 编辑商品弹窗 -->
-    <EditDialog v-model:visible="editVisible" :product="editingProduct" @saved="fetchProducts" />
+    <EditDialog v-model:visible="editVisible" :product="editingProduct" @saved="fetchData" />
 
     <!-- 编辑商品详情抽屉 -->
     <DetailDrawer v-model:visible="detailVisible" :product="detailProduct" />
@@ -113,6 +93,22 @@ import { ElMessage } from 'element-plus';
 import dayjs from 'dayjs';
 import EditDialog from './components/EditDialog.vue';
 import DetailDrawer from './components/DetailDrawer.vue';
+import type { SearchFormItem } from '~/components/BaseTable.vue';
+// 根据 type 映射到对应的值类型
+type FormValueType<T extends SearchFormItem['type']> = T extends 'input' | 'textarea' | 'select'
+  ? string
+  : T extends 'number'
+    ? number
+    : T extends 'date'
+      ? string // 若使用 value-format="YYYY-MM-DD" 则为 string
+      : T extends 'daterange'
+        ? [string, string]
+        : any;
+
+// 从配置数组推导表单数据对象类型
+type SearchFormData<T extends readonly SearchFormItem[]> = {
+  [K in T[number]['prop']]: FormValueType<Extract<T[number], { prop: K }>['type']>;
+};
 
 // ========== 表格列配置 ==========
 const columns = [
@@ -136,14 +132,70 @@ const columns = [
   { label: '创建时间', slotName: 'createdAtSlot', minWidth: 170, resizable: false },
   { label: '操作', slotName: 'actionsSlot', width: 150, fixed: 'right', resizable: false },
 ];
+const searchConfig = [
+  {
+    label: '商品名称',
+    prop: 'name',
+    type: 'input',
+    placeholder: '请输入商品名称',
+    attrs: { style: 'width:200px' },
+    rules: [
+      { required: true, message: '请输入商品名称', trigger: 'blur' },
+      { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' },
+    ],
+  },
+  {
+    label: '分类',
+    prop: 'category',
+    type: 'select',
+    options: [
+      { label: '电子产品', value: 'electronics' },
+      { label: '服装', value: 'clothing' },
+    ],
+    attrs: { style: 'width:150px' },
+    rules: [{ required: true, message: '请选择分类', trigger: 'change' }],
+  },
+  {
+    label: '上架日期',
+    prop: 'date',
+    type: 'date',
+    attrs: { style: 'width:180px' },
+    rules: [{ required: false, message: '请选择上架日期', trigger: 'change' }], // 非必填
+  },
+  {
+    label: '最低价',
+    prop: 'minPrice',
+    type: 'number',
+    placeholder: '最低价',
+    attrs: {
+      style: 'width:150px',
+      min: 0,
+      step: 1,
+    },
+    rules: [{ type: 'number', min: 0, message: '最低价不能小于0', trigger: 'blur' }],
+  },
+  {
+    label: '最高价',
+    prop: 'maxPrice',
+    type: 'number',
+    placeholder: '最高价',
+    attrs: {
+      style: 'width:150px',
+      min: 0,
+      step: 1,
+    },
+    rules: [{ type: 'number', min: 0, message: '最高价不能小于0', trigger: 'blur' }],
+  },
+] as const satisfies SearchFormItem[];
+// ↑ satisfies 确保每个对象符合 SearchFormItem，同时保留字面量类型
 
 // ========== 状态 ==========
 const products = ref<Product[]>([]);
 const loading = ref(false);
-const page = ref(1);
+const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
-const searchText = ref('');
+const filterForm = ref<SearchForm>();
 const sortField = ref<'price' | null>(null);
 const sortOrder = ref<'asc' | 'desc'>('asc');
 
@@ -169,15 +221,32 @@ const sortedProducts = computed(() => {
   });
 });
 
-// ========== 数据请求 ==========
-async function fetchProducts() {
+function toggleSort() {
+  if (sortField.value !== 'price') {
+    sortField.value = 'price';
+    sortOrder.value = 'asc';
+  } else {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  }
+  // 无需重新请求数据，计算属性会自动更新
+}
+// ========== 推导表单数据类型 ==========
+type SearchForm = SearchFormData<typeof searchConfig>;
+// ========== 搜索与重置 ==========
+function handleSearch(form: SearchForm) {
+  filterForm.value = form;
+  currentPage.value = 1;
+  fetchData();
+}
+
+const fetchData = async () => {
   loading.value = true;
   try {
     const res = await $fetch('/api/public/products/list', {
       params: {
-        page: page.value,
+        page: currentPage.value,
         pageSize: pageSize.value,
-        search: searchText.value,
+        ...filterForm.value,
       },
     });
     products.value = res.data || [];
@@ -190,36 +259,7 @@ async function fetchProducts() {
   } finally {
     loading.value = false;
   }
-}
-
-function toggleSort() {
-  if (sortField.value !== 'price') {
-    sortField.value = 'price';
-    sortOrder.value = 'asc';
-  } else {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  }
-  // 无需重新请求数据，计算属性会自动更新
-}
-
-// ========== 搜索与重置 ==========
-function handleSearch() {
-  page.value = 1;
-  fetchProducts();
-}
-
-function handleReset() {
-  searchText.value = '';
-  page.value = 1;
-  fetchProducts();
-}
-
-// ========== 分页 ==========
-function onPageSizeChange(val: number) {
-  pageSize.value = val;
-  page.value = 1;
-  fetchProducts();
-}
+};
 
 // ========== 操作 ==========
 function openEdit(row: Product) {
@@ -249,13 +289,11 @@ function thumbUrl(url: string) {
 }
 
 // ========== 生命周期 ==========
-onMounted(fetchProducts);
+onMounted(fetchData);
 </script>
 
 <style scoped>
 .product-list {
-  padding: 24px;
-  min-width: 900px;
 }
 
 .page-title {
