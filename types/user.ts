@@ -4,7 +4,7 @@
  * ============================================================
  */
 
-import type { RoleCode } from "./role";
+import type { RoleCode } from './role';
 
 /** 用户状态枚举 */
 export enum UserStatus {
@@ -31,16 +31,7 @@ export interface User {
 /** 用户列表返回项（不含敏感字段） */
 export type UserListItem = Pick<
   User,
-  | "id"
-  | "uuid"
-  | "email"
-  | "phone"
-  | "nickname"
-  | "avatar"
-  | "status"
-  | "last_login_at"
-  | "created_at"
-  | "updated_at"
+  'id' | 'uuid' | 'email' | 'phone' | 'nickname' | 'avatar' | 'status' | 'last_login_at' | 'created_at' | 'updated_at'
 > & {
   role_id: number | null;
   role_name: string | null;
@@ -58,8 +49,8 @@ export interface UserListResponse {
 /**
  * ============================================================
  * 当前登录用户（RuoYi 规范）
- *  - GET /api/getInfo    → { code, msg, permissions, roles, user }
- *  - GET /api/getRouters → { code, msg, data: RuoYiRoute[] }
+ *  - GET /api/public/getInfo    → { code, msg, permissions, roles, user }（未登录返回访客信息）
+ *  - GET /api/public/getRouters → { code, msg, data: RuoYiRoute[] }
  * ============================================================
  */
 
@@ -83,7 +74,7 @@ export interface SysUser {
   roles: SysRole[];
 }
 
-/** GET /api/getInfo 响应 */
+/** GET /api/public/getInfo 响应 */
 export interface GetInfoResponse {
   code: number;
   msg: string;
@@ -122,7 +113,7 @@ export interface RuoYiRoute {
   children?: RuoYiRoute[];
 }
 
-/** GET /api/getRouters 响应 */
+/** GET /api/public/getRouters 响应 */
 export interface GetRoutersResponse {
   code: number;
   msg: string;

@@ -1,4 +1,4 @@
-import { createError, getCookie, getRequestHeader } from 'h3';
+import { createError, getCookie, getRequestHeader, type H3Event } from 'h3';
 import { verifyAccessToken } from '~~/server/utils/jwt';
 import { errors } from 'jose';
 const { JWTExpired, JWTInvalid } = errors;
@@ -46,6 +46,14 @@ function handleUnauthorized(message?: string): never {
   });
 }
 
+/**
+ * 提取 token：优先 Authorization 头（客户端 fetch 插件注入），其次 cookie（SSR 服务端请求）
+ */
+function extractToken(event: H3Event): string | undefined {
+  const authHeader = getRequestHeader(event, 'authorization');
+  return authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : getCookie(event, 'token');
+}
+
 // ============================================
 // 3. 主中间件：仅保护 API 请求
 // ============================================
@@ -57,16 +65,27 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  // 白名单接口直接放行
+  // 白名单接口直接放行（不强制登录）
   if (isWhitelisted(pathname)) {
+    // 可选鉴权：尽力解析 token 注入 context.user，供需要区分登录态的公共接口使用；
+    // 无 token / 解析失败均静默跳过（不拦截、不抛 401），由接口自行决定匿名行为
+    const publicToken = extractToken(event);
+    if (publicToken) {
+      try {
+        const payload = await verifyAccessToken(publicToken);
+        event.context.user = {
+          userId: payload.userId,
+          role: payload.role as string,
+        };
+      } catch {
+        // 公共接口匿名可用，token 无效视为游客
+      }
+    }
     return;
   }
 
-  // 提取 token：优先 Authorization 头（客户端 fetch 插件注入），其次 cookie（SSR 服务端请求）
-  const authHeader = getRequestHeader(event, 'authorization');
-  const token = authHeader?.startsWith('Bearer ')
-    ? authHeader.slice(7) // "Bearer ".length === 7
-    : getCookie(event, 'token');
+  // 提取 token 并验证
+  const token = extractToken(event);
 
   // 验证 token：try 只包 verifyAccessToken，handleUnauthorized 的 throw
   // 必须在 try 之外触发，否则 401 会被下面的 catch 捕获并包装成 500

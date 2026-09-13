@@ -3,18 +3,12 @@
     <HomeButton />
     <!-- 顶部栏 -->
     <el-header class="border-b !h-16">
-      <div
-        class="flex items-center justify-between h-full max-w-5xl mx-auto px-4"
-      >
-        <div class="text-xl font-bold cursor-pointer" @click="goHome">
-          我的商城
-        </div>
+      <div class="flex items-center justify-between h-full max-w-5xl mx-auto px-4">
+        <div class="text-xl font-bold cursor-pointer" @click="goHome">我的商城</div>
 
         <!-- 电脑导航 -->
         <div class="hidden md:flex items-center gap-8">
-          <span class="cursor-pointer hover:text-blue-500" @click="goHome"
-            >首页</span
-          >
+          <span class="cursor-pointer hover:text-blue-500" @click="goHome">首页</span>
           <span class="cursor-pointer hover:text-blue-500">商品分类</span>
           <span class="cursor-pointer hover:text-blue-500">新品上市</span>
           <span class="cursor-pointer hover:text-blue-500">优惠活动</span>
@@ -26,12 +20,7 @@
         </el-button>
         <div class="flex items-center gap-4">
           <el-badge :value="cart.totalCount" :hidden="cart.isEmpty" :max="99">
-            <el-button
-              circle
-              class="cursor-pointer"
-              aria-label="购物车"
-              @click="goCart"
-            >
+            <el-button circle class="cursor-pointer" aria-label="购物车" @click="goCart">
               <div class="iconfont icon-cart-empty"></div>
             </el-button>
           </el-badge>
@@ -52,8 +41,9 @@
       </div>
     </el-drawer>
 
-    <!-- 搜索栏 -->
+    <!-- 搜索栏：页面 meta.showSearch !== false 时展示（如购物车页可关闭） -->
     <SearchBar
+      v-if="showSearch"
       @search="onSearch"
       :options="[
         { label: '商品', value: 'product' },
@@ -102,9 +92,7 @@
             </div>
           </el-col>
         </el-row>
-        <div
-          class="text-center text-xs mt-8 md:mt-12 pt-6 border-t text-gray-400"
-        >
+        <div class="text-center text-xs mt-8 md:mt-12 pt-6 border-t text-gray-400">
           © 2024 我的商城. All rights reserved.
         </div>
       </div>
@@ -113,20 +101,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { navigateTo } from "nuxt/app";
-import HomeButton from "@/components/HomeButton.vue";
+import { ref, computed } from 'vue';
+import { navigateTo } from 'nuxt/app';
+import HomeButton from '@/components/HomeButton.vue';
 
 const drawerVisible = ref(false);
 
 const cart = useCartStore();
 
+// 页面 meta 控制搜索栏显隐：definePageMeta({ showSearch: false }) 可关闭，默认展示
+const route = useRoute();
+const showSearch = computed(() => route.meta.showSearch !== false);
+
 function goCart() {
-  navigateTo("/store/cart");
+  navigateTo('/store/cart');
 }
 
 function goHome() {
-  navigateTo("/store");
+  navigateTo('/store');
 }
 
 const { login } = useAuth();
@@ -137,6 +129,6 @@ function goUser() {
 
 function onSearch({ query, mode }: { query: string; mode: string }) {
   console.log(query, mode);
-  ElMessage.warning("功能暂未开放");
+  ElMessage.warning('功能暂未开放');
 }
 </script>

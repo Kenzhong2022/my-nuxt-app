@@ -1,35 +1,28 @@
 <template>
-  <div class="home-button-wrapper">
-    <i class="iconfont icon-home home-button-icon" @click="handleClick" />
-  </div>
+  <el-tooltip content="返回首页" effect="dark">
+    <div @click="navigateTo('/')" class="home-btn">
+      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M44 40.8361C39.1069 34.8632 34.7617 31.4739 30.9644 30.6682C27.1671 29.8625 23.5517 29.7408 20.1182 30.303V41L4 23.5453L20.1182 7V17.167C26.4667 17.2172 31.8638 19.4948 36.3095 24C40.7553 28.5052 43.3187 34.1172 44 40.8361Z"
+          fill="#333"
+          stroke="#333"
+          stroke-width="4"
+          stroke-linejoin="miter"
+        />
+      </svg>
+    </div>
+  </el-tooltip>
 </template>
 
-<script setup lang="ts">
-import { navigateTo } from "nuxt/app";
-
-function handleClick() {
-  navigateTo("/");
-}
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
-.home-button-wrapper {
-  position: fixed;
+div {
+  position: absolute;
   top: 10px;
   left: 10px;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 2px solid var(--el-color-primary);
   cursor: pointer;
-  background: var(--el-bg-color-page);
-}
-
-.home-button-icon {
-  font-size: 36px;
-  color: var(--el-color-primary);
 }
 </style>

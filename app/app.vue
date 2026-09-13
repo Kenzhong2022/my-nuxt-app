@@ -43,14 +43,19 @@ const loadingStore = useLoadingStore();
 // ---------- 用户信息（RuoYi 规范：getInfo + getRouters）SSR 拉取 ----------
 // callOnce：SSR 期间执行一次，客户端水合时跳过；
 // pinia 状态随 Nuxt payload 序列化下发，v-hasPermi/v-hasRole 指令两端读到一致数据
+// 菜单路由树由 userInfoStore.getRouters 拉取（store 状态），useMenuConfig 负责视图转换
 const userInfoStore = useUserInfoStore();
 await callOnce('user-info', async () => {
   await Promise.all([userInfoStore.getInfo(), userInfoStore.getRouters()]);
+  // 权限标识由接口按角色下发，同步到本地权限 store（pinia + localStorage 持久化），
+  // 供 PermissionButton / $hasPermission 等本地判定；游客回退本地缓存
+  const permissionStore = usePermissionStore();
+  if (userInfoStore.user) {
+    permissionStore.setPermissions(userInfoStore.permissions);
+  } else {
+    permissionStore.restoreFromCache();
+  }
 });
-
-// TODO: 临时调试 —— 根组件 setup 只执行一次，此时 Nuxt 已按文件系统把 pages 全部注册进 router
-const router = useRouter();
-const routes = router.getRoutes();
 
 let tl = null;
 

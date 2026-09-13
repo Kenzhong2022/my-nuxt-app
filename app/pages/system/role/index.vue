@@ -1,660 +1,657 @@
 <template>
-  <div class="permission-admin">
-    <h2 class="page-title">角色权限管理</h2>
-    <p class="page-desc">
-      选择角色后在左侧权限树中勾选权限，点击「保存」将配置写入数据库。
-    </p>
+  <div class="menu-admin">
+    <!-- ==================== 顶部筛选区 ==================== -->
+    <el-card class="filter-card" shadow="never">
+      <el-form class="filter-form" :model="filters" inline @submit.prevent>
+        <el-form-item label="菜单名称">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="菜单名称 / 权限标识"
+            clearable
+            style="width: 220px"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
 
-    <div class="admin-layout">
-      <!-- 左侧：角色选择 + 权限树 -->
-      <aside class="tree-panel">
-        <div class="panel-header">
-          <h3>权限配置</h3>
-        </div>
-
-        <!-- 角色选择 -->
-        <div class="role-selector">
-          <el-select
-            v-model="currentRoleId"
-            placeholder="选择角色"
-            style="width: 100%"
-            @change="onRoleChange"
-          >
-            <el-option
-              v-for="role in roleList"
-              :key="role.id"
-              :label="`${role.name}（${role.code}）`"
-              :value="role.id"
-            >
-              <span>{{ role.name }}</span>
-              <el-tag
-                size="small"
-                :type="role.status === 1 ? 'success' : 'danger'"
-                style="margin-left: 0.5rem"
-              >
-                {{ role.status === 1 ? "启用" : "禁用" }}
-              </el-tag>
-            </el-option>
+        <el-form-item label="类型">
+          <el-select v-model="filters.type" placeholder="全部" clearable style="width: 140px">
+            <el-option v-for="opt in TYPE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="状态">
+          <el-select v-model="filters.status" placeholder="全部" clearable style="width: 140px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
+          <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- ==================== 底部菜单表格 ==================== -->
+    <el-card class="table-card" shadow="never">
+      <!-- 工具栏 -->
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <span class="table-title">菜单列表</span>
+          <el-tag type="primary" effect="plain" size="small" round>共 {{ totalCount }} 项</el-tag>
         </div>
 
-        <!-- 权限树 -->
-        <el-tree
-          ref="treeRef"
-          :data="_rawTree"
-          :props="treeFieldMap"
-          node-key="id"
-          show-checkbox
-          check-strictly
-          :default-expand-all="true"
-          @check="
-            (_, info) => onPermissionChange(info.checkedKeys as string[])
-          "
-        />
-
-        <div class="panel-actions">
-          <el-button
-            size="small"
-            type="primary"
-            :loading="saving"
-            :disabled="!currentRoleId"
-            @click="saveToDB"
-          >
-            保存到数据库
+        <div class="toolbar-right">
+          <el-button :icon="Sort" @click="toggleExpandAll">
+            {{ expandAll ? '收起全部' : '展开全部' }}
           </el-button>
-          <el-button size="small" :disabled="!currentRoleId" @click="resetToDB">
-            还原
-          </el-button>
-          <el-button size="small" :disabled="!currentRoleId" @click="clearAll">
-            全部清空
-          </el-button>
+          <el-button :icon="Refresh" @click="fetchMenus">刷新</el-button>
+          <el-button type="primary" :icon="Plus" @click="handleCreate()">新增</el-button>
         </div>
-      </aside>
+      </div>
 
-      <!-- 右侧：角色信息 + 权限预览 -->
-      <main class="preview-panel">
-        <h3 class="preview-title">权限预览</h3>
+      <!-- 树形表格 -->
+      <el-table
+        :key="tableKey"
+        v-loading="loading"
+        :data="tableData"
+        row-key="id"
+        :tree-props="{ children: 'children' }"
+        :default-expand-all="expandAll"
+        border
+        stripe
+        class="menu-table"
+      >
+        <el-table-column prop="label" label="菜单名称" min-width="200" show-overflow-tooltip />
 
-        <!-- 当前角色信息 -->
-        <section class="preview-card" v-if="currentRole">
-          <div class="card-label">当前角色</div>
-          <div class="role-info">
-            <el-descriptions :column="2" border size="small">
-              <el-descriptions-item label="角色名称">
-                {{ currentRole.name }}
-              </el-descriptions-item>
-              <el-descriptions-item label="角色编码">
-                {{ currentRole.code }}
-              </el-descriptions-item>
-              <el-descriptions-item label="描述">
-                {{ currentRole.description || "—" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="权限数">
-                {{ checkedKeys.length }} 项
-              </el-descriptions-item>
-            </el-descriptions>
-          </div>
-        </section>
+        <el-table-column prop="id" label="权限标识" min-width="240" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="perm-code">{{ row.id }}</span>
+          </template>
+        </el-table-column>
 
-        <section class="preview-card" v-else>
-          <el-empty description="请在左侧选择角色" />
-        </section>
+        <el-table-column prop="sort" label="排序" width="80" align="center" />
 
-        <!-- 导航菜单预览 -->
-        <section class="preview-card" v-if="currentRole">
-          <div class="card-label">页面访问权限</div>
-          <div class="nav-preview">
-            <el-tag
-              v-for="menu in pageMenus"
-              :key="menu.id"
-              :type="hasPageAccess(menu.id) ? 'success' : 'info'"
-              :effect="hasPageAccess(menu.id) ? 'dark' : 'plain'"
-              class="nav-item"
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <span class="status-cell">
+              <i class="status-dot" :class="row.status === 1 ? 'is-on' : 'is-off'" />
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
+
+        <!-- 右侧操作列 -->
+        <el-table-column label="操作" width="230" fixed="right" align="center">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.type !== 'action'"
+              link
+              type="primary"
+              :icon="Plus"
+              @click="handleCreate(row as MenuItem)"
             >
-              {{ menu.label }}
-              <span v-if="!hasPageAccess(menu.id)" class="muted"
-                >（无权限）</span
-              >
-            </el-tag>
-          </div>
-        </section>
+              新增子项
+            </el-button>
 
-        <!-- 页面内容预览 -->
-        <section class="preview-card" v-if="currentRole">
-          <div class="card-label">操作按钮权限</div>
-          <el-tabs v-model="activePageId" type="border-card">
-            <el-tab-pane
-              v-for="page in pageMenus"
-              :key="page.id"
-              :label="page.label"
-              :name="page.id"
-            >
-              <div class="page-content">
-                <div class="btn-row">
-                  <el-button
-                    v-for="btn in getPageButtons(page.id)"
-                    :key="btn.id"
-                    :type="btn.uiType"
-                    :disabled="!hasPermission(btn.id)"
-                    @click="simulateAction(btn)"
-                  >
-                    {{ btn.label }}
-                    <span v-if="!hasPermission(btn.id)" class="muted"
-                      >（无权限）</span
-                    >
-                  </el-button>
-                </div>
+            <el-button link type="primary" :icon="Edit" @click="handleEdit(row as MenuItem)">编辑</el-button>
 
-                <el-alert
-                  v-if="
-                    getPageButtons(page.id).length > 0 &&
-                    !hasAnyPageButton(page.id)
-                  "
-                  type="warning"
-                  :closable="false"
-                  class="mt-1rem"
-                >
-                  当前页面没有任何操作权限，请在左侧勾选「{{
-                    page.label
-                  }}」下的按钮权限。
-                </el-alert>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-        </section>
+            <el-button link type="danger" :icon="Delete" @click="handleDelete(row as MenuItem)">删除</el-button>
+          </template>
+        </el-table-column>
 
-        <!-- 当前权限列表 -->
-        <section class="debug-card" v-if="currentRole">
-          <div class="debug-header">
-            <span>当前已勾选权限（{{ checkedKeys.length }} 个）</span>
-            <el-button size="small" text @click="copyKeys">复制 ID</el-button>
-          </div>
-          <div class="debug-tags">
-            <el-tag
-              v-for="key in checkedKeys"
-              :key="key"
-              size="small"
-              :type="getTagType(key)"
-              class="debug-tag"
-            >
-              {{ key }}
-            </el-tag>
-          </div>
-        </section>
-      </main>
-    </div>
+        <template #empty>
+          <el-empty description="暂无菜单数据" :image-size="90" />
+        </template>
+      </el-table>
+    </el-card>
+
+    <!-- ==================== 新增 / 编辑弹窗（表单配置由父组件下发，随类型 radio 联动） ==================== -->
+    <FormDialog
+      ref="formDialogRef"
+      :title="dialogTitle"
+      :schema="formSchema"
+      width="520px"
+      label-width="88px"
+      @field-change="handleFieldChange"
+      @submit="handleFormSubmit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import type {
-  PermissionNode,
-  PermissionTree,
-} from "~~/types/permission";
-import type { RoleWithPermissions, RoleListResponse } from "~~/types/role";
-import { ElTag } from "element-plus";
-import { ElMessage } from "element-plus";
-import {
-  findNodeById,
-  collectDescendantIds,
-  getParentIds,
-  extractPageMenus,
-  getPageActions,
-  createPermissionChecker,
-} from "~~/app/composables/usePermission";
+import { computed, onMounted, reactive, ref } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Delete, Edit, Plus, Refresh, RefreshLeft, Search, Sort } from '@element-plus/icons-vue';
+import type { FormSchema, FieldConfig } from '~~/types/dynamicForm';
+import FormDialog from '@/components/FormDialog.vue';
 
-type ElTagProps = InstanceType<typeof ElTag>["$props"];
-type ElTagType = ElTagProps["type"];
+/* ==================== 类型定义 ==================== */
 
-/** 权限树数据：定义系统中所有可配置的权限节点 */
-const _rawTree: PermissionNode[] = [
-  {
-    id: "module:system",
-    label: "系统管理",
-    children: [
-      {
-        id: "page:system:user",
-        label: "用户管理",
-        children: [
-          {
-            id: "action:system:user:create",
-            label: "新增用户",
-          },
-          { id: "action:system:user:edit", label: "编辑用户" },
-          {
-            id: "action:system:user:delete",
-            label: "删除用户",
-          },
-          {
-            id: "action:system:user:export",
-            label: "导出用户",
-          },
-        ],
-      },
-      {
-        id: "page:system:role",
-        label: "角色管理",
-        children: [
-          {
-            id: "action:system:role:create",
-            label: "新增角色",
-          },
-          {
-            id: "action:system:role:assign",
-            label: "分配权限",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "module:content",
-    label: "内容管理",
-    children: [
-      {
-        id: "page:content:article",
-        label: "文章管理",
-        children: [
-          {
-            id: "action:content:article:publish",
-            label: "发布文章",
-          },
-          {
-            id: "action:content:article:audit",
-            label: "审核文章",
-          },
-          {
-            id: "action:content:article:delete",
-            label: "删除文章",
-          },
-        ],
-      },
-    ],
-  },
-];
+type MenuType = 'module' | 'page' | 'action';
 
-const permissionTree: PermissionTree = readonly(_rawTree);
-const treeFieldMap = { children: "children", label: "label" };
+/** 菜单节点（树形结构，与后端约定字段） */
+interface MenuItem {
+  /** 权限标识，全局唯一（目录通常无，由后端兜底生成） */
+  id: string;
+  /** 显示名称 */
+  label: string;
+  /** 节点类型：目录 / 菜单 / 按钮 */
+  type: MenuType;
+  /** 路由地址（目录 / 菜单） */
+  path?: string;
+  /** 菜单图标（目录 / 菜单） */
+  icon?: string;
+  /** 排序值 */
+  sort: number;
+  /** 状态：1 启用，0 禁用 */
+  status: 0 | 1;
+  /** 创建时间 */
+  createTime: string;
+  /** 子节点 */
+  children?: MenuItem[];
+}
 
-/** Tree 组件引用 */
-const treeRef = ref();
-/** 角色列表（含权限） */
-const roleList = ref<RoleWithPermissions[]>([]);
-/** 当前选中的角色 ID */
-const currentRoleId = ref<number | null>(null);
-/** 当前角色的已勾选权限 */
-const checkedKeys = ref<string[]>([]);
-/** 当前激活的预览页面 */
-const activePageId = ref<string>("page:system:user");
-/** 保存中状态 */
-const saving = ref(false);
-/** 加载中状态 */
+/** 后端菜单列表返回结构 */
+interface MenuListResponse {
+  code: number;
+  message: string;
+  data: MenuItem[];
+}
+
+/* ==================== 常量映射 ==================== */
+
+const TYPE_OPTIONS = [
+  { label: '目录', value: 'module' },
+  { label: '菜单', value: 'page' },
+  { label: '按钮', value: 'action' },
+] as const;
+
+const TYPE_TEXT: Record<MenuType, string> = {
+  module: '目录',
+  page: '菜单',
+  action: '按钮',
+};
+
+/* ==================== 筛选状态 ==================== */
+
+/** 表单里正在编辑的筛选条件 */
+const filters = reactive<{
+  keyword: string;
+  type: MenuType | '';
+  status: number | '';
+}>({
+  keyword: '',
+  type: '',
+  status: '',
+});
+
+/** 真正生效的筛选条件（点击「查询」后才同步） */
+const applied = ref<{
+  keyword: string;
+  type: MenuType | '';
+  status: number | '';
+}>({
+  keyword: '',
+  type: '',
+  status: '',
+});
+
+/* ==================== 表格状态 ==================== */
+
+/** 原始树数据（API 返回） */
+const rawMenus = ref<MenuItem[]>([]);
+/** 表格加载态 */
 const loading = ref(false);
+/** 是否默认展开全部 */
+const expandAll = ref(true);
+/** 用于强制重渲染表格，切换展开态 / 重新筛选时刷新 */
+const tableKey = ref(0);
 
-/**
- * 当前选中的角色对象
- * @returns 从角色列表中查找匹配的角色，未找到返回 null
- */
-const currentRole = computed(
-  () => roleList.value.find((r) => r.id === currentRoleId.value) || null,
+/* ==================== 计算属性 ==================== */
+
+/** 经过筛选后的树数据 */
+const tableData = computed(() =>
+  filterTree(rawMenus.value, applied.value.keyword, applied.value.type, applied.value.status),
 );
 
-const checker = computed(() => createPermissionChecker(checkedKeys.value));
-const pageMenus = computed(() => extractPageMenus(permissionTree));
+/** 筛选后节点总数（含子节点） */
+const totalCount = computed(() => countNodes(tableData.value));
+
+/* ==================== 工具函数 ==================== */
 
 /**
- * 判断单个权限是否生效
- * @param id - 权限 ID
- * @returns 权限是否生效
+ * 递归筛选菜单树
+ * @description 节点自身命中，或任一子节点命中，则保留该节点
  */
-function hasPermission(id: string): boolean {
-  return checker.value.hasPermission(id);
-}
-/**
- * 判断页面是否有访问权限
- * @param id - 页面权限 ID
- * @returns 是否有访问权限
- */
-function hasPageAccess(id: string): boolean {
-  return checker.value.hasPageAccess(id);
-}
-/**
- * 判断某页面下是否至少有一个操作权限
- * @param pageId - 页面权限 ID
- * @returns 是否至少有一个操作权限
- */
-function hasAnyPageButton(pageId: string): boolean {
-  const buttons = getPageButtons(pageId);
-  return buttons.some((btn) => hasPermission(btn.id));
+function filterTree(list: MenuItem[], keyword: string, type: MenuType | '', status: number | ''): MenuItem[] {
+  const result: MenuItem[] = [];
+
+  for (const node of list) {
+    const children = node.children ? filterTree(node.children, keyword, type, status) : [];
+
+    const selfMatch =
+      (!keyword || node.label.includes(keyword) || node.id.includes(keyword)) &&
+      (!type || node.type === type) &&
+      (status === '' || node.status === status);
+
+    if (selfMatch || children.length > 0) {
+      result.push({
+        ...node,
+        children: children.length > 0 ? children : undefined,
+      });
+    }
+  }
+
+  return result;
 }
 
-/**
- * 获取指定页面下的所有操作按钮
- * @param pageId - 页面权限 ID
- * @returns 按钮配置数组
- */
-function getPageButtons(pageId: string) {
-  return getPageActions(permissionTree, pageId);
+/** 递归统计节点数量 */
+function countNodes(list: MenuItem[]): number {
+  return list.reduce((total, node) => total + 1 + (node.children ? countNodes(node.children) : 0), 0);
 }
 
+/** 递归查找节点 */
+function findNode(list: MenuItem[], id: string): MenuItem | null {
+  for (const node of list) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const hit = findNode(node.children, id);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+/** 递归删除节点 */
+function removeNode(list: MenuItem[], id: string): boolean {
+  const index = list.findIndex((node) => node.id === id);
+  if (index > -1) {
+    list.splice(index, 1);
+    return true;
+  }
+  return list.some((node) => (node.children ? removeNode(node.children, id) : false));
+}
+
+/** 简易时间格式化 */
+function formatNow(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+    d.getHours(),
+  )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ==================== 数据请求 ==================== */
+
 /**
- * 拉取角色列表，默认选中第一个角色
- * @description 从后端获取所有角色及权限，自动选中第一个角色
- * @returns 无返回值
+ * 拉取菜单列表
+ * @description 请求 /api/public/menus/list，返回按 sort_order 排序的全量菜单树（含禁用项）
  */
-async function fetchRoles(): Promise<void> {
+async function fetchMenus(): Promise<void> {
   loading.value = true;
   try {
-    const res = await $fetch<RoleListResponse>("/api/public/roles/list");
-    const list = res?.data ?? [];
-    roleList.value = list;
-    if (list.length > 0 && currentRoleId.value === null) {
-      currentRoleId.value = list[0]!.id;
-      onRoleChange(currentRoleId.value);
-    }
+    const res = await $fetch<MenuListResponse>('/api/public/menus/list');
+    rawMenus.value = res.data ?? [];
+    tableKey.value += 1;
   } catch (err) {
-    console.error("获取角色列表失败:", err);
-    ElMessage.error("获取角色列表失败");
+    console.error('获取菜单列表失败:', err);
+    ElMessage.error('获取菜单列表失败');
   } finally {
     loading.value = false;
   }
 }
 
-/** 将当前勾选的权限保存到数据库 */
-async function saveToDB() {
-  if (!currentRoleId.value) return;
-  saving.value = true;
-  try {
-    await $fetch(`/api/public/roles/${currentRoleId.value}/permissions`, {
-      method: "PUT",
-      body: { permissions: checkedKeys.value },
+/* ==================== 筛选交互 ==================== */
+
+/** 执行查询 */
+function handleSearch(): void {
+  applied.value = {
+    keyword: filters.keyword.trim(),
+    type: filters.type,
+    status: filters.status,
+  };
+  tableKey.value += 1;
+}
+
+/** 重置筛选条件 */
+function handleReset(): void {
+  filters.keyword = '';
+  filters.type = '';
+  filters.status = '';
+  handleSearch();
+}
+
+/** 切换展开 / 收起全部 */
+function toggleExpandAll(): void {
+  expandAll.value = !expandAll.value;
+  tableKey.value += 1;
+}
+
+/* ==================== 弹窗逻辑（FormDialog 消费方） ==================== */
+const formDialogRef = ref<InstanceType<typeof FormDialog>>();
+
+/** 弹窗上下文：当前操作模式与目标节点（表单数据本身由 FormDialog 管理） */
+const dialogMeta = reactive({
+  mode: 'create' as 'create' | 'edit',
+  /** 当前选中的菜单类型（随弹窗内 radio 切换更新，驱动 schema 与标题联动） */
+  currentType: 'page' as MenuType,
+  /** 上级菜单 id，空字符串表示根节点 */
+  parentId: '',
+  parentLabel: '根目录',
+  /** 编辑时的原始 id，用于定位节点（表单 id 可能被改动） */
+  editingId: '',
+  editingLabel: '',
+});
+
+/** 弹窗标题：编辑固定为节点名；新增随类型 radio 联动（新增目录/菜单/按钮） */
+const dialogTitle = computed(() => {
+  if (dialogMeta.mode === 'edit') return `编辑 - ${dialogMeta.editingLabel}`;
+  const typeLabel = TYPE_TEXT[dialogMeta.currentType];
+  return dialogMeta.parentId ? `在「${dialogMeta.parentLabel}」下新增${typeLabel}` : `新增${typeLabel}`;
+});
+
+/** 弹窗表单配置：随「菜单类型」radio 联动
+ * - 目录：名称 + 路由地址 + 图标
+ * - 菜单：名称 + 路由地址 + 权限标识(选填) + 图标
+ * - 按钮：名称 + 权限标识(必填)
+ */
+const formSchema = computed<FormSchema>(() => {
+  const type = dialogMeta.currentType;
+  const labelName = { module: '目录名称', page: '菜单名称', action: '按钮名称' }[type];
+  const fields: FieldConfig[] = [
+    { key: 'parentLabel', type: 'input', label: '上级菜单', props: { disabled: true } },
+    {
+      key: 'type',
+      type: 'button',
+      label: '菜单类型',
+      options: [...TYPE_OPTIONS],
+      rules: { required: true, trigger: 'change' },
+    },
+    { key: 'label', type: 'input', label: labelName, placeholder: `请输入${labelName}`, rules: { required: true } },
+  ];
+
+  // 目录/菜单需要路由地址与图标；按钮无路由概念
+  if (type !== 'action') {
+    fields.push({
+      key: 'path',
+      type: 'input',
+      label: '路由地址',
+      placeholder: '如 /system/user',
+      rules: { required: true },
     });
-    // 同步本地缓存
-    if (currentRole.value) {
-      currentRole.value.permissions = [...checkedKeys.value];
-    }
-    ElMessage.success("权限已保存到数据库");
-  } catch (err) {
-    console.error("保存权限失败:", err);
-    ElMessage.error("保存权限失败");
-  } finally {
-    saving.value = false;
+  }
+  // 按钮必须有权限标识；菜单选填（页面路由本身可作权限）；目录无
+  if (type !== 'module') {
+    fields.push({
+      key: 'id',
+      type: 'input',
+      label: '权限标识',
+      placeholder: '如 action:system:user:create',
+      rules: type === 'action' ? { required: true } : undefined,
+    });
+  }
+  if (type !== 'action') {
+    fields.push({ key: 'icon', type: 'input', label: '菜单图标', placeholder: 'Element Plus 图标名，如 Goods' });
+  }
+
+  fields.push(
+    { key: 'sort', type: 'number', label: '排序', defaultValue: 1, props: { min: 0, max: 9999 } },
+    {
+      key: 'status',
+      type: 'radio',
+      label: '状态',
+      defaultValue: 1,
+      options: [
+        { label: '启用', value: 1 },
+        { label: '禁用', value: 0 },
+      ],
+    },
+  );
+
+  return { formId: 'menu-form', fields };
+});
+
+/**
+ * FormDialog 内部字段变化回调：类型 radio 切换 → 更新上下文
+ * schema 与标题均为 computed，随之自动更新
+ */
+function handleFieldChange(key: string, value: unknown): void {
+  if (key === 'type') {
+    dialogMeta.currentType = value as MenuType;
   }
 }
 
 /**
- * 切换角色时，加载该角色的权限到树
- * @param roleId - 要切换到的角色 ID
- * @returns 无返回值
+ * 打开新增弹窗
+ * @param parent 父节点，不传表示新增根节点
  */
-function onRoleChange(roleId: number): void {
-  const role = roleList.value.find((r) => r.id === roleId);
-  if (!role) return;
+function handleCreate(parent?: MenuItem): void {
+  dialogMeta.mode = 'create';
+  dialogMeta.currentType = parent?.type === 'page' ? 'action' : 'page';
+  dialogMeta.parentId = parent?.id ?? '';
+  dialogMeta.parentLabel = parent?.label ?? '根目录';
+  formDialogRef.value?.open({
+    parentLabel: dialogMeta.parentLabel,
+    type: dialogMeta.currentType,
+    sort: 1,
+    status: 1,
+  });
+}
 
-  checkedKeys.value = [...role.permissions];
-  nextTick(() => {
-    treeRef.value?.setCheckedKeys(role.permissions, false);
+/** 打开编辑弹窗（回填行数据） */
+function handleEdit(row: MenuItem): void {
+  dialogMeta.mode = 'edit';
+  dialogMeta.currentType = row.type;
+  dialogMeta.editingId = row.id;
+  dialogMeta.editingLabel = row.label;
+  formDialogRef.value?.open({
+    parentLabel: '—',
+    type: row.type,
+    label: row.label,
+    path: row.path ?? '',
+    id: row.id,
+    icon: row.icon ?? '',
+    sort: row.sort,
+    status: row.status,
   });
 }
 
 /**
- * Tree 勾选事件：自定义级联逻辑
- * @description check-strictly 模式下手动实现级联：取消父节点自动取消子孙，勾选子节点自动补全父节点
- * @param checked - 当前所有勾选的权限 ID 数组
- * @returns 无返回值
+ * 接收 FormDialog 校验通过后的表单数据，执行本地新增/编辑
+ * @param data 表单数据（含 parentLabel 展示字段，此处不消费）
  */
-function onPermissionChange(checked: string[]): void {
-  if (!treeRef.value) return;
-
-  const newChecked = new Set<string>(checked);
-  const previousChecked = new Set<string>(checkedKeys.value);
-
-  const uncheckedKeys = [...previousChecked].filter((k) => !newChecked.has(k));
-  for (const key of uncheckedKeys) {
-    const node = findNodeById(permissionTree, key);
-    const descendants = collectDescendantIds(node);
-    descendants.forEach((did) => newChecked.delete(did));
-  }
-
-  const keysToProcess = [...newChecked];
-  for (const key of keysToProcess) {
-    const parents = getParentIds(permissionTree, key);
-    parents.forEach((pid) => newChecked.add(pid));
-  }
-
-  const finalKeys = [...newChecked];
-  checkedKeys.value = finalKeys;
-
-  nextTick(() => {
-    treeRef.value?.setCheckedKeys(finalKeys, false);
-  });
-}
-
-/**
- * 根据权限层级返回对应的 tag 颜色类型
- * @param key - 权限 ID，如 "action:system:user:create"
- * @returns {ElTagType} action→primary, page→success, module→warning
- */
-function getTagType(key: string): ElTagType {
-  if (key.startsWith("action:")) return "primary";
-  if (key.startsWith("page:")) return "success";
-  return "warning";
-}
-
-/**
- * 模拟操作按钮点击，根据权限判断是否可执行
- * @param btn - 按钮配置，包含权限 ID 和显示文本
- * @param btn.id - 权限 ID
- * @param btn.label - 按钮显示文本
- * @returns 无返回值
- */
-function simulateAction(btn: { id: string; label: string }): void {
-  if (hasPermission(btn.id)) {
-    ElMessage.success(`执行了「${btn.label}」操作`);
-  } else {
-    ElMessage.error(`无权限执行「${btn.label}」`);
-  }
-}
-
-/**
- * 还原为数据库中的权限配置
- * @description 放弃当前修改，重新从角色列表中读取该角色的权限
- * @returns 无返回值
- */
-function resetToDB(): void {
-  if (currentRole.value) {
-    onRoleChange(currentRole.value.id);
-    ElMessage.info("已还原为数据库中的配置");
-  }
-}
-
-/**
- * 清空所有勾选
- * @description 清空树和 checkedKeys，需手动点击保存才生效
- * @returns {void} 无返回值
- */
-function clearAll(): void {
-  checkedKeys.value = [];
-  nextTick(() => treeRef.value?.setCheckedKeys([], false));
-  ElMessage.info("已清空（未保存，请点击「保存到数据库」生效）");
-}
-
-/**
- * 复制当前权限 ID 列表到剪贴板
- * @description 将 checkedKeys 以逗号分隔写入剪贴板
- * @returns 无返回值
- */
-async function copyKeys(): Promise<void> {
+function handleFormSubmit(data: Record<string, any>): void {
   try {
-    await navigator.clipboard.writeText(checkedKeys.value.join(", "));
-    ElMessage.success("已复制到剪贴板");
-  } catch {
-    ElMessage.error("复制失败");
+    if (dialogMeta.mode === 'create') {
+      const node: MenuItem = {
+        // 目录类型无权限标识字段，用时间戳兜底保证 row-key 唯一
+        id: data.id || `menu:${Date.now()}`,
+        label: data.label,
+        type: data.type as MenuType,
+        path: data.path || undefined,
+        icon: data.icon || undefined,
+        sort: data.sort,
+        status: data.status as 0 | 1,
+        createTime: formatNow(),
+      };
+
+      if (dialogMeta.parentId) {
+        const parent = findNode(rawMenus.value, dialogMeta.parentId);
+        if (parent) {
+          parent.children = parent.children ?? [];
+          parent.children.push(node);
+        }
+      } else {
+        rawMenus.value.push(node);
+      }
+      ElMessage.success('新增成功');
+    } else {
+      const target = findNode(rawMenus.value, dialogMeta.editingId);
+      if (target) {
+        target.id = data.id || target.id; // 目录类型无权限标识字段，保留原 id
+        target.label = data.label;
+        target.type = data.type as MenuType;
+        target.path = data.path || undefined;
+        target.icon = data.icon || undefined;
+        target.sort = data.sort;
+        target.status = data.status as 0 | 1;
+      }
+      ElMessage.success('保存成功');
+    }
+
+    formDialogRef.value?.close();
+    tableKey.value += 1;
+  } catch (err) {
+    console.error('保存菜单失败:', err);
+    ElMessage.error('保存失败');
   }
 }
 
-onMounted(fetchRoles);
+/** 删除菜单节点 */
+async function handleDelete(row: MenuItem): Promise<void> {
+  try {
+    await ElMessageBox.confirm(`确认删除「${row.label}」吗？其下子项将一并删除。`, '删除确认', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      confirmButtonClass: 'el-button--danger',
+    });
+
+    // TODO: 替换为真实接口
+    // await $fetch(`/api/public/menus/${row.id}`, { method: "DELETE" });
+
+    removeNode(rawMenus.value, row.id);
+    tableKey.value += 1;
+    ElMessage.success('删除成功');
+  } catch {
+    // 用户取消，无需处理
+  }
+}
+
+/* ==================== 生命周期 ==================== */
+
+onMounted(() => {
+  fetchMenus();
+});
 </script>
 
 <style scoped>
-.permission-admin {
-  padding: 1.5rem;
-  max-width: 87.5rem;
-  margin: 0 auto;
-}
-
-.page-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.page-desc {
-  margin: 0 0 1.5rem 0;
-  font-size: 0.875rem;
-  color: var(--el-text-color-secondary);
-  line-height: 1.6;
-}
-
-.admin-layout {
-  display: flex;
-  gap: 1.5rem;
-  height: calc(100vh - 10rem);
-}
-
-/* ---------- 左侧面板 ---------- */
-.tree-panel {
-  flex: 0 0 23.75rem;
-  border: 0.0625rem solid var(--el-border-color);
-  border-radius: 0.5rem;
-  padding: 1rem;
+/* ==================== 页面容器 ==================== */
+.menu-admin {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: var(--el-bg-color);
+  gap: 16px;
+  min-height: 100%;
+  padding: 16px;
+  background-color: var(--el-bg-color-page);
 }
 
-.panel-header {
+/* ==================== 卡片通用 ==================== */
+.filter-card,
+.table-card {
+  border-color: var(--el-border-color-lighter);
+  border-radius: 8px;
+}
+
+/* 表格卡片纵向撑满剩余空间 */
+.table-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.panel-header h3 {
+.table-card :deep(.el-card__body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 16px;
+}
+
+/* ==================== 筛选表单 ==================== */
+/* 用 flex 接管换行与间距，避免 inline 表单自带 margin 造成的错位 */
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.filter-form :deep(.el-form-item) {
+  flex: none;
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
 }
 
-.role-selector {
-  margin-bottom: 0.75rem;
-}
-
-:deep(.el-tree) {
-  flex: 1;
-  overflow-y: auto;
-  border: 0.0625rem solid var(--el-border-color-lighter);
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  background: var(--el-fill-color-blank);
-}
-
-.panel-actions {
-  margin-top: 0.75rem;
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-/* ---------- 右侧预览面板 ---------- */
-.preview-panel {
-  flex: 1;
-  background: var(--el-bg-color-page);
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  overflow-y: auto;
-}
-
-.preview-title {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.preview-card {
-  background: var(--el-bg-color-overlay);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.card-label {
-  font-weight: 600;
-  color: var(--el-text-color-regular);
-  margin-bottom: 0.75rem;
-  font-size: 0.875rem;
-}
-
-.nav-preview {
+/* ==================== 工具栏 ==================== */
+.table-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.625rem;
-}
-
-.nav-item {
-  cursor: default;
-  min-width: 5rem;
-  text-align: center;
-}
-
-.muted {
-  color: var(--el-text-color-secondary);
-  font-size: 0.75rem;
-  margin-left: 0.25rem;
-}
-
-.page-content {
-  padding: 0.25rem 0;
-}
-
-.btn-row {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.mt-1rem {
-  margin-top: 1rem;
-}
-
-/* ---------- 调试面板 ---------- */
-.debug-card {
-  background: var(--el-color-primary-light-9);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 0.0625rem solid var(--el-color-primary-light-8);
-}
-
-.debug-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
-  color: var(--el-color-primary);
-  margin-bottom: 0.625rem;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.debug-tags {
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 按钮间距交给 Element 自带的 .el-button + .el-button */
+.toolbar-right {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
+  align-items: center;
+  row-gap: 8px;
 }
 
-.debug-tag {
-  font-family: "Courier New", monospace;
+.table-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+/* ==================== 表格 ==================== */
+.menu-table {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 单元格内容 */
+.perm-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+}
+
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--el-color-info);
+}
+
+.status-dot.is-on {
+  background-color: var(--el-color-success);
+}
+
+.status-dot.is-off {
+  background-color: var(--el-color-info);
 }
 </style>

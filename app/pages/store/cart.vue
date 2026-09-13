@@ -3,9 +3,7 @@
     <!-- 标题 -->
     <div class="mb-4 md:mb-6">
       <h1 class="text-xl md:text-2xl font-bold">我的购物车</h1>
-      <p v-if="!cart.isEmpty" class="cart-count text-sm mt-1">
-        共 {{ cart.totalCount }} 件商品
-      </p>
+      <p v-if="!cart.isEmpty" class="cart-count text-sm mt-1">共 {{ cart.totalCount }} 件商品</p>
     </div>
 
     <!-- 空购物车状态 -->
@@ -22,24 +20,15 @@
       </div>
 
       <!-- 底部结算栏（吸底） -->
-      <div
-        class="cart-footer fixed bottom-0 left-0 right-0 border-t shadow-lg z-10"
-      >
+      <div class="cart-footer fixed bottom-0 left-0 right-0 border-t shadow-lg z-10">
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <!-- 全选 -->
-          <el-checkbox
-            :model-value="cart.isAllSelected"
-            @change="cart.toggleSelectAll"
-          >
-            全选
-          </el-checkbox>
+          <el-checkbox :model-value="cart.isAllSelected" @change="cart.toggleSelectAll"> 全选 </el-checkbox>
 
           <!-- 已选信息 -->
           <div class="cart-selected-info flex-1 text-sm">
             <span>已选 </span>
-            <span class="cart-selected-count font-semibold">{{
-              cart.selectedCount
-            }}</span>
+            <span class="cart-selected-count font-semibold">{{ cart.selectedCount }}</span>
             <span> 件</span>
           </div>
 
@@ -54,11 +43,7 @@
           </div>
 
           <!-- 结算按钮 -->
-          <el-button
-            type="primary"
-            :disabled="cart.selectedCount === 0"
-            @click="handleCheckout"
-          >
+          <el-button type="primary" :disabled="cart.selectedCount === 0" @click="handleCheckout">
             去结算({{ cart.selectedCount }})
           </el-button>
         </div>
@@ -68,11 +53,12 @@
 </template>
 
 <script setup lang="ts">
-import CartItemRow from "~/components/CartItemRow.vue";
+import CartItemRow from '~/components/CartItemRow.vue';
 
-// 使用 store 布局
+// 使用 store 布局（购物车页不需要搜索栏，经 showSearch 告知布局隐藏 SearchBar）
 definePageMeta({
-  layout: "store",
+  layout: 'store',
+  showSearch: false,
 });
 
 const cart = useCartStore();
@@ -83,17 +69,15 @@ onMounted(() => {
 });
 
 function goShopping() {
-  navigateTo("/");
+  navigateTo('/store');
 }
 
 function handleCheckout() {
   if (cart.selectedCount === 0) {
-    ElMessage.warning("请先选择商品");
+    ElMessage.warning('请先选择商品');
     return;
   }
-  ElMessage.success(
-    `已提交 ${cart.selectedCount} 件商品，合计 ¥${cart.selectedPrice.toFixed(2)}`,
-  );
+  ElMessage.success(`已提交 ${cart.selectedCount} 件商品，合计 ¥${cart.selectedPrice.toFixed(2)}`);
 }
 </script>
 

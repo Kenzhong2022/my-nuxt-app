@@ -1,47 +1,52 @@
 /**
  * ============================================================
- * 全局权限路由守卫
+ * 全局页面权限守卫（数据驱动，页面无需硬编码 requiredPermission）
  * ============================================================
  *
- * 设计思路:
- *   1. 声明式拦截: 在页面 meta 中声明 requiredPermission，无需在页面内写判断逻辑
- *   2. 懒加载兼容: 权限未加载时先尝试从缓存恢复，再决定是否放行
- *   3. 统一降级: 无权限时统一跳转到 /403 页面，保持体验一致
+ * 数据来源: GET /api/public/getRouters —— 按角色下发的菜单路由树（admin 全量，
+ * 其余角色由 role_permissions 页面权限推导），存于 userInfo store（app.vue 首次进入拉取）；
+ * 未登录一律按访客角色下发访客菜单；按钮级权限由页面内 v-hasPermi 指令判定。
  *
- * 用法:
- *   definePageMeta({
- *     requiredPermission: 'page:system:user' 
- *   })
- *
- *   // 或满足任意一项即可:
- *   definePageMeta({
- *     requiredPermissionAny: ['page:system:user', 'page:system:admin'] 
- *   })
+ * 规则:
+ *   1. 服务端跳过（客户端体验层管控，接口层另有鉴权兜底）
+ *   2. 超管（admin / *:*:*）放行；用户信息未加载（游客）放行
+ *   3. 角色未分配任何菜单（routers 为空）→ 不启用页面级管控，仅按钮指令生效
+ *   4. 目标路由的 matched 路径模式不在角色菜单集合内 → /403（/403 自身放行防重定向循环）
  */
-export default defineNuxtRouteMiddleware((to) => {
-  // 权限数据存于 localStorage，仅在客户端校验（与 auth 中间件保持一致）
-  if (process.server) return
+import type { RuoYiRoute } from '~~/types/user';
 
-  const permissionStore = usePermissionStore()
+export default defineNuxtRouteMiddleware(async (to) => {
+  // 权限数据来自接口 + 本地 store，仅在客户端校验
+  if (process.server) return;
 
-  // 如果权限未加载，尝试从缓存恢复
-  if (!permissionStore.isLoaded) {
-    const restored = permissionStore.restoreFromCache()
-    if (!restored) {
-      // 未配置且无缓存，跳过权限检查（由 auth middleware 处理登录态）
-      return
+  const userInfoStore = useUserInfoStore();
+  // 游客或超管不启用页面级管控
+  if (!userInfoStore.isLoaded || userInfoStore.isAdmin) return;
+
+  // /403 自身放行，避免重定向循环
+  if (to.path === '/403') return;
+  // 未匹配到任何页面路由（真 404）交给错误页处理
+  if (to.matched.length === 0) return;
+
+  // 拉取角色菜单路由表（与布局侧边栏同源：userInfo store，callOnce 已拉取则直接复用）
+  if (userInfoStore.routers.length === 0) await userInfoStore.getRouters();
+  // 角色未分配任何菜单 → 不启用页面级管控（仅按钮指令生效）
+  if (userInfoStore.routers.length === 0) return;
+
+  // 扁平化角色可访问路径（含 hidden 页面，如商品详情；子路径可能是相对路径，需拼接父级）
+  const allowed = new Set<string>();
+  function collect(list: RuoYiRoute[], base: string) {
+    for (const route of list) {
+      const fullPath = route.path.startsWith('/') ? route.path : `${base}/${route.path}`;
+      allowed.add(fullPath.replace(/\/+/g, '/'));
+      if (route.children?.length) collect(route.children, fullPath);
     }
   }
+  collect(userInfoStore.routers, '');
 
-  // 页面声明了单一必需权限
-  const required = to.meta.requiredPermission as string | undefined
-  if (required && !permissionStore.hasPageAccess(required)) {
-    return navigateTo('/403', { replace: true })
+  // 用 matched 的路径模式匹配，兼容 /store/:id() 这类动态路由
+  const isAllowed = to.matched.some((record) => allowed.has(record.path.replace(/\/+/g, '/')));
+  if (!isAllowed) {
+    return navigateTo('/403', { replace: true });
   }
-
-  // 页面声明了"满足任意一项即可"的权限列表
-  const requiredAny = to.meta.requiredPermissionAny as string[] | undefined
-  if (requiredAny && !permissionStore.hasAnyPermission(requiredAny)) {
-    return navigateTo('/403', { replace: true })
-  }
-})
+});

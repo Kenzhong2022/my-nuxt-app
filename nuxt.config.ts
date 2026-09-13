@@ -6,11 +6,41 @@ import svgLoader from 'vite-svg-loader';
 const isDev = process.dev;
 
 /** OAuth2 回调地址按环境区分（需与认证中心 clientDB 白名单注册的 redirect_uri 完全一致） */
-const CALLBACK_URL = isDev ? 'http://localhost:3000/CallBack' : 'https://kk-shop-app.netlify.app/CallBack';
+const CALLBACK_URL = 'http://localhost:3000/CallBack';
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
+  hooks: {
+    // pages:extend —— 过滤页面路由注册：pages 目录下的局部组件/配置文件不应生成可访问路由
+    'pages:extend'(pages) {
+      // 匹配 components 子目录，以及 agent/survey 模块内散落的组件与配置文件
+      const componentFilePattern =
+        /(\/|\\)components(\/|\\)|\/(ChatArea|AIChatInput|HistorySidebar|componentMeta)\.\w+$/;
+      function removeFrom(list: typeof pages) {
+        for (const route of list.slice()) {
+          if (componentFilePattern.test(route.file ?? '')) {
+            list.splice(list.indexOf(route), 1);
+            continue;
+          }
+          if (route.children) removeFrom(route.children);
+        }
+      }
+      removeFrom(pages);
+
+      // dev 下打印每条注册路由的 meta（definePageMeta 编译产物，输出到 dev server 终端）
+      if (process.dev) {
+        function dumpMeta(list: typeof pages, indent = '') {
+          for (const route of list) {
+            const meta = route.meta && Object.keys(route.meta).length > 0 ? JSON.stringify(route.meta) : '';
+            console.log(`${indent}${route.path}  ${meta}`);
+            if (route.children?.length) dumpMeta(route.children, `${indent}  `);
+          }
+        }
+        dumpMeta(pages);
+      }
+    },
+  },
   routeRules: {
     '/': { redirect: '/dashboard' },
     '/**': {
@@ -70,7 +100,11 @@ export default defineNuxtConfig({
       /** OAuth2 客户端标识（需与认证中心注册的 client 一致） */
       clientId: process.env.OAUTH_CLIENT_ID || 'business-a',
       /** OAuth2 回调地址（环境变量优先，其次按 dev/prod 取默认值） */
-      callbackUrl: process.env.OAUTH_CALLBACK_URL || CALLBACK_URL,
+      callbackUrl: CALLBACK_URL,
+      /** 高德地图 Web 端 Key（临时复用 .env 的 VITE_AMAP_*） */
+      amapKey: process.env.VITE_AMAP_KEY,
+      /** 高德地图安全密钥（JS API 加载前设置） */
+      amapSecurityCode: process.env.VITE_AMAP_SECURITY_CODE,
     },
   },
   app: {
@@ -95,7 +129,6 @@ export default defineNuxtConfig({
     },
     optimizeDeps: {
       include: [
-        'lodash-unified',
         '@mediapipe/selfie_segmentation',
         '@mediapipe/camera_utils',
         '@element-plus/icons-vue',

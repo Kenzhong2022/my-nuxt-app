@@ -106,16 +106,10 @@ import DailyChart from './components/DailyChart.vue';
 import CityHeatmap from './components/CityHeatmap.vue';
 
 definePageMeta({
-  name: 'Dashboard', // 页面名称
+  name: 'Dashboard123', // 页面名称
   title: '仪表盘', // 页面标题
   layout: 'default', // 指定布局
   keepalive: true, // KeepAlive 缓存
-  key: 'dashboard', // 路由 key
-  pageTransition: {
-    // 页面过渡动画
-    name: 'slide',
-    mode: 'out-in',
-  },
 });
 
 // ============ 响应式数据 ============

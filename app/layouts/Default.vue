@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import type { MenuItem } from '~~/app/components/AppMenu.vue';
 import { useDark } from '@vueuse/core';
@@ -104,9 +104,7 @@ useHead({
   },
 });
 
-onUnmounted(() => {
-  console.log('组件卸载时执行');
-});
+onUnmounted(() => {});
 
 const route = useRoute();
 const activeMenu = ref(route.path);
@@ -118,7 +116,7 @@ watch(
 );
 /**
  * 菜单祖先链索引：叶子 path → 全部祖先 path 数组
- * menuConfig 为静态数据，索引仅构建一次（O(n)），路由切换时查找 O(1)
+ * menuConfig 来自 useMenuConfig（DB 驱动），索引仅构建一次（O(n)），路由切换时查找 O(1)
  */
 const menuAncestorsMap = computed(() => {
   const map = new Map<string, string[]>();
@@ -146,345 +144,18 @@ const menuAncestorsMap = computed(() => {
  */
 const defaultOpeneds = computed(() => menuAncestorsMap.value.get(route.path) ?? []);
 
-const menuConfig = ref<MenuItem[]>([
-  {
-    id: 0,
-    parentId: 0,
-    name: 'Dashboard',
-    icon: 'Histogram',
-    path: '/dashboard',
-    sort: 0,
-  },
-  {
-    id: 1,
-    parentId: 0,
-    name: '我的项目',
-    icon: 'FolderOpened',
-    path: '/myProjects',
-    sort: 1,
-  },
-  {
-    id: 2,
-    parentId: 0,
-    name: '商品管理',
-    icon: 'Goods',
-    path: '/product',
-    sort: 2,
-    children: [
-      { id: 21, parentId: 2, name: '商品列表', path: '/product/list', sort: 0 },
-      {
-        id: 22,
-        parentId: 2,
-        name: '商品分类',
-        path: '/product/category',
-        sort: 1,
-      },
-      {
-        id: 23,
-        parentId: 2,
-        name: '品牌管理',
-        path: '/product/brand',
-        sort: 2,
-      },
-      {
-        id: 24,
-        parentId: 2,
-        name: '规格属性管理',
-        path: '/product/attr',
-        sort: 3,
-      },
-      {
-        id: 25,
-        parentId: 2,
-        name: '库存管理',
-        path: '/product/stock',
-        sort: 4,
-      },
-      {
-        id: 26,
-        parentId: 2,
-        name: '素材图库',
-        path: '/product/image',
-        sort: 5,
-      },
-    ],
-  },
-  {
-    id: 3,
-    parentId: 0,
-    name: '订单管理',
-    icon: 'order',
-    path: '/order',
-    sort: 3,
-    children: [
-      { id: 31, parentId: 3, name: '全部订单', path: '/order/all', sort: 0 },
-      {
-        id: 32,
-        parentId: 3,
-        name: '待付款订单',
-        path: '/order/unpay',
-        sort: 1,
-      },
-      {
-        id: 33,
-        parentId: 3,
-        name: '待发货订单',
-        path: '/order/unship',
-        sort: 2,
-      },
-      {
-        id: 34,
-        parentId: 3,
-        name: '已完成/已取消订单',
-        path: '/order/finish',
-        sort: 3,
-      },
-      {
-        id: 35,
-        parentId: 3,
-        name: '售后管理',
-        path: '/order/aftersale',
-        sort: 4,
-      },
-      {
-        id: 36,
-        parentId: 3,
-        name: '物流运费配置',
-        path: '/order/express',
-        sort: 5,
-      },
-    ],
-  },
-  {
-    id: 4,
-    parentId: 0,
-    name: '商城会员',
-    icon: 'User',
-    path: '/member',
-    sort: 4,
-    children: [
-      { id: 41, parentId: 4, name: '会员列表', path: '/member/list', sort: 0 },
-      { id: 42, parentId: 4, name: '会员标签', path: '/member/tag', sort: 1 },
-      {
-        id: 43,
-        parentId: 4,
-        name: '会员等级配置',
-        path: '/member/level',
-        sort: 2,
-      },
-      {
-        id: 44,
-        parentId: 4,
-        name: '账户流水明细',
-        path: '/member/account',
-        sort: 3,
-      },
-    ],
-  },
-  {
-    id: 5,
-    parentId: 0,
-    name: '营销活动',
-    icon: 'ShoppingBag',
-    path: '/promo',
-    sort: 5,
-    children: [
-      {
-        id: 51,
-        parentId: 5,
-        name: '优惠券管理',
-        path: '/promo/coupon',
-        sort: 0,
-      },
-      {
-        id: 52,
-        parentId: 5,
-        name: '限时秒杀',
-        path: '/promo/seckill',
-        sort: 1,
-      },
-      { id: 53, parentId: 5, name: '拼团活动', path: '/promo/group', sort: 2 },
-      {
-        id: 54,
-        parentId: 5,
-        name: '全店满减',
-        path: '/promo/fullcut',
-        sort: 3,
-      },
-      {
-        id: 55,
-        parentId: 5,
-        name: '首页广告配置',
-        path: '/promo/banner',
-        sort: 4,
-      },
-    ],
-  },
-  {
-    id: 6,
-    parentId: 0,
-    name: '财务管理',
-    icon: 'Money',
-    path: '/finance',
-    sort: 6,
-    children: [
-      { id: 61, parentId: 6, name: '资金流水', path: '/finance/log', sort: 0 },
-      {
-        id: 62,
-        parentId: 6,
-        name: '订单对账报表',
-        path: '/finance/check',
-        sort: 1,
-      },
-      {
-        id: 63,
-        parentId: 6,
-        name: '退款账单',
-        path: '/finance/refund',
-        sort: 2,
-      },
-      {
-        id: 64,
-        parentId: 6,
-        name: '支付渠道配置',
-        path: '/finance/payconfig',
-        sort: 3,
-      },
-    ],
-  },
-  {
-    id: 7,
-    parentId: 0,
-    name: '数据统计',
-    icon: 'TrendCharts',
-    path: '/stats',
-    sort: 7,
-    children: [
-      {
-        id: 71,
-        parentId: 7,
-        name: '运营概览看板',
-        path: '/stats/dashboard',
-        sort: 0,
-      },
-      {
-        id: 72,
-        parentId: 7,
-        name: '商品数据分析',
-        path: '/stats/product',
-        sort: 1,
-      },
-      {
-        id: 73,
-        parentId: 7,
-        name: '订单统计报表',
-        path: '/stats/order',
-        sort: 2,
-      },
-      {
-        id: 74,
-        parentId: 7,
-        name: '用户数据分析',
-        path: '/stats/user',
-        sort: 3,
-      },
-    ],
-  },
-  {
-    id: 8,
-    parentId: 0,
-    name: '系统权限',
-    icon: 'Key',
-    path: '/system',
-    sort: 8,
-    children: [
-      { id: 81, parentId: 8, name: '角色管理', path: '/system/role', sort: 1 },
-      {
-        id: 82,
-        parentId: 8,
-        name: '用户管理',
-        path: '/system/user',
-        sort: 2,
-      },
-      { id: 83, parentId: 8, name: '系统日志', path: '/system/log', sort: 3 },
-    ],
-  },
-  {
-    id: 9,
-    parentId: 0,
-    name: '问卷工坊',
-    icon: 'Document',
-    path: '/survey',
-    sort: 9,
-    children: [
-      { id: 91, parentId: 9, name: '问卷列表', path: '/survey/list', sort: 0 },
-      {
-        id: 92,
-        parentId: 9,
-        name: '创建问卷',
-        path: '/survey/create',
-        sort: 1,
-      },
-      {
-        id: 93,
-        parentId: 9,
-        name: '答卷数据',
-        path: '/survey/record',
-        sort: 2,
-      },
-    ],
-  },
-  {
-    id: 10,
-    parentId: 0,
-    name: 'Chief Agent',
-    icon: 'Service',
-    path: '/agent',
-    sort: 10,
-    children: [
-      { id: 101, parentId: 10, name: '智能对话', path: '/agent/chat', sort: 0 },
-      {
-        id: 102,
-        parentId: 10,
-        name: '会话记录',
-        path: '/agent/history',
-        sort: 1,
-      },
-      {
-        id: 103,
-        parentId: 10,
-        name: '模型对话',
-        path: '/llmModels',
-        sort: 2,
-        children: [{ id: 1031, parentId: 103, name: '模型对话', path: '/llmModels/chat', sort: 0 }],
-      },
-    ],
-  },
-  {
-    id: 11,
-    parentId: 0,
-    name: 'Canvas',
-    icon: 'Monitor',
-    path: '/canvas',
-    sort: 11,
-    children: [
-      {
-        id: 111,
-        parentId: 11,
-        name: '弹幕避让',
-        path: '/canvas/cameraMattingDanmakuView',
-        sort: 0,
-      },
-      {
-        id: 112,
-        parentId: 11,
-        name: 'Gsap 动画',
-        path: '/canvas/gsap',
-        sort: 1,
-      },
-    ],
-  },
-]);
+// 菜单路由配置：app.vue 首次进入（SSR callOnce）时经 userInfoStore.getRouters 拉取，
+// useMenuConfig 负责 RuoYi 路由树 → 菜单树转换，此处仅消费转换结果 menuConfig
+const { menuConfig } = useMenuConfig();
+const { logRegisteredRoutes, syncRoutesToServer } = useRoutesDebug();
+
+// dev 下自动上报路由同步菜单（补建/补名）；非管理员或异常时静默忽略
+onBeforeMount(() => {
+  logRegisteredRoutes();
+  if (import.meta.dev) {
+    syncRoutesToServer().catch(() => {});
+  }
+});
 
 function sortMenu(items: MenuItem[]): MenuItem[] {
   return [...items]
@@ -495,40 +166,6 @@ function sortMenu(items: MenuItem[]): MenuItem[] {
 const sortedMenu = computed(() => sortMenu(menuConfig.value));
 
 function handleMenuClick(item: { path: string; name: string }) {
-  // TODO: 暂时注释掉"已完成功能"白名单校验，所有菜单直接放行
-  // const completedPaths = [
-  //   // 菜单项 - 已完成
-  //   '/dashboard',
-  //   '/myProjects',
-  //   '/survey',
-  //   '/agent',
-  //   '/canvas',
-  //   '/canvas/cameraMattingDanmakuView',
-  //   '/canvas/gsap',
-  //   '/product/list',
-  //   '/system/role',
-  //   '/system/user',
-  //   '/admin/permissions',
-  //   // 非菜单页面 - 已完成
-  //   '/admin',
-  //   '/store',
-  //   '/store/cart',
-  //   '/store/chat',
-  //   '/agent/chat',
-  //   '/CallBack',
-  //   '/qrcode',
-  //   '/testdynamicForm',
-  //   '/403',
-  // ];
-  // // 检查是否已完成
-  // if (completedPaths.some((path) => path === item.path || path.startsWith(item.path))) {
-  //   navigateTo(item.path);
-  //   return;
-  // }
-  // // 功能未开放
-  // ElMessage.warning(`功能暂未开发：${item.path}`);
-
-  // 所有菜单直接跳转
   navigateTo(item.path);
 }
 
@@ -569,11 +206,6 @@ function toggleMobileMenu() {
   cursor: pointer;
   font-size: 3rem;
   color: var(--el-color-primary);
-  filter: drop-shadow(0 0 0.1rem var(--el-color-primary));
-
-  &:hover {
-    filter: drop-shadow(0 0 0.5rem var(--el-color-primary));
-  }
 }
 
 .hidden-aside {

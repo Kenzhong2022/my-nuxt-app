@@ -1,55 +1,46 @@
 // stores/userInfo.ts —— 当前登录用户 store（RuoYi 规范）
-// 数据来源：GET /api/getInfo + GET /api/getRouters，由 app.vue 在 SSR 期间
+// 数据来源：GET /api/public/getInfo + GET /api/public/getRouters，由 app.vue 在 SSR 期间
 // 经 callOnce 拉取一次，pinia 状态随 Nuxt payload 序列化传给客户端，水合不重复请求
+// （菜单路由树统一存于本 store.routers，useMenuConfig 仅做视图转换，布局/中间件消费同一数据源）
+// 服务端约定：未登录一律按访客（guest）返回访客信息，接口层不会 401
 //
 // RuoYi 约定：
 //   - roles       角色权限串数组（roleKey，如 ["admin", "operator"]）
 //   - permissions 权限标识数组（"模块:实体:操作"，如 ["system:user:list"]）
 //   - 超级管理员  permissions = ["*:*:*"]，任意 checkPermi 直接放行
 //   - 无角色用户  roles = ["ROLE_DEFAULT"]（RuoYi GetInfo 行为）
-import { computed, ref } from "vue";
-import type {
-  GetInfoResponse,
-  GetRoutersResponse,
-  RuoYiRoute,
-  SysRole,
-  SysUser,
-} from "~~/types/user";
+import { computed, ref } from 'vue';
+import type { GetInfoResponse, GetRoutersResponse, RuoYiRoute, SysRole, SysUser } from '~~/types/user';
 
 /** RuoYi 约定常量 */
-const SUPER_ADMIN = "admin"; // 超管角色标识
-const ALL_PERMISSION = "*:*:*"; // 通配权限
-const ROLE_DEFAULT = "ROLE_DEFAULT"; // 无角色时的默认角色
+const SUPER_ADMIN = 'admin'; // 超管角色标识
+const ALL_PERMISSION = '*:*:*'; // 通配权限
+const ROLE_DEFAULT = 'ROLE_DEFAULT'; // 无角色时的默认角色
 
-export const useUserInfoStore = defineStore("userInfo", () => {
+export const useUserInfoStore = defineStore('userInfo', () => {
   // ========== State ==========
   const user = ref<SysUser | null>(null);
   const roles = ref<string[]>([]);
   const permissions = ref<string[]>([]);
+  /** 角色可见的菜单路由树（RuoYi getRouters 返回，布局侧边栏与权限中间件的单一数据源） */
   const routers = ref<RuoYiRoute[]>([]);
   /** 是否已完成首次拉取（未加载时指令默认隐藏，防越权内容闪现） */
   const isLoaded = ref(false);
 
   // ========== Getters ==========
-  const name = computed(
-    () => user.value?.nickName || user.value?.userName || "",
-  );
-  const avatar = computed(() => user.value?.avatar || "");
-  const isAdmin = computed(
-    () =>
-      roles.value.includes(SUPER_ADMIN) ||
-      permissions.value.includes(ALL_PERMISSION),
-  );
+  const name = computed(() => user.value?.nickName || user.value?.userName || '');
+  const avatar = computed(() => user.value?.avatar || '');
+  const isAdmin = computed(() => roles.value.includes(SUPER_ADMIN) || permissions.value.includes(ALL_PERMISSION));
   /** 角色详情（含 roleName，供展示） */
   const roleInfos = computed<SysRole[]>(() => user.value?.roles ?? []);
 
   // ========== Actions ==========
-  /** 拉取用户信息+角色+权限（静默失败：未登录/异常时视为游客，不阻塞渲染） */
+  /** 拉取用户信息+角色+权限（未登录服务端直接返回访客信息；静默失败：网络异常时视为游客，不阻塞渲染） */
   async function getInfo(): Promise<SysUser | null> {
     try {
       // useRequestFetch：SSR 内部请求时透传浏览器带来的 cookie（token），客户端等价 $fetch
       const requestFetch = useRequestFetch();
-      const res = await requestFetch<GetInfoResponse>("/api/getInfo");
+      const res = await requestFetch<GetInfoResponse>('/api/public/getInfo');
       if (res.code === 200) {
         user.value = res.user;
         // RuoYi：roles 为空数组时置默认角色，避免权限判断异常
@@ -65,11 +56,11 @@ export const useUserInfoStore = defineStore("userInfo", () => {
     return user.value;
   }
 
-  /** 拉取菜单路由树（RuoYi getRouters） */
+  /** 拉取菜单路由树（RuoYi getRouters，公共接口；静默失败：未登录/异常时视为无菜单，不阻塞渲染） */
   async function getRouters(): Promise<RuoYiRoute[]> {
     try {
       const requestFetch = useRequestFetch();
-      const res = await requestFetch<GetRoutersResponse>("/api/getRouters");
+      const res = await requestFetch<GetRoutersResponse>('/api/public/getRouters');
       routers.value = res.code === 200 ? res.data : [];
     } catch {
       routers.value = [];
@@ -97,9 +88,7 @@ export const useUserInfoStore = defineStore("userInfo", () => {
    */
   function checkPermi(value: string[]): boolean {
     if (value && value.length > 0) {
-      return permissions.value.some(
-        (p) => p === ALL_PERMISSION || value.includes(p),
-      );
+      return permissions.value.some((p) => p === ALL_PERMISSION || value.includes(p));
     }
     console.error(`need roles! Like v-hasPermi="['system:user:add']"`);
     return false;
@@ -111,9 +100,7 @@ export const useUserInfoStore = defineStore("userInfo", () => {
    */
   function checkRole(value: string[]): boolean {
     if (value && value.length > 0) {
-      return roles.value.some(
-        (r) => r === SUPER_ADMIN || value.includes(r),
-      );
+      return roles.value.some((r) => r === SUPER_ADMIN || value.includes(r));
     }
     console.error(`need roles! Like v-hasRole="['admin']"`);
     return false;
