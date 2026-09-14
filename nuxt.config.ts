@@ -1,4 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import Components from 'unplugin-vue-components/vite';
+import Icons from 'unplugin-icons/vite';
+import IconsResolver from 'unplugin-icons/resolver';
 import viteCompression from 'vite-plugin-compression';
 import svgLoader from 'vite-svg-loader';
 
@@ -116,7 +119,27 @@ export default defineNuxtConfig({
   },
   modules: ['@pinia/nuxt', '@element-plus/nuxt', '@nuxtjs/tailwindcss'],
   vite: {
-    plugins: [svgLoader({ defaultImport: 'component' })],
+    plugins: [
+      svgLoader({ defaultImport: 'component' }),
+      // unplugin-icons 核心插件：负责把 IconsResolver 生成的 ~icons/icon-park/xxx
+      // 虚拟模块编译成 inline SVG 组件（必须在 Components 之前注册）
+      Icons({
+        compiler: 'vue3',
+        autoInstall: false, // 依赖已通过 pnpm 显式安装（@iconify-json/icon-park）
+      }),
+      // IconPark 图标按需加载：<i-icon-park-xxx /> 编译期自动解析为 inline SVG 组件（SSR 安全）
+      // dirs: [] —— 本地组件由 Nuxt 自身的 auto-import 负责，此处只处理图标解析器，避免重复注册
+      Components({
+        dirs: [], // 本地组件目录（不包含图标组件）
+        resolvers: [
+          IconsResolver({
+            prefix: 'i', // 图标组件前缀
+            enabledCollections: ['icon-park'], // 启用 IconPark 图标集合
+          }),
+        ],
+        dts: 'types/components.d.ts', // 生成模板里 <i-icon-park-xxx /> 的类型提示
+      }),
+    ],
     server: {
       // 开发服务器响应头（仅限开发环境时生效）
       headers: {

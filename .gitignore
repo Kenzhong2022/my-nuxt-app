@@ -10,6 +10,9 @@ docs
 *.md
 *.zip
 
+# unplugin-vue-components 自动生成的图标组件类型
+types/components.d.ts
+
 # Node dependencies
 node_modules
 
