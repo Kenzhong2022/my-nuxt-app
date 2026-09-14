@@ -77,16 +77,8 @@ watch(primaryColor, () => {
   }
 });
 
-import { useDark } from "@vueuse/core";
-
-// Dark/Light 切换（和插件完全解耦）
-const isDark = useDark({
-  storageKey: "color-scheme",
-  selector: "html",
-  attribute: "class",
-  valueDark: "dark",
-  valueLight: "",
-});
+// Dark/Light 切换：与 Default 布局共享同一份 cookie 持久化状态（SSR 可读）
+const isDark = useThemeDark();
 </script>
 
 <style scoped lang="scss">

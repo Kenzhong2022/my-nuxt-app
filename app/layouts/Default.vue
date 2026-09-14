@@ -70,7 +70,6 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import type { MenuItem } from '~~/app/components/AppMenu.vue';
-import { useDark } from '@vueuse/core';
 
 const showColorPicker = ref(false);
 
@@ -85,17 +84,11 @@ function handleLogout(): void {
 }
 
 /**
- * 暗黑模式布尔值存 cookie（而非 localStorage）：
- * SSR 阶段服务端即可随请求读到，首屏 HTML 直接带正确的 dark 类，避免主题闪烁
+ * 暗黑模式共享状态（useThemeDark，cookie 持久化）：
+ * SSR 阶段服务端随请求 cookie 即知 light/dark，首屏 HTML 直接带正确的 dark 类，
+ * 避免主题闪烁与水合不一致
  */
-// Dark/Light 切换（和插件完全解耦）
-const isDark = useDark({
-  storageKey: 'color-scheme',
-  selector: 'html',
-  attribute: 'class',
-  valueDark: 'dark',
-  valueLight: '',
-});
+const isDark = useThemeDark();
 
 // <html> 的 dark 类由 useHead 统一管理：服务端渲染输出 + 客户端切换时响应式更新
 useHead({
