@@ -1,20 +1,8 @@
 <template>
-  <div
-    class="chat-input-container"
-    :style="[{ boxShadow: shadowStyle }, { width: isMobile ? '100%' : '70%' }]"
-  >
-    <div
-      class="flex items-center justify-start mb-[8px] overflow-hidden"
-      :style="{ height: 'fit-content' }"
-    >
-      <div
-        v-for="(item, index) in inputImagesBase64"
-        :key="item"
-        class="mr-[12px]"
-      >
-        <div
-          class="h-[120px] w-[120px] overflow-hidden rounded-lg image-slot relative"
-        >
+  <div class="chat-input-container" :style="[{ boxShadow: shadowStyle }, { width: isMobile ? '100%' : '70%' }]">
+    <div class="flex items-center justify-start mb-[8px] overflow-hidden" :style="{ height: 'fit-content' }">
+      <div v-for="(item, index) in inputImagesBase64" :key="item" class="mr-[12px]">
+        <div class="h-[120px] w-[120px] overflow-hidden rounded-lg image-slot relative">
           <ImageWithFallback
             :src="item"
             fit="fill"
@@ -55,10 +43,7 @@
           >智能搜索</el-button
         >
       </div>
-      <div
-        @click="handleClick"
-        class="send-btn flex items-center justify-center"
-      >
+      <div @click="handleClick" class="send-btn flex items-center justify-center">
         <i v-if="!sendLoading" class="iconfont icon-fasong text-[36px]"></i>
         <i v-else class="iconfont icon-tingzhi" style="font-size: 36px"></i>
       </div>
@@ -67,25 +52,23 @@
 </template>
 
 <script setup lang="ts">
-import { useMediaQuery } from "@vueuse/core";
+import { useMediaQuery } from '@vueuse/core';
 
-const isMobile = useMediaQuery("(max-width: 768px)");
+const isMobile = useMediaQuery('(max-width: 768px)');
 
 // 新增：缓存粘贴的原始图片File对象（上传必需）
 const pendingImageFiles = ref<File[]>([]);
 // 新增：上传加载状态，防止重复点击发送
 const sendLoading = ref(false);
 // 新增：固定会话ID（对接后端thread_id参数）
-const THREAD_ID = "1";
+const THREAD_ID = '1';
 const inputImagesBase64 = ref<string[]>([]);
-const inputText = ref("");
-const activeButton = ref("");
+const inputText = ref('');
+const activeButton = ref('');
 const isFocused = ref(false);
 
 const shadowStyle = computed(() => {
-  const color = isFocused.value
-    ? "rgba(59, 130, 246, 0.5)"
-    : "rgba(0, 0, 0, 0.3)";
+  const color = isFocused.value ? 'rgba(59, 130, 246, 0.5)' : 'rgba(0, 0, 0, 0.3)';
   // 第一个参数是水平偏移，第二个参数是垂直偏移，第三个参数是模糊半径，第四个参数是阴影颜色
   return `0 4px 8px ${color}`;
 });
@@ -98,8 +81,7 @@ function handleBlur() {
   isFocused.value = false;
 }
 
-const { batchUploadImages } = useCloudinaryUpload();
-const emit = defineEmits(["send", "pauseSend"]);
+const emit = defineEmits(['send', 'pauseSend']);
 
 function handleClick() {
   if (!sendLoading.value) {
@@ -114,21 +96,21 @@ async function onSend() {
   const files = pendingImageFiles.value;
   let urls: string[] = [];
   if (files.length) {
-    urls = await batchUploadImages(files);
-    console.log("上传完成链接", urls);
+    urls = await Promise.all(files.map((f) => uploadImage(f)));
+    console.log('上传完成链接', urls);
   }
   if (!inputText.value.trim()) return;
-  emit("send", {
+  emit('send', {
     thread_id: THREAD_ID,
     prompt: inputText.value,
     image: urls[0],
   });
-  inputText.value = "";
+  inputText.value = '';
 }
 
 function pauseSend() {
   sendLoading.value = false;
-  emit("pauseSend");
+  emit('pauseSend');
 }
 
 function removeImage(index: number) {
@@ -142,14 +124,14 @@ function handlePaste(e: ClipboardEvent) {
 
   // 处理粘贴内容
   const items = clipboardData.items;
-  console.log("=== 粘贴内容 ===");
+  console.log('=== 粘贴内容 ===');
 
   for (const item of items) {
-    if (item.type.indexOf("text") !== -1) {
+    if (item.type.indexOf('text') !== -1) {
       item.getAsString((text) => {
-        console.log("文本内容：", text);
+        console.log('文本内容：', text);
       });
-    } else if (item.type.startsWith("image/")) {
+    } else if (item.type.startsWith('image/')) {
       const file = item.getAsFile();
       if (!file) continue;
 
@@ -161,9 +143,7 @@ function handlePaste(e: ClipboardEvent) {
       }
 
       // 优化2：简单去重（对比文件名+大小，避免重复缓存）
-      const isDuplicate = pendingImageFiles.value.some(
-        (f) => f.name === file.name && f.size === file.size,
-      );
+      const isDuplicate = pendingImageFiles.value.some((f) => f.name === file.name && f.size === file.size);
       if (isDuplicate) continue;
 
       pendingImageFiles.value.push(file);
@@ -180,7 +160,7 @@ function handlePaste(e: ClipboardEvent) {
       // 优化4：ev.target 增加安全判断，消除强制类型断言风险
       reader.onload = (ev) => {
         const base64Url = ev.target?.result;
-        if (typeof base64Url === "string") {
+        if (typeof base64Url === 'string') {
           inputImagesBase64.value.push(base64Url);
         }
       };
@@ -189,15 +169,7 @@ function handlePaste(e: ClipboardEvent) {
     } else {
       const file = item.getAsFile();
       if (file) {
-        console.log(
-          "其他文件：",
-          file.name,
-          "类型：",
-          file.type,
-          "大小：",
-          file.size,
-          "字节",
-        );
+        console.log('其他文件：', file.name, '类型：', file.type, '大小：', file.size, '字节');
       }
     }
   }

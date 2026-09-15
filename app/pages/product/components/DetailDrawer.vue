@@ -19,11 +19,7 @@
               :item-key="(_: string, index: number) => String(index)"
               class="gallery-grid"
             >
-              <div
-                v-for="(img, index) in detailForm.gallery"
-                :key="img"
-                class="gallery-item"
-              >
+              <div v-for="(img, index) in detailForm.gallery" :key="img" class="gallery-item">
                 <el-image
                   :src="cloudinaryUrl(img, 'w_120,h_120,c_fill,q_auto,f_webp')"
                   :alt="`图集-${index + 1}`"
@@ -37,11 +33,7 @@
                     <div class="image-placeholder">无图</div>
                   </template>
                 </el-image>
-                <el-icon
-                  class="gallery-remove"
-                  :size="16"
-                  @click.stop="removeGallery(index)"
-                >
+                <el-icon class="gallery-remove" :size="16" @click.stop="removeGallery(index)">
                   <CircleClose />
                 </el-icon>
                 <el-icon class="gallery-drag-handle" :size="14">
@@ -51,12 +43,7 @@
             </VueDraggable>
             <!-- 上传 / AI 生成 触发卡片（直传或生图成功后仅加入本地数组，保存才落库） -->
             <div class="gallery-actions">
-              <el-upload
-                accept="image/*"
-                :show-file-list="false"
-                :http-request="handleUpload"
-                class="gallery-upload"
-              >
+              <el-upload accept="image/*" :show-file-list="false" :http-request="handleUpload" class="gallery-upload">
                 <div v-loading="uploading" class="upload-trigger">
                   <el-icon :size="20"><Plus /></el-icon>
                   <span>上传图片</span>
@@ -73,26 +60,11 @@
         <el-form-item label="商品规格">
           <div class="specs-edit">
             <div v-for="(row, index) in specRows" :key="index" class="spec-row">
-              <el-input
-                v-model="row.key"
-                placeholder="规格名（如：产地）"
-                style="width: 160px"
-              />
-              <el-input
-                v-model="row.value"
-                placeholder="规格值（如：云南）"
-                style="flex: 1"
-              />
-              <el-button
-                type="danger"
-                :icon="Delete"
-                circle
-                @click="specRows.splice(index, 1)"
-              />
+              <el-input v-model="row.key" placeholder="规格名（如：产地）" style="width: 160px" />
+              <el-input v-model="row.value" placeholder="规格值（如：云南）" style="flex: 1" />
+              <el-button type="danger" :icon="Delete" circle @click="specRows.splice(index, 1)" />
             </div>
-            <el-button type="primary" plain :icon="Plus" @click="addSpecRow">
-              添加规格
-            </el-button>
+            <el-button type="primary" plain :icon="Plus" @click="addSpecRow"> 添加规格 </el-button>
           </div>
         </el-form-item>
 
@@ -127,46 +99,27 @@
           />
         </el-form-item>
         <el-form-item label="详情内容">
-          <el-input
-            v-model="detailForm.detailContent"
-            type="textarea"
-            :rows="8"
-            placeholder="请输入商品详情图文内容"
-          />
+          <el-input v-model="detailForm.detailContent" type="textarea" :rows="8" placeholder="请输入商品详情图文内容" />
         </el-form-item>
         <el-form-item label="浏览量">
-          <el-tag type="info" disable-transitions>
-            {{ detailForm.viewCount }}（系统统计，不可编辑）
-          </el-tag>
+          <el-tag type="info" disable-transitions> {{ detailForm.viewCount }}（系统统计，不可编辑） </el-tag>
         </el-form-item>
       </el-form>
     </div>
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="saveDetail">
-        保存
-      </el-button>
+      <el-button type="primary" :loading="saving" @click="saveDetail"> 保存 </el-button>
     </template>
 
     <!-- AI 生图弹窗：下拉切换图片类型，各自提示词可修改后反复生成 -->
-    <el-dialog
-      v-model="aiVisible"
-      title="AI 生成图集图片"
-      width="560px"
-      append-to-body
-    >
+    <el-dialog v-model="aiVisible" title="AI 生成图集图片" width="560px" append-to-body>
       <el-select
         v-model="aiActiveType"
         v-loading="aiPromptLoading"
         placeholder="正在加载图片类型..."
         style="width: 100%; margin-bottom: 12px"
       >
-        <el-option
-          v-for="p in aiPrompts"
-          :key="p.type"
-          :label="p.label"
-          :value="p.type"
-        />
+        <el-option v-for="p in aiPrompts" :key="p.type" :label="p.label" :value="p.type" />
       </el-select>
       <el-input
         v-if="activePromptItem"
@@ -176,13 +129,7 @@
         placeholder="请输入提示词"
       />
       <div class="ai-dialog-footer-tip">
-        <el-button
-          link
-          type="primary"
-          size="small"
-          :disabled="!activePromptItem"
-          @click="resetActivePrompt"
-        >
+        <el-button link type="primary" size="small" :disabled="!activePromptItem" @click="resetActivePrompt">
           恢复默认提示词
         </el-button>
         <span class="ai-hint">可修改提示词后多次生成，图片将追加到图集</span>
@@ -203,17 +150,11 @@
 </template>
 
 <script setup lang="ts">
-import { VueDraggable } from "vue-draggable-plus";
-import {
-  CircleClose,
-  Delete,
-  MagicStick,
-  Plus,
-  Rank,
-} from "@element-plus/icons-vue";
-import type { UploadRequestOptions } from "element-plus";
-import type { Product } from "~~/types/product";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { VueDraggable } from 'vue-draggable-plus';
+import { CircleClose, Delete, MagicStick, Plus, Rank } from '@element-plus/icons-vue';
+import type { UploadRequestOptions } from 'element-plus';
+import type { Product } from '~~/types/product';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 /**
  * 商品详情编辑抽屉组件
@@ -229,7 +170,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** 同步抽屉显示状态 */
-  (e: "update:visible", val: boolean): void;
+  (e: 'update:visible', val: boolean): void;
 }>();
 
 /** AI 生图图片类型提示词项 */
@@ -250,20 +191,18 @@ const aiVisible = ref(false);
 /** 各图片类型的提示词（服务端默认值回填，用户可分别修改） */
 const aiPrompts = ref<AiPromptItem[]>([]);
 /** 当前选中的图片类型 */
-const aiActiveType = ref("");
+const aiActiveType = ref('');
 /** type → 服务端默认提示词，用于单类型恢复 */
 const defaultPromptMap = ref<Record<string, string>>({});
 const aiPromptLoading = ref(false);
 const aiGenerating = ref(false);
 
 /** 当前选中类型的提示词项 */
-const activePromptItem = computed(() =>
-  aiPrompts.value.find((p) => p.type === aiActiveType.value),
-);
+const activePromptItem = computed(() => aiPrompts.value.find((p) => p.type === aiActiveType.value));
 
 const detailForm = reactive({
   gallery: [] as string[],
-  detailContent: "",
+  detailContent: '',
   highlights: [] as string[],
   packaging: [] as string[],
   services: [] as string[],
@@ -286,16 +225,16 @@ watch(
       const res = await $fetch<{
         code: number;
         message: string;
-        data: import("~~/types/product").ProductDetail | null;
+        data: import('~~/types/product').ProductDetail | null;
       }>(`/api/public/products/${props.product.id}`);
       if (res.code !== 200 || !res.data) {
-        ElMessage.error(res.message || "获取商品详情失败");
-        emit("update:visible", false);
+        ElMessage.error(res.message || '获取商品详情失败');
+        emit('update:visible', false);
         return;
       }
       const d = res.data;
       detailForm.gallery = [...(d.gallery ?? [])];
-      detailForm.detailContent = d.detailContent ?? "";
+      detailForm.detailContent = d.detailContent ?? '';
       detailForm.highlights = [...(d.highlights ?? [])];
       detailForm.packaging = [...(d.packaging ?? [])];
       detailForm.services = [...(d.services ?? [])];
@@ -308,9 +247,9 @@ watch(
       await nextTick();
       dirty.value = false;
     } catch (err) {
-      console.error("获取商品详情失败:", err);
-      ElMessage.error("获取商品详情失败");
-      emit("update:visible", false);
+      console.error('获取商品详情失败:', err);
+      ElMessage.error('获取商品详情失败');
+      emit('update:visible', false);
     } finally {
       loading.value = false;
     }
@@ -318,7 +257,7 @@ watch(
 );
 
 function addSpecRow() {
-  specRows.value.push({ key: "", value: "" });
+  specRows.value.push({ key: '', value: '' });
 }
 
 function removeGallery(index: number) {
@@ -331,20 +270,12 @@ function removeGallery(index: number) {
 async function handleUpload(options: UploadRequestOptions) {
   uploading.value = true;
   try {
-    const sig = await $fetch<{
-      code: number;
-      message: string;
-      data: DirectUploadSignature | null;
-    }>("/api/admin/upload-signature", { method: "POST" });
-    if (sig.code !== 200 || !sig.data) {
-      throw new Error(sig.message || "获取上传签名失败");
-    }
-    const url = await uploadImageDirect(options.file, sig.data);
+    const url = await uploadImage(options.file);
     detailForm.gallery.push(url);
-    ElMessage.success("图片已上传，保存后生效");
+    ElMessage.success('图片已上传，保存后生效');
   } catch (err) {
-    console.error("上传图集图片失败:", err);
-    ElMessage.error("上传图片失败");
+    console.error('上传图集图片失败:', err);
+    ElMessage.error('上传图片失败');
   } finally {
     uploading.value = false;
   }
@@ -374,17 +305,15 @@ async function loadDefaultPrompts() {
       aiPrompts.value = res.data.prompts.map((p) => ({ ...p }));
       // 已选中类型被保留，否则默认选第一个
       if (!aiPrompts.value.some((p) => p.type === aiActiveType.value)) {
-        aiActiveType.value = aiPrompts.value[0]?.type ?? "";
+        aiActiveType.value = aiPrompts.value[0]?.type ?? '';
       }
-      defaultPromptMap.value = Object.fromEntries(
-        res.data.prompts.map((p) => [p.type, p.prompt]),
-      );
+      defaultPromptMap.value = Object.fromEntries(res.data.prompts.map((p) => [p.type, p.prompt]));
     } else {
-      ElMessage.error(res.message || "获取默认提示词失败");
+      ElMessage.error(res.message || '获取默认提示词失败');
     }
   } catch (err) {
-    console.error("获取默认提示词失败:", err);
-    ElMessage.error("获取默认提示词失败");
+    console.error('获取默认提示词失败:', err);
+    ElMessage.error('获取默认提示词失败');
   } finally {
     aiPromptLoading.value = false;
   }
@@ -395,7 +324,7 @@ async function loadDefaultPrompts() {
  */
 function resetActivePrompt() {
   const item = activePromptItem.value;
-  if (item) item.prompt = defaultPromptMap.value[item.type] ?? "";
+  if (item) item.prompt = defaultPromptMap.value[item.type] ?? '';
 }
 
 /**
@@ -411,18 +340,18 @@ async function handleAiGenerate() {
       message: string;
       data: { image: string } | null;
     }>(`/api/admin/products/${props.product.id}/generate-gallery`, {
-      method: "POST",
+      method: 'POST',
       body: { prompt: item.prompt.trim(), type: item.type },
     });
     if (res.code === 200 && res.data?.image) {
       detailForm.gallery.push(res.data.image);
-      ElMessage.success("已生成并加入图集，保存后生效");
+      ElMessage.success('已生成并加入图集，保存后生效');
     } else {
-      ElMessage.error(res.message || "生成失败");
+      ElMessage.error(res.message || '生成失败');
     }
   } catch (err) {
-    console.error("AI 生成图集图片失败:", err);
-    ElMessage.error("生成失败");
+    console.error('AI 生成图集图片失败:', err);
+    ElMessage.error('生成失败');
   } finally {
     aiGenerating.value = false;
     aiVisible.value = false;
@@ -437,10 +366,10 @@ function handleClose(done: () => void) {
     done();
     return;
   }
-  ElMessageBox.confirm("修改尚未保存，确定离开？", "未保存提示", {
-    confirmButtonText: "离开",
-    cancelButtonText: "继续编辑",
-    type: "warning",
+  ElMessageBox.confirm('修改尚未保存，确定离开？', '未保存提示', {
+    confirmButtonText: '离开',
+    cancelButtonText: '继续编辑',
+    type: 'warning',
   })
     .then(() => done())
     .catch(() => {});
@@ -457,7 +386,7 @@ async function saveDetail() {
     const value = row.value.trim();
     if (!key && !value) continue; // 整行为空直接忽略
     if (!key || !value) {
-      ElMessage.warning("规格名和规格值需成对填写");
+      ElMessage.warning('规格名和规格值需成对填写');
       return;
     }
     if (specs[key]) {
@@ -471,28 +400,14 @@ async function saveDetail() {
     // 图集中的 data URL（AI 生图）需先直传 Cloudinary 换成 https URL，
     // 服务端只接受 http(s) 链接；已有 URL 原样保留，顺序不变
     let galleryUrls = detailForm.gallery;
-    if (detailForm.gallery.some((u) => u.startsWith("data:"))) {
-      const sig = await $fetch<{
-        code: number;
-        message: string;
-        data: DirectUploadSignature | null;
-      }>("/api/admin/upload-signature", { method: "POST" });
-      if (sig.code !== 200 || !sig.data) {
-        throw new Error(sig.message || "获取上传签名失败");
-      }
-      // 签名仅绑定 folder/timestamp 等参数，与文件内容无关，可复用签多张
-      const sigData = sig.data;
+    if (detailForm.gallery.some((u) => u.startsWith('data:'))) {
       galleryUrls = await Promise.all(
-        detailForm.gallery.map(async (u) =>
-          u.startsWith("data:")
-            ? uploadImageDirect(await (await fetch(u)).blob(), sigData)
-            : u,
-        ),
+        detailForm.gallery.map(async (u) => (u.startsWith('data:') ? uploadImage(await (await fetch(u)).blob()) : u)),
       );
     }
 
     const res = await $fetch(`/api/admin/products/${props.product.id}/detail`, {
-      method: "PUT",
+      method: 'PUT',
       body: {
         gallery: galleryUrls,
         detailContent: detailForm.detailContent,
@@ -504,14 +419,14 @@ async function saveDetail() {
     });
     if (res.code === 200) {
       dirty.value = false;
-      ElMessage.success("保存成功");
-      emit("update:visible", false);
+      ElMessage.success('保存成功');
+      emit('update:visible', false);
     } else {
-      ElMessage.error(res.message || "保存失败");
+      ElMessage.error(res.message || '保存失败');
     }
   } catch (err) {
-    console.error("保存商品详情失败:", err);
-    ElMessage.error("保存失败");
+    console.error('保存商品详情失败:', err);
+    ElMessage.error('保存失败');
   } finally {
     saving.value = false;
   }

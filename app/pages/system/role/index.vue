@@ -22,7 +22,7 @@
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 140px">
             <el-option label="启用" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option label="隐藏" :value="0" />
           </el-select>
         </el-form-item>
 
@@ -46,7 +46,7 @@
           <el-button :icon="Sort" @click="toggleExpandAll">
             {{ expandAll ? '收起全部' : '展开全部' }}
           </el-button>
-          <el-button :icon="Refresh" @click="fetchMenus">刷新</el-button>
+          <el-button :icon="Refresh" @click="refreshFromCache">刷新</el-button>
           <el-button type="primary" :icon="Plus" @click="handleCreate()">新增</el-button>
         </div>
       </div>
@@ -54,30 +54,30 @@
       <!-- 树形表格 -->
       <el-table
         :key="tableKey"
-        v-loading="loading"
         :data="tableData"
-        row-key="id"
+        row-key="key"
         :tree-props="{ children: 'children' }"
         :default-expand-all="expandAll"
-        border
-        stripe
+        :row-class-name="tableRowClassName"
         class="menu-table"
       >
         <el-table-column prop="label" label="菜单名称" min-width="200" show-overflow-tooltip />
-
-        <el-table-column prop="id" label="权限标识" min-width="240" show-overflow-tooltip>
+        <el-table-column prop="path" label="菜单路由" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="perm" label="权限标识" min-width="240" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="perm-code">{{ row.id }}</span>
+            <span class="perm-code">{{ row.perm || '—' }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="sort" label="排序" width="80" align="center" />
+        <el-table-column prop="sort" label="排序" width="80" align="center">
+          <template #default="{ row }">{{ row.sort ?? '—' }}</template>
+        </el-table-column>
 
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <span class="status-cell">
               <i class="status-dot" :class="row.status === 1 ? 'is-on' : 'is-off'" />
-              {{ row.status === 1 ? '启用' : '禁用' }}
+              {{ row.status === 1 ? '启用' : '隐藏' }}
             </span>
           </template>
         </el-table-column>
@@ -87,19 +87,21 @@
         <!-- 右侧操作列 -->
         <el-table-column label="操作" width="230" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="row.type !== 'action'"
-              link
-              type="primary"
-              :icon="Plus"
-              @click="handleCreate(row as MenuItem)"
-            >
-              新增子项
-            </el-button>
+            <div class="flex flex-row">
+              <el-button
+                v-if="row.type !== 'action'"
+                link
+                type="success"
+                :icon="Plus"
+                @click="handleCreate(row as MenuItem)"
+              >
+                新增子项
+              </el-button>
 
-            <el-button link type="primary" :icon="Edit" @click="handleEdit(row as MenuItem)">编辑</el-button>
+              <el-button link type="primary" :icon="Edit" @click="handleEdit(row as MenuItem)">编辑</el-button>
 
-            <el-button link type="danger" :icon="Delete" @click="handleDelete(row as MenuItem)">删除</el-button>
+              <el-button link type="danger" :icon="Delete" @click="handleDelete(row as MenuItem)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
 
@@ -127,16 +129,20 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Edit, Plus, Refresh, RefreshLeft, Search, Sort } from '@element-plus/icons-vue';
 import type { FormSchema, FieldConfig } from '~~/types/dynamicForm';
+import type { PermissionResource } from '~~/types/permission';
+import type { RuoYiRoute } from '~~/types/user';
 import FormDialog from '@/components/FormDialog.vue';
 
 /* ==================== 类型定义 ==================== */
 
 type MenuType = 'module' | 'page' | 'action';
 
-/** 菜单节点（树形结构，与后端约定字段） */
+/** 菜单节点（由启动缓存 routers + 权限数据派生的树形结构） */
 interface MenuItem {
-  /** 权限标识，全局唯一（目录通常无，由后端兜底生成） */
-  id: string;
+  /** 唯一标识（row-key）：权限标识 / 路由 name / 本地时间戳 */
+  key: string;
+  /** 权限标识（page:/xxx、action:/xxx:code；目录为空） */
+  perm: string;
   /** 显示名称 */
   label: string;
   /** 节点类型：目录 / 菜单 / 按钮 */
@@ -145,21 +151,14 @@ interface MenuItem {
   path?: string;
   /** 菜单图标（目录 / 菜单） */
   icon?: string;
-  /** 排序值 */
-  sort: number;
-  /** 状态：1 启用，0 禁用 */
+  /** 排序值（启动缓存不携带排序，为 null 展示 —） */
+  sort: number | null;
+  /** 状态：1 启用，0 隐藏（menu_visible=0 的路由 hidden=true） */
   status: 0 | 1;
-  /** 创建时间 */
+  /** 创建时间（启动缓存不携带该字段，展示 —） */
   createTime: string;
   /** 子节点 */
   children?: MenuItem[];
-}
-
-/** 后端菜单列表返回结构 */
-interface MenuListResponse {
-  code: number;
-  message: string;
-  data: MenuItem[];
 }
 
 /* ==================== 常量映射 ==================== */
@@ -175,6 +174,29 @@ const TYPE_TEXT: Record<MenuType, string> = {
   page: '菜单',
   action: '按钮',
 };
+
+/** 角色 perms 中按钮 code → 中文名（未收录的回退原 code） */
+const ACTION_LABELS: Record<string, string> = {
+  create: '新增',
+  edit: '编辑',
+  delete: '删除',
+  view: '查看',
+  export: '导出',
+  import: '导入',
+  audit: '审核',
+  publish: '发布',
+  assign: '分配',
+  enable: '启用',
+  disable: '禁用',
+};
+
+/**
+ * 页面路由 path → RuoYi 权限串（与 getInfo 下发口径一致）
+ * /system/user → system:user；/store/:id() → store::id()
+ */
+function toRuoYiKey(path: string): string {
+  return path.replace(/^\/+/, '').replace(/\//g, ':');
+}
 
 /* ==================== 筛选状态 ==================== */
 
@@ -202,10 +224,8 @@ const applied = ref<{
 
 /* ==================== 表格状态 ==================== */
 
-/** 原始树数据（API 返回） */
+/** 原始树数据（由启动缓存派生） */
 const rawMenus = ref<MenuItem[]>([]);
-/** 表格加载态 */
-const loading = ref(false);
 /** 是否默认展开全部 */
 const expandAll = ref(true);
 /** 用于强制重渲染表格，切换展开态 / 重新筛选时刷新 */
@@ -234,7 +254,7 @@ function filterTree(list: MenuItem[], keyword: string, type: MenuType | '', stat
     const children = node.children ? filterTree(node.children, keyword, type, status) : [];
 
     const selfMatch =
-      (!keyword || node.label.includes(keyword) || node.id.includes(keyword)) &&
+      (!keyword || node.label.includes(keyword) || node.perm.includes(keyword)) &&
       (!type || node.type === type) &&
       (status === '' || node.status === status);
 
@@ -254,12 +274,22 @@ function countNodes(list: MenuItem[]): number {
   return list.reduce((total, node) => total + 1 + (node.children ? countNodes(node.children) : 0), 0);
 }
 
+/**
+ * 行高亮：页面级黄色（warning）、按钮级绿色（success），目录不着色
+ * @param row 行数据（MenuItem）
+ */
+function tableRowClassName({ row }: { row: MenuItem }): string {
+  if (row.type === 'page') return 'warning-row';
+  if (row.type === 'action') return 'success-row';
+  return '';
+}
+
 /** 递归查找节点 */
-function findNode(list: MenuItem[], id: string): MenuItem | null {
+function findNode(list: MenuItem[], key: string): MenuItem | null {
   for (const node of list) {
-    if (node.id === id) return node;
+    if (node.key === key) return node;
     if (node.children) {
-      const hit = findNode(node.children, id);
+      const hit = findNode(node.children, key);
       if (hit) return hit;
     }
   }
@@ -267,13 +297,13 @@ function findNode(list: MenuItem[], id: string): MenuItem | null {
 }
 
 /** 递归删除节点 */
-function removeNode(list: MenuItem[], id: string): boolean {
-  const index = list.findIndex((node) => node.id === id);
+function removeNode(list: MenuItem[], key: string): boolean {
+  const index = list.findIndex((node) => node.key === key);
   if (index > -1) {
     list.splice(index, 1);
     return true;
   }
-  return list.some((node) => (node.children ? removeNode(node.children, id) : false));
+  return list.some((node) => (node.children ? removeNode(node.children, key) : false));
 }
 
 /** 简易时间格式化 */
@@ -285,24 +315,134 @@ function formatNow(): string {
   )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-/* ==================== 数据请求 ==================== */
+/* ==================== 数据构建（来源：启动缓存，不发请求） ==================== */
 
 /**
- * 拉取菜单列表
- * @description 请求 /api/public/menus/list，返回按 sort_order 排序的全量菜单树（含禁用项）
+ * routers 路由节点 → 菜单表格节点
+ * @description 目录 component='Layout'；页面为具体组件（path 已是绝对路径，无需拼接）
  */
-async function fetchMenus(): Promise<void> {
-  loading.value = true;
-  try {
-    const res = await $fetch<MenuListResponse>('/api/public/menus/list');
-    rawMenus.value = res.data ?? [];
-    tableKey.value += 1;
-  } catch (err) {
-    console.error('获取菜单列表失败:', err);
-    ElMessage.error('获取菜单列表失败');
-  } finally {
-    loading.value = false;
+function routeToNode(route: RuoYiRoute): MenuItem {
+  const isModule = route.component === 'Layout';
+  return {
+    key: route.name,
+    perm: '',
+    label: route.meta.title,
+    type: isModule ? 'module' : 'page',
+    path: route.path,
+    icon: route.meta.icon ?? undefined,
+    sort: null,
+    status: route.hidden ? 0 : 1,
+    createTime: '—',
+    children: isModule && route.children?.length ? route.children.map(routeToNode) : undefined,
+  };
+}
+
+/** 递归收集页面节点（权限挂载目标） */
+function collectPages(list: MenuItem[], pages: MenuItem[]): void {
+  for (const node of list) {
+    if (node.type === 'page') pages.push(node);
+    if (node.children?.length) collectPages(node.children, pages);
   }
+}
+
+/**
+ * admin 模式挂权限：全量权限目录（页面→按钮已按 path 归组）
+ * 页面 perm = 目录页 permKey；按钮子节点 label 即中文名
+ */
+function attachCatalogPerms(pages: MenuItem[], catalog: PermissionResource[]): void {
+  const pageByPath = new Map(catalog.map((p) => [p.path, p]));
+  for (const node of pages) {
+    const resource = node.path ? pageByPath.get(node.path) : undefined;
+    if (!resource) continue;
+    node.perm = resource.permKey;
+    node.children = (resource.children ?? []).map((action) => ({
+      key: action.permKey,
+      perm: action.permKey,
+      label: action.label,
+      type: 'action' as MenuType,
+      sort: null,
+      status: action.status === 1 ? 1 : 0,
+      createTime: '—',
+    }));
+  }
+}
+
+/**
+ * 非 admin 模式挂权限：RuoYi 权限串按页面 path 反向匹配
+ * 精确命中 → 页面权限（perm 还原为 page:/xxx 原始格式）；
+ * 前缀命中 → 按钮权限（末段为 action code，拆为页面下子节点）
+ */
+function attachRolePerms(pages: MenuItem[], perms: string[]): void {
+  const permByNode = new Map<MenuItem, string>();
+  const actionsByNode = new Map<MenuItem, string[]>();
+  const keyed = pages
+    .filter((node): node is MenuItem & { path: string } => !!node.path)
+    .map((node) => ({ node, ry: toRuoYiKey(node.path) }));
+
+  for (const perm of perms) {
+    if (perm === '*:*:*') continue; // 通配权限无明细
+    // 精确匹配优先（避免同串既是某页面 path 又是另一页面前缀时误判为按钮）
+    const exact = keyed.find((item) => item.ry === perm);
+    if (exact) {
+      permByNode.set(exact.node, `page:${exact.node.path}`);
+      continue;
+    }
+    const prefix = keyed.find((item) => perm.startsWith(`${item.ry}:`));
+    if (prefix) {
+      const code = perm.slice(prefix.ry.length + 1);
+      if (code && !code.includes(':')) {
+        const list = actionsByNode.get(prefix.node) ?? [];
+        list.push(code);
+        actionsByNode.set(prefix.node, list);
+      }
+    }
+  }
+
+  for (const node of pages) {
+    node.perm = permByNode.get(node) ?? '';
+    node.children = (actionsByNode.get(node) ?? []).map((code) => {
+      const permKey = `action:${node.path}:${code}`;
+      return {
+        key: permKey,
+        perm: permKey,
+        label: ACTION_LABELS[code] ?? code,
+        type: 'action' as MenuType,
+        sort: null,
+        status: 1 as const,
+        createTime: '—',
+      };
+    });
+  }
+}
+
+/**
+ * 从启动缓存构建菜单树（app.vue callOnce 拉取，pinia 随 payload 下发）
+ * - 菜单结构 ← userInfoStore.routers（getRouters）
+ * - 权限标识 ← permissionStore.allPermissions（admin 全量目录）
+ *              或 permissionStore.permissions（非 admin 角色权限串，路径匹配拆 action）
+ */
+function buildMenuTree(): MenuItem[] {
+  const userInfoStore = useUserInfoStore();
+  const permissionStore = usePermissionStore();
+
+  const tree = userInfoStore.routers.map(routeToNode);
+
+  const pages: MenuItem[] = [];
+  collectPages(tree, pages);
+
+  if (permissionStore.allPermissions.length) {
+    attachCatalogPerms(pages, permissionStore.allPermissions);
+  } else {
+    attachRolePerms(pages, permissionStore.permissions);
+  }
+
+  return tree;
+}
+
+/** 从启动缓存重建表格（「刷新」按钮同源，不发请求） */
+function refreshFromCache(): void {
+  rawMenus.value = buildMenuTree();
+  tableKey.value += 1;
 }
 
 /* ==================== 筛选交互 ==================== */
@@ -390,7 +530,7 @@ const formSchema = computed<FormSchema>(() => {
       key: 'id',
       type: 'input',
       label: '权限标识',
-      placeholder: '如 action:system:user:create',
+      placeholder: '如 action:/system/user:create',
       rules: type === 'action' ? { required: true } : undefined,
     });
   }
@@ -432,7 +572,7 @@ function handleFieldChange(key: string, value: unknown): void {
 function handleCreate(parent?: MenuItem): void {
   dialogMeta.mode = 'create';
   dialogMeta.currentType = parent?.type === 'page' ? 'action' : 'page';
-  dialogMeta.parentId = parent?.id ?? '';
+  dialogMeta.parentId = parent?.key ?? '';
   dialogMeta.parentLabel = parent?.label ?? '根目录';
   formDialogRef.value?.open({
     parentLabel: dialogMeta.parentLabel,
@@ -446,16 +586,16 @@ function handleCreate(parent?: MenuItem): void {
 function handleEdit(row: MenuItem): void {
   dialogMeta.mode = 'edit';
   dialogMeta.currentType = row.type;
-  dialogMeta.editingId = row.id;
+  dialogMeta.editingId = row.key;
   dialogMeta.editingLabel = row.label;
   formDialogRef.value?.open({
     parentLabel: '—',
     type: row.type,
     label: row.label,
     path: row.path ?? '',
-    id: row.id,
+    id: row.perm,
     icon: row.icon ?? '',
-    sort: row.sort,
+    sort: row.sort ?? 1,
     status: row.status,
   });
 }
@@ -469,7 +609,8 @@ function handleFormSubmit(data: Record<string, any>): void {
     if (dialogMeta.mode === 'create') {
       const node: MenuItem = {
         // 目录类型无权限标识字段，用时间戳兜底保证 row-key 唯一
-        id: data.id || `menu:${Date.now()}`,
+        key: data.id || `local:${Date.now()}`,
+        perm: data.id || '',
         label: data.label,
         type: data.type as MenuType,
         path: data.path || undefined,
@@ -492,7 +633,8 @@ function handleFormSubmit(data: Record<string, any>): void {
     } else {
       const target = findNode(rawMenus.value, dialogMeta.editingId);
       if (target) {
-        target.id = data.id || target.id; // 目录类型无权限标识字段，保留原 id
+        target.key = data.id || target.key; // 目录类型无权限标识字段，保留原 key
+        target.perm = data.id || target.perm;
         target.label = data.label;
         target.type = data.type as MenuType;
         target.path = data.path || undefined;
@@ -522,9 +664,9 @@ async function handleDelete(row: MenuItem): Promise<void> {
     });
 
     // TODO: 替换为真实接口
-    // await $fetch(`/api/public/menus/${row.id}`, { method: "DELETE" });
+    // await $fetch(`/api/public/menus/${row.key}`, { method: "DELETE" });
 
-    removeNode(rawMenus.value, row.id);
+    removeNode(rawMenus.value, row.key);
     tableKey.value += 1;
     ElMessage.success('删除成功');
   } catch {
@@ -535,7 +677,7 @@ async function handleDelete(row: MenuItem): Promise<void> {
 /* ==================== 生命周期 ==================== */
 
 onMounted(() => {
-  fetchMenus();
+  refreshFromCache();
 });
 </script>
 
@@ -622,6 +764,14 @@ onMounted(() => {
 .menu-table {
   flex: 1;
   min-height: 0;
+}
+
+/* 行高亮（:deep 穿透 scoped）：页面级黄、按钮级绿 */
+.menu-table :deep(.warning-row) {
+  --el-table-tr-bg-color: var(--el-color-warning-light-9);
+}
+.menu-table :deep(.success-row) {
+  --el-table-tr-bg-color: var(--el-color-success-light-9);
 }
 
 /* 单元格内容 */

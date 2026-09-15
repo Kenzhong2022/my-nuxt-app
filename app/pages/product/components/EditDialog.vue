@@ -15,29 +15,14 @@
         <el-input v-model="editForm.title" placeholder="请输入商品标题" />
       </el-form-item>
       <el-form-item label="描述">
-        <el-input
-          v-model="editForm.description"
-          type="textarea"
-          :rows="3"
-          placeholder="请输入商品描述"
-        />
+        <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="请输入商品描述" />
       </el-form-item>
       <div class="form-row">
         <el-form-item label="价格" required>
-          <el-input-number
-            v-model="editForm.price"
-            :min="0"
-            :precision="2"
-            :step="1"
-          />
+          <el-input-number v-model="editForm.price" :min="0" :precision="2" :step="1" />
         </el-form-item>
         <el-form-item label="原价">
-          <el-input-number
-            v-model="editForm.originalPrice"
-            :min="0"
-            :precision="2"
-            :step="1"
-          />
+          <el-input-number v-model="editForm.originalPrice" :min="0" :precision="2" :step="1" />
         </el-form-item>
       </div>
       <div class="form-row">
@@ -62,9 +47,7 @@
         <div class="image-edit">
           <el-image
             v-if="editForm.image"
-            :src="
-              cloudinaryUrl(editForm.image, 'w_160,h_160,c_fill,q_auto,f_webp')
-            "
+            :src="cloudinaryUrl(editForm.image, 'w_160,h_160,c_fill,q_auto,f_webp')"
             fit="cover"
             class="edit-image"
             :preview-src-list="[editForm.image]"
@@ -74,28 +57,20 @@
           />
           <div v-else class="image-placeholder">无图</div>
           <!-- 现阶段调用固定提示词生图，后续可扩展为自定义提示词输入 -->
-          <el-button
-            type="warning"
-            :loading="regenerating"
-            @click="handleRegenerateImage"
-          >
-            AI 生成主图替换
-          </el-button>
+          <el-button type="warning" :loading="regenerating" @click="handleRegenerateImage"> AI 生成主图替换 </el-button>
         </div>
       </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="saveEdit">
-        保存
-      </el-button>
+      <el-button type="primary" :loading="saving" @click="saveEdit"> 保存 </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import type { Product } from "~~/types/product";
-import { ElMessage, ElMessageBox } from "element-plus";
+import type { Product } from '~~/types/product';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 /**
  * 商品编辑弹窗组件
@@ -110,9 +85,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** 同步弹窗显示状态 */
-  (e: "update:visible", val: boolean): void;
+  (e: 'update:visible', val: boolean): void;
   /** 保存成功，父组件据此刷新列表 */
-  (e: "saved"): void;
+  (e: 'saved'): void;
 }>();
 
 const saving = ref(false);
@@ -120,15 +95,15 @@ const regenerating = ref(false);
 /** 待保存的 AI 生图 base64（data URL），保存时随 PUT 提交，取消则丢弃 */
 const pendingImage = ref<string | null>(null);
 const editForm = reactive({
-  name: "",
-  title: "",
-  description: "",
+  name: '',
+  title: '',
+  description: '',
   price: 0,
   originalPrice: null as number | null,
-  category: "",
+  category: '',
   stock: 0,
   tags: [] as string[],
-  image: "",
+  image: '',
 });
 
 // 弹窗打开时用商品数据回填表单，并丢弃上次未保存的生图
@@ -141,10 +116,10 @@ watch(
       Object.assign(editForm, {
         name: row.name,
         title: row.title,
-        description: row.description ?? "",
+        description: row.description ?? '',
         price: row.price,
         originalPrice: row.originalPrice ?? null,
-        category: row.category ?? "",
+        category: row.category ?? '',
         stock: row.stock ?? 0,
         tags: [...(row.tags ?? [])],
         image: row.image,
@@ -159,7 +134,7 @@ watch(
 async function saveEdit() {
   if (!props.product) return;
   if (!editForm.name.trim() || !editForm.title.trim()) {
-    ElMessage.warning("商品名称和标题不能为空");
+    ElMessage.warning('商品名称和标题不能为空');
     return;
   }
   saving.value = true;
@@ -168,19 +143,11 @@ async function saveEdit() {
     let imageUrl: string | undefined;
     if (pendingImage.value) {
       const blob = await (await fetch(pendingImage.value)).blob();
-      const sig = await $fetch<{
-        code: number;
-        message: string;
-        data: DirectUploadSignature | null;
-      }>("/api/admin/upload-signature", { method: "POST" });
-      if (sig.code !== 200 || !sig.data) {
-        throw new Error(sig.message || "获取上传签名失败");
-      }
-      imageUrl = await uploadImageDirect(blob, sig.data);
+      imageUrl = await uploadImage(blob);
     }
 
     const res = await $fetch(`/api/admin/products/${props.product.id}`, {
-      method: "PUT",
+      method: 'PUT',
       body: {
         name: editForm.name,
         title: editForm.title,
@@ -196,15 +163,15 @@ async function saveEdit() {
     });
     if (res.code === 200) {
       pendingImage.value = null;
-      ElMessage.success("保存成功");
-      emit("update:visible", false);
-      emit("saved");
+      ElMessage.success('保存成功');
+      emit('update:visible', false);
+      emit('saved');
     } else {
-      ElMessage.error(res.message || "保存失败");
+      ElMessage.error(res.message || '保存失败');
     }
   } catch (err) {
-    console.error("保存商品失败:", err);
-    ElMessage.error("保存失败");
+    console.error('保存商品失败:', err);
+    ElMessage.error('保存失败');
   } finally {
     saving.value = false;
   }
@@ -218,28 +185,24 @@ async function saveEdit() {
 async function handleRegenerateImage() {
   if (!props.product) return;
   try {
-    await ElMessageBox.confirm(
-      "将使用 AI 重新生成商品主图（仅预览，点击保存后生效），是否继续？",
-      "AI 生图",
-      {
-        confirmButtonText: "开始生成",
-        cancelButtonText: "取消",
-        type: "warning",
-      },
-    );
+    await ElMessageBox.confirm('将使用 AI 重新生成商品主图（仅预览，点击保存后生效），是否继续？', 'AI 生图', {
+      confirmButtonText: '开始生成',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
   } catch {
     return; // 用户取消
   }
   regenerating.value = true;
   await $fetch(`/api/admin/products/${props.product.id}/generate-main-image`, {
-    method: "POST",
+    method: 'POST',
   })
     .then((res) => {
       if (res.data) {
         // base64 data URL，仅用于预览展示
         editForm.image = res.data.image;
         pendingImage.value = res.data.image;
-        ElMessage.success("图片已生成，保存后生效");
+        ElMessage.success('图片已生成，保存后生效');
       }
     })
     .finally(() => {
