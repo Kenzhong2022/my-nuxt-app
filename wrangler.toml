@@ -21,4 +21,9 @@ NUXT_CLOUDFLARE_ACCOUNT_ID = "65844ae2478b17ef0b07680420bc454f"
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
 # 百度翻译 AppID（AppKey 是敏感信息，用 secret 设置）
 BAIDU_APPID = "20260815002666664"
+# 高德地图 Web 端 Key（JS API 设计上前端公开，靠高德控制台域名白名单防护）
+VITE_AMAP_KEY = "74308dcc0a8d524936a1468fe6599e13"
+VITE_AMAP_SECURITY_CODE = "948b43075553eea53be2fe9fd9714ea6"
+# 前端要连的 Socket 地址（本地开发用 localhost；生产环境在 Pages Dashboard 覆盖为公网地址）
+NUXT_PUBLIC_SOCKET_URL = "http://localhost:5555"
 
