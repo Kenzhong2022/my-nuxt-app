@@ -8,7 +8,7 @@ export interface FieldRule {
   required?: boolean;
   pattern?: string;
   message?: string;
-  trigger?: string | string[]; // ✅ 修正类型
+  trigger?: string | string[]; // 修正类型
   min?: number;
   max?: number;
   len?: number;

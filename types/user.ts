@@ -78,7 +78,7 @@ export interface SysUser {
 export interface GetInfoResponse {
   code: number;
   msg: string;
-  /** 权限标识数组（"模块:实体:操作"，超管为 ["*:*:*"]） */
+  /** 权限标识数组（perm_key 原值，如 "page:/system/user"、"action:/system/user:create"；超管为 ["*:*:*"]） */
   permissions: string[];
   /** 角色权限串数组（roleKey，如 ["admin"]） */
   roles: string[];

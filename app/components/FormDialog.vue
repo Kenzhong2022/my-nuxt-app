@@ -16,6 +16,7 @@
           :placeholder="field.placeholder"
           v-bind="field.props || {}"
           clearable
+          @input="handleFieldChange(field)"
         />
 
         <!-- 数字输入 -->
@@ -28,6 +29,7 @@
           :placeholder="field.placeholder || '请选择'"
           v-bind="field.props || {}"
           clearable
+          @change="handleFieldChange(field)"
         >
           <el-option v-for="opt in field.options" :key="String(opt.value)" :label="opt.label" :value="opt.value" />
         </el-select>
@@ -94,7 +96,7 @@ import type { FormSchema, FieldConfig, FieldRule } from '~~/types/dynamicForm';
 /**
  * 通用表单弹窗
  * - 表单配置（schema.fields）完全由父组件传入，字段渲染约定与 DynamicForm 一致
- * - 通过 ref 调用 open(initial?) / close() 控制显示隐藏
+ * - 通过 ref 调用 open(initial?) / close() 控制显示隐藏，setValue(key, value) 支持外部联动设值
  * - 校验通过后打印表单数据并 emit('submit', data)，由父组件消费
  */
 const props = withDefaults(
@@ -133,20 +135,33 @@ const formData = ref<Record<string, any>>({});
 /**
  * 打开弹窗并初始化表单数据
  * @param initial 初始值（优先级高于字段 defaultValue），如编辑回填
+ * 表单数据构建推迟到 nextTick：父组件常在 open() 前同步修改驱动 schema 的
+ * 响应式状态（如菜单类型/弹窗模式），props 需等渲染 flush 才更新，同步读取会拿到过期 schema
  */
 function open(initial: Record<string, any> = {}): void {
-  const data: Record<string, any> = {};
-  for (const field of props.schema.fields) {
-    data[field.key] = initial[field.key] ?? field.defaultValue ?? '';
-  }
-  formData.value = data;
   visible.value = true;
-  nextTick(() => formRef.value?.clearValidate());
+  nextTick(() => {
+    const data: Record<string, any> = {};
+    for (const field of props.schema.fields) {
+      data[field.key] = initial[field.key] ?? field.defaultValue ?? '';
+    }
+    formData.value = data;
+    formRef.value?.clearValidate();
+  });
 }
 
 /** 关闭弹窗 */
 function close(): void {
   visible.value = false;
+}
+
+/**
+ * 外部按字段 key 直接设值（用于跨字段联动，如权限标识随路由地址/操作类型自动生成）
+ * @param key 字段 key（需存在于当前 schema.fields）
+ * @param value 目标值
+ */
+function setValue(key: string, value: unknown): void {
+  formData.value[key] = value;
 }
 
 /** 弹窗关闭动画结束后清除校验状态 */
@@ -163,14 +178,20 @@ function handleFieldChange(field: FieldConfig): void {
 }
 
 // schema 动态变化（父组件按字段联动增删字段）时同步表单数据：
-// 保留用户已填写的字段值，新增字段补默认值，已移除字段不再保留
+// 保留用户已填写的字段值，新增字段补默认值，已移除字段不再保留；
+// select 字段选项集变化导致原值失效时（如上级菜单随类型联动过滤），回退默认值
 watch(
   () => props.schema,
   () => {
     if (!visible.value) return;
     const next: Record<string, any> = {};
     for (const field of props.schema.fields) {
-      next[field.key] = formData.value[field.key] ?? field.defaultValue ?? '';
+      let value = formData.value[field.key] ?? field.defaultValue ?? '';
+      if (field.type === 'select' && field.options?.length && value !== '') {
+        const valid = field.options.some((opt) => opt.value === value);
+        if (!valid) value = field.defaultValue ?? '';
+      }
+      next[field.key] = value;
     }
     formData.value = next;
   },
@@ -231,7 +252,7 @@ function handleSubmit(): void {
     });
 }
 
-defineExpose({ open, close });
+defineExpose({ open, close, setValue });
 </script>
 
 <style scoped>

@@ -47,6 +47,12 @@ function handleUnauthorized(message?: string): never {
 }
 
 /**
+ * 设计上就无 token 的端点（令牌兑换/刷新/回调）：调用时客户端尚未持有 token，
+ * 尽力鉴权分支不对它们打游客诊断日志，避免误导排查
+ */
+const NO_TOKEN_DIAG = ['/api/token', '/api/refresh-token', '/api/callback'];
+
+/**
  * 提取 token：优先 Authorization 头（客户端 fetch 插件注入），其次 cookie（SSR 服务端请求）
  */
 function extractToken(event: H3Event): string | undefined {
@@ -70,15 +76,26 @@ export default defineEventHandler(async (event) => {
     // 可选鉴权：尽力解析 token 注入 context.user，供需要区分登录态的公共接口使用；
     // 无 token / 解析失败均静默跳过（不拦截、不抛 401），由接口自行决定匿名行为
     const publicToken = extractToken(event);
-    if (publicToken) {
+    // 令牌兑换等设计上无 token 的端点不打诊断日志
+    const diagEnabled = !NO_TOKEN_DIAG.some((item) => pathname === item || pathname.startsWith(item + '/'));
+    if (!publicToken) {
+      // 诊断：无 Authorization 头且无 cookie token → 按游客
+      if (diagEnabled) {
+        // console.warn(`[auth] ${pathname}：未携带 token（无 Bearer 头、无 cookie token）→ 游客`);
+      }
+    } else {
       try {
         const payload = await verifyAccessToken(publicToken);
         event.context.user = {
           userId: payload.userId,
           role: payload.role as string,
         };
-      } catch {
+      } catch (error) {
         // 公共接口匿名可用，token 无效视为游客
+        // 诊断：区分过期 / 验签失败（密钥不符、格式错误）
+        if (diagEnabled) {
+          console.warn(`[auth] ${pathname}：token 校验失败 → 游客：`, (error as Error)?.message);
+        }
       }
     }
     return;

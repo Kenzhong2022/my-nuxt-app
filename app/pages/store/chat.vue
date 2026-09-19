@@ -6,17 +6,11 @@
     <!-- 聊天历史区域 -->
     <div class="messages" ref="messagesRef">
       <!-- 遍历显示所有聊天消息 -->
-      <div
-        v-for="(msg, index) in messages"
-        :key="index"
-        :class="['message', msg.role]"
-      >
-        <div class="font-bold">{{ msg.role === "user" ? "我" : "AI" }}：</div>
+      <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.role]">
+        <div class="font-bold">{{ msg.role === 'user' ? '我' : 'AI' }}：</div>
 
         <!-- 思考过程显示（灰色斜体，思考完成后自动消失） -->
-        <div v-if="msg.reasoningContent" class="reasoning">
-          💭 {{ msg.reasoningContent }}
-        </div>
+        <div v-if="msg.reasoningContent" class="reasoning">💭 {{ msg.reasoningContent }}</div>
 
         <!-- 最终答案（保留换行和格式） -->
         <div class="answer">{{ msg.content }}</div>
@@ -39,7 +33,7 @@
         autocomplete="off"
       />
       <button @click="sendMessage" :disabled="loading || !userInput.trim()">
-        {{ loading ? "发送中" : "发送" }}
+        {{ loading ? '发送中' : '发送' }}
       </button>
     </div>
 
@@ -55,16 +49,16 @@
  * 聊天消息类型定义
  */
 interface Message {
-  role: "user" | "assistant"; // 消息角色：用户/AI助手
+  role: 'user' | 'assistant'; // 消息角色：用户/AI助手
   content: string; // 最终回答内容
   reasoningContent?: string; // 思考过程（仅AI消息有）
 }
 
 // 响应式状态
 const messages = ref<Message[]>([]); // 聊天历史数组
-const userInput = ref(""); // 用户输入框内容
+const userInput = ref(''); // 用户输入框内容
 const loading = ref(false); // 加载状态
-const error = ref(""); // 错误信息
+const error = ref(''); // 错误信息
 const messagesRef = ref<HTMLDivElement>(); // 聊天区域DOM引用
 
 /**
@@ -92,29 +86,29 @@ async function sendMessage() {
 
   // 重置状态
   const userContent = userInput.value.trim();
-  userInput.value = "";
+  userInput.value = '';
   loading.value = true;
-  error.value = "";
+  error.value = '';
 
   // 添加用户消息到聊天历史
   messages.value.push({
-    role: "user",
+    role: 'user',
     content: userContent,
   });
 
   // 创建AI消息对象（使用ref确保响应式）
   const aiMessage = ref<Message>({
-    role: "assistant",
-    content: "",
-    reasoningContent: "",
+    role: 'assistant',
+    content: '',
+    reasoningContent: '',
   });
   messages.value.push(aiMessage.value);
 
   try {
     // 调用流式API接口
-    const response = await fetch("/api/chat/stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: messages.value.slice(0, -1), // 发送除当前空AI消息外的所有历史
       }),
@@ -130,7 +124,7 @@ async function sendMessage() {
     const decoder = new TextDecoder();
 
     if (!reader) {
-      throw new Error("无法建立流式连接");
+      throw new Error('无法建立流式连接');
     }
 
     // 循环读取流数据
@@ -142,14 +136,14 @@ async function sendMessage() {
       // 解码二进制数据为字符串
       const rawChunk = decoder.decode(value);
       // 按SSE协议分割数据块
-      const lines = rawChunk.split("\n\n").filter((line) => line.trim());
+      const lines = rawChunk.split('\n\n').filter((line) => line.trim());
 
       for (const line of lines) {
-        if (line.startsWith("data: ")) {
+        if (line.startsWith('data: ')) {
           const dataStr = line.slice(6);
 
           // 收到结束信号
-          if (dataStr === "[DONE]") continue;
+          if (dataStr === '[DONE]') continue;
 
           // 解析JSON数据
           const data = JSON.parse(dataStr);
@@ -169,7 +163,7 @@ async function sendMessage() {
             aiMessage.value.content += data.content;
           }
 
-          // ✅ 关键：强制Vue立即更新DOM，实现逐字打字效果
+          // 关键：强制Vue立即更新DOM，实现逐字打字效果
           // 解决Vue异步批量更新导致内容一次性显示的问题
           await nextTick();
         }
@@ -177,9 +171,9 @@ async function sendMessage() {
     }
   } catch (e) {
     // 统一错误处理
-    console.error("聊天请求失败:", e);
-    error.value = e instanceof Error ? e.message : "网络连接失败，请稍后重试";
-    aiMessage.value.content = "抱歉，我遇到了一点问题，请稍后再试。";
+    console.error('聊天请求失败:', e);
+    error.value = e instanceof Error ? e.message : '网络连接失败，请稍后重试';
+    aiMessage.value.content = '抱歉，我遇到了一点问题，请稍后再试。';
   } finally {
     // 无论成功失败，最终都关闭加载状态
     loading.value = false;

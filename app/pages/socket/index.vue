@@ -22,7 +22,7 @@ const searchKey = ref('');
 definePageMeta({
   title: '聊天窗口',
   layout: 'default',
-  name: 'Socket',
+  name: 'socket',
 });
 </script>
 

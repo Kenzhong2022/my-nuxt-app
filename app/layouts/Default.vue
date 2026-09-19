@@ -1,6 +1,10 @@
 <template>
   <div class="default-layout isolate">
-    <ThemeColorPicker v-if="showColorPicker" class="fixed z-[1] top-[calc(10%+4rem+0.5rem)] right-4 w-64" />
+    <ThemeColorPicker
+      v-if="showColorPicker"
+      class="fixed z-[1] top-[calc(10%+4rem+0.5rem)] right-4 w-64"
+      @close="showColorPicker = false"
+    />
     <el-container class="h-screen">
       <!-- 头部导航：文字不能换行 -->
       <el-header class="border-b">
@@ -34,7 +38,12 @@
           </el-switch>
           <el-button class="mobile-menu-btn" icon="Menu" @click="toggleMobileMenu"></el-button>
           <div class="ml-auto login-btn flex items-center justify-center gap-2">
-            <div class="theme-btn iconfont icon-yanse-zhutise" @click="showColorPicker = !showColorPicker"></div>
+            <!-- pointerdown.stop：防止 onClickOutside（监听 pointerdown）先关闭后 click 又取反重开，导致按钮无法收起面板 -->
+            <div
+              class="theme-btn iconfont icon-yanse-zhutise"
+              @pointerdown.stop
+              @click="showColorPicker = !showColorPicker"
+            ></div>
             <el-button v-if="!isLoggedIn" type="primary" @click="handleLogin"> 登录 </el-button>
             <el-button v-else type="danger" @click="handleLogout"> 退出登录 </el-button>
           </div>

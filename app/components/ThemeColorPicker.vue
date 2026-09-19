@@ -1,5 +1,5 @@
 <template>
-  <div class="color-picker-container">
+  <div class="color-picker-container" ref="rootRef">
     <h4>切换主题颜色</h4>
     <div class="color-preset">
       <div
@@ -49,36 +49,56 @@ const props = withDefaults(
   }>(),
   {
     colors: () => [
-      { label: "红", value: "#f56c6c" },
-      { label: "蓝", value: "#409eff" },
-      { label: "绿", value: "#67c23a" },
-      { label: "黄", value: "#e6a23c" },
-      { label: "紫", value: "#9c27b0" },
+      { label: '红', value: '#f56c6c' },
+      { label: '蓝', value: '#409eff' },
+      { label: '绿', value: '#67c23a' },
+      { label: '黄', value: '#e6a23c' },
+      { label: '紫', value: '#9c27b0' },
     ],
   },
 );
 
 // 和插件共用同一个 useState key，响应式打通
-const primaryColor = useState<string>("CUSTOM-PRIMARY-COLOR-KEY");
+const primaryColor = useState<string>('CUSTOM-PRIMARY-COLOR-KEY');
 
 // 上一次主题色（插件 watch 自动维护）
-const prevColor = useState<string | null>("CUSTOM-PRIMARY-COLOR-PREV-KEY");
+const prevColor = useState<string | null>('CUSTOM-PRIMARY-COLOR-PREV-KEY');
 
 // 主题色切换：临时启用全局过渡，切换完成后移除
 let transitionTimer: ReturnType<typeof setTimeout> | null = null;
 watch(primaryColor, () => {
   if (import.meta.client) {
     const root = document.documentElement;
-    root.classList.add("theme-transitioning");
+    root.classList.add('theme-transitioning');
     if (transitionTimer) clearTimeout(transitionTimer);
     transitionTimer = setTimeout(() => {
-      root.classList.remove("theme-transitioning");
+      root.classList.remove('theme-transitioning');
     }, 420);
   }
 });
 
 // Dark/Light 切换：与 Default 布局共享同一份 cookie 持久化状态（SSR 可读）
 const isDark = useThemeDark();
+
+import { onClickOutside } from '@vueuse/core';
+
+const emit = defineEmits<{ (e: 'close'): void }>();
+
+const rootRef = ref<HTMLElement | null>(null);
+
+onClickOutside(
+  rootRef,
+  (e) => {
+    const target = e.target as HTMLElement | null;
+    // el-color-picker 的面板和触发器被 teleport 到 body，不算"外部"
+    if (target?.closest('.el-color-picker__panel') || target?.closest('.el-color-picker__trigger')) {
+      return;
+    }
+    emit('close');
+  },
+  // 面板本身不能被算作"内部"之外的干扰，这里只监听 click
+  { detectIframe: false },
+);
 </script>
 
 <style scoped lang="scss">

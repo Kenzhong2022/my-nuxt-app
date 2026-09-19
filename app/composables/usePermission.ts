@@ -1,8 +1,4 @@
-import type {
-  ActionButtonConfig,
-  PermissionNode,
-  PermissionTree,
-} from "~~/types/permission";
+import type { PermissionNode, PermissionTree } from '~~/types/permission';
 
 /**
  * ============================================================
@@ -17,17 +13,19 @@ import type {
  */
 
 /**
- * 从 action ID 推导所属 page ID
- * 例: action:system:user:create → page:system:user
+ * 从 action 的 perm_key 推导所属 page 的 perm_key
+ * 例: action:/system/user:create → page:/system/user
  *
- * @param actionId - action 级权限 ID
- * @returns 所属 page ID，若格式非法则返回 null
+ * perm_key 中 path 自带斜杠，按 ':' 切分为 [action, /system/user, create] 三段
+ *
+ * @param actionId - action 级权限 perm_key
+ * @returns 所属 page perm_key，若格式非法则返回 null
  */
 export function getParentPageId(actionId: string): string | null {
-  const parts = actionId.split(":");
-  // action:{module}:{page}:{operation} → 必须 4 段
-  if (parts.length === 4 && parts[0] === "action") {
-    return `page:${parts[1]}:${parts[2]}`;
+  const parts = actionId.split(':');
+  // action:{path}:{operation} → 必须 3 段（path 内含 / 不含 :）
+  if (parts.length === 3 && parts[0] === 'action') {
+    return `page:${parts[1]}`;
   }
   return null;
 }
@@ -39,17 +37,10 @@ export function getParentPageId(actionId: string): string | null {
  * @param targetId - 目标节点 ID
  * @returns 父节点 ID 数组（从近到远）
  */
-export function getParentIds(
-  tree: PermissionTree,
-  targetId: string,
-): string[] {
+export function getParentIds(tree: PermissionTree, targetId: string): string[] {
   const parents: string[] = [];
 
-  const findPath = (
-    nodes: readonly PermissionNode[],
-    target: string,
-    path: string[] = [],
-  ): boolean => {
+  const findPath = (nodes: readonly PermissionNode[], target: string, path: string[] = []): boolean => {
     for (const node of nodes) {
       if (node.id === target) {
         parents.push(...path);
@@ -74,10 +65,7 @@ export function getParentIds(
  * @param targetId - 目标节点 ID
  * @returns 找到的节点，不存在则返回 null
  */
-export function findNodeById(
-  tree: PermissionTree,
-  targetId: string,
-): PermissionNode | null {
+export function findNodeById(tree: PermissionTree, targetId: string): PermissionNode | null {
   for (const node of tree) {
     if (node.id === targetId) return node;
     if (node.children) {
@@ -95,10 +83,7 @@ export function findNodeById(
  * @param result - 结果累加器
  * @returns 子孙节点 ID 数组
  */
-export function collectDescendantIds(
-  node: PermissionNode | null,
-  result: string[] = [],
-): string[] {
+export function collectDescendantIds(node: PermissionNode | null, result: string[] = []): string[] {
   if (!node || !node.children) return result;
   for (const child of node.children) {
     result.push(child.id);
@@ -113,15 +98,12 @@ export function collectDescendantIds(
  * @param tree - 权限树
  * @returns page 节点数组（仅含 id 和 label）
  */
-export function extractPageMenus(
-  tree: PermissionTree,
-): Array<{ readonly id: string; readonly label: string }> {
-  const menus: Array<{ readonly id: string; readonly label: string }> =
-    [];
+export function extractPageMenus(tree: PermissionTree): Array<{ readonly id: string; readonly label: string }> {
+  const menus: Array<{ readonly id: string; readonly label: string }> = [];
 
   const walk = (nodes: readonly PermissionNode[]): void => {
     for (const node of nodes) {
-      if (node.id.startsWith("page:")) {
+      if (node.id.startsWith('page:')) {
         menus.push({ id: node.id, label: node.label });
       }
       if (node.children) walk(node.children);
@@ -130,50 +112,6 @@ export function extractPageMenus(
 
   walk(tree);
   return menus;
-}
-
-/**
- * 获取指定页面下的所有 action 级权限配置
- *
- * @param tree - 权限树
- * @param pageId - 页面 ID
- * @returns 按钮配置数组
- */
-export function getPageActions(
-  tree: PermissionTree,
-  pageId: string,
-): Array<{
-  id: string;
-  label: string;
-  uiType: ActionButtonConfig["uiType"];
-}> {
-  const pageNode = findNodeById(tree, pageId);
-  if (!pageNode || !pageNode.children) return [];
-
-  return pageNode.children.map((child) => ({
-    /** 限制只可读操作 */
-    id: child.id,
-    label: child.label,
-    uiType: getElBtnType(child.id),
-  }));
-}
-
-/**
- * 根据 action ID 推断按钮 UI 类型
- * 扩展时在此添加映射即可
- *
- * @param actionId - action 权限 ID
- * @returns Element Plus 按钮类型
- */
-export function getElBtnType(
-  actionId: string,
-): ActionButtonConfig["uiType"] {
-  if (actionId.includes(":delete")) return "danger";
-  if (actionId.includes(":edit")) return "default";
-  if (actionId.includes(":create") || actionId.includes(":publish"))
-    return "success";
-  if (actionId.includes(":export")) return "info";
-  return "primary";
 }
 
 /**
@@ -186,16 +124,20 @@ export function getElBtnType(
  */
 export function createPermissionChecker(permissions: readonly string[]) {
   const permissionSet = new Set<string>(permissions);
+  /** RuoYi 约定：超管通配权限，放行一切 */
+  const isAll = permissionSet.has('*:*:*');
 
   /**
    * 判断单个权限是否生效
+   * - 通配 *:*:*: 全部放行
    * - action 级: 自身被勾选 且 所属 page 被勾选
    * - page/module 级: 自身被勾选
    */
   const hasPermission = (id: string): boolean => {
+    if (isAll) return true;
     if (!permissionSet.has(id)) return false;
 
-    if (id.startsWith("action:")) {
+    if (id.startsWith('action:')) {
       const pageId = getParentPageId(id);
       if (pageId && !permissionSet.has(pageId)) return false;
     }

@@ -20,8 +20,6 @@
  *   assign 分配 | enable 启用 | disable 禁用
  */
 
-import type { ButtonType } from "element-plus";
-
 /** 权限节点类型（只读，防止运行时篡改树结构） */
 export interface PermissionNode {
   /** 权限唯一标识，必须遵循命名规则 */
@@ -34,18 +32,6 @@ export interface PermissionNode {
 
 /** 权限树（只读数组，防止运行时篡改结构） */
 export type PermissionTree = readonly PermissionNode[];
-
-/** 按钮权限配置（用于页面组件） */
-export interface ActionButtonConfig {
-  /** 按钮权限 ID */
-  readonly action: string;
-  /** 按钮显示文本 */
-  readonly label: string;
-  /** Element Plus 按钮类型 */
-  readonly uiType?: ButtonType;
-  /** 业务层禁用（与权限无关） */
-  readonly disabled?: boolean;
-}
 
 /** 页面元数据权限声明 */
 export interface PagePermissionMeta {
@@ -74,6 +60,8 @@ export interface PermissionPayload {
 
 /** 权限节点类型（对应 permissions 表 type 列） */
 export enum PermissionType {
+  /** 目录级（菜单分组，type=0；替代原 menus 表的 M 行，parent_id 表达层级） */
+  DIRECTORY = 0,
   /** 页面级（具体页面，可注册动态路由，path 即路由路径） */
   PAGE = 1,
   /** 操作级（按钮/接口权限，path 指向所属页面） */
@@ -81,15 +69,7 @@ export enum PermissionType {
 }
 
 /** el-button type 合法取值（与表 CHECK 约束一致；text 已废弃仅兼容） */
-export type PermissionButtonType =
-  | "default"
-  | "primary"
-  | "success"
-  | "warning"
-  | "danger"
-  | "info"
-  | ""
-  | "text";
+export type PermissionButtonType = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | '' | 'text';
 
 /** permissions 表行结构（snake_case，驱动返回） */
 export interface PermissionRow {
@@ -99,12 +79,16 @@ export interface PermissionRow {
   type: number;
   /** 页面行=自身路由路径；按钮行=所属页面路径 */
   path: string;
-  name: string;
+  label: string;
   route_name: string | null;
   menu_visible: number;
   icon: string | null;
   /** 按钮行=el-button type；页面行为 null */
   button_type: PermissionButtonType | null;
+  /** 同级排序（目录/页面进菜单树排序，按钮行通常 0） */
+  sort_order: number;
+  /** 父节点 id（permissions 表主键；0=根。目录/页面用，按钮行由 path 归属故为 0） */
+  parent_id: number | string;
   status: number;
   description: string | null;
   created_at: string;
@@ -117,46 +101,58 @@ export interface PermissionResource {
   permKey: string;
   type: PermissionType;
   path: string;
-  name: string;
+  label: string;
   routeName: string | null;
   menuVisible: boolean;
   icon: string | null;
   /** 按钮行=el-button type；页面行为 null */
   buttonType: PermissionButtonType | null;
+  /** 同级排序 */
+  sortOrder: number;
+  /** 父节点 id（0=根） */
+  parentId: number;
   status: number;
   description: string | null;
   createdAt: string;
   updatedAt: string;
-  /** 按钮子节点（仅页面行，按 path 归组后填充） */
+  /** 子节点（菜单树：目录→页面→按钮，按 parent_id / path 归组后填充） */
   children?: PermissionResource[];
 }
 
 /** 新增权限请求 */
 export interface CreatePermissionRequest {
   type: PermissionType;
-  name: string;
-  /** 页面行=新页面路由路径（/ 开头，即权限身份键）；按钮行=所属页面路径 */
+  label: string;
+  /** 目录/页面行=自身路由路径（/ 开头，即权限身份键）；按钮行=所属页面路径 */
   path: string;
-  /** 按钮行必填（操作动词，进 perm_key 末段）；页面行忽略 */
+  /** 按钮行必填（操作动词，进 perm_key 末段）；目录/页面行忽略 */
   code?: string;
-  /** 按钮行=el-button type；页面行忽略 */
+  /** 按钮行=el-button type；目录/页面行忽略 */
   buttonType?: PermissionButtonType;
   /** 页面行路由注册信息 */
   routeName?: string;
   menuVisible?: boolean;
   icon?: string;
+  /** 同级排序（默认 0） */
+  sortOrder?: number;
+  /** 父节点 id（0=根；目录/页面用，按钮行忽略由 path 归属） */
+  parentId?: number;
   status?: number;
   description?: string;
 }
 
 /** 更新权限请求（type/path 不可变，如需调整请删除重建） */
 export interface UpdatePermissionRequest {
-  name?: string;
+  label?: string;
   routeName?: string | null;
   menuVisible?: boolean;
   icon?: string | null;
-  /** 按钮行=el-button type；页面行忽略 */
+  /** 按钮行=el-button type；目录/页面行忽略 */
   buttonType?: PermissionButtonType | null;
+  /** 同级排序 */
+  sortOrder?: number;
+  /** 父节点 id（0=根；仅目录/页面可改，用于调整层级） */
+  parentId?: number;
   status?: number;
   description?: string | null;
 }
@@ -170,9 +166,9 @@ export interface PermissionCache {
 
 /**
  * 扩展 vue-router 路由元信息，使 definePageMeta 支持权限声明
- * 用法: definePageMeta({ requiredPermission: 'page:system:user' })
+ * 用法: definePageMeta({ requiredPermission: 'page:/system/user' })
  */
-declare module "vue-router" {
+declare module 'vue-router' {
   interface RouteMeta {
     readonly requiredPermission?: string;
     readonly requiredPermissionAny?: readonly string[];

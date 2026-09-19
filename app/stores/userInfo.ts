@@ -6,7 +6,7 @@
 //
 // RuoYi 约定：
 //   - roles       角色权限串数组（roleKey，如 ["admin", "operator"]）
-//   - permissions 权限标识数组（"模块:实体:操作"，如 ["system:user:list"]）
+//   - permissions 权限标识数组（perm_key 原值，如 ["page:/system/user", "action:/system/user:create"]）
 //   - 超级管理员  permissions = ["*:*:*"]，任意 checkPermi 直接放行
 //   - 无角色用户  roles = ["ROLE_DEFAULT"]（RuoYi GetInfo 行为）
 import { computed, ref } from 'vue';
@@ -84,13 +84,13 @@ export const useUserInfoStore = defineStore('userInfo', () => {
   // ========== 权限校验（RuoYi utils/permission 的 checkPermi/checkRole 语义） ==========
   /**
    * 校验权限标识（供 v-hasPermi 指令与组件调用）
-   * @param value 权限标识数组，满足任一即可，如 ['system:user:add']
+   * @param value perm_key 数组，满足任一即可，如 ['action:/system/user:create']
    */
   function checkPermi(value: string[]): boolean {
     if (value && value.length > 0) {
       return permissions.value.some((p) => p === ALL_PERMISSION || value.includes(p));
     }
-    console.error(`need roles! Like v-hasPermi="['system:user:add']"`);
+    console.error(`need roles! Like v-hasPermi="['action:/system/user:create']"`);
     return false;
   }
 

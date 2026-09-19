@@ -31,12 +31,13 @@ export default defineNuxtConfig({
       }
       removeFrom(pages);
 
-      // dev 下打印每条注册路由的 meta（definePageMeta 编译产物，输出到 dev server 终端）
-      if (process.dev) {
+      // dev 下打印每条注册路由（path / name / 源文件 / definePageMeta 编译产物 meta，输出到 dev server 终端）
+      // 注意：nuxt.config 上下文中 process.dev 未被 @nuxt/cli 赋值（恒为 undefined），改用 NODE_ENV 判定
+      if (process.env.NODE_ENV === 'development') {
         function dumpMeta(list: typeof pages, indent = '') {
           for (const route of list) {
             const meta = route.meta && Object.keys(route.meta).length > 0 ? JSON.stringify(route.meta) : '';
-            console.log(`${indent}${route.path}  ${meta}`);
+            // console.log(`${indent}${route.path}  [${route.name ?? '-'}]  ${route.file ?? ''}  ${meta}`);
             if (route.children?.length) dumpMeta(route.children, `${indent}  `);
           }
         }
@@ -108,6 +109,7 @@ export default defineNuxtConfig({
       amapKey: process.env.VITE_AMAP_KEY,
       /** 高德地图安全密钥（JS API 加载前设置） */
       amapSecurityCode: process.env.VITE_AMAP_SECURITY_CODE,
+      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:5555',
     },
   },
   app: {

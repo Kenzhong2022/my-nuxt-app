@@ -9,8 +9,8 @@
     <ClientOnly>
       <div class="header-actions">
         <!-- 按钮权限由接口按角色下发（本地 store），v-hasPermi 无权限时直接移除元素 -->
-        <el-button v-hasPermi="['action:system:user:create']" type="primary" @click="onCreate"> 新增用户 </el-button>
-        <el-button v-hasPermi="['action:system:user:export']" type="success" @click="onExport"> 导出用户 </el-button>
+        <el-button v-hasPermi="['action:/system/user:create']" type="primary" @click="onCreate"> 新增用户 </el-button>
+        <el-button v-hasPermi="['action:/system/user:export']" type="success" @click="onExport"> 导出用户 </el-button>
       </div>
 
       <el-table v-loading="loading" :data="users" border stripe class="table" empty-text="暂无用户数据">
@@ -46,7 +46,7 @@
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <el-button
-              v-hasPermi="['action:system:user:edit']"
+              v-hasPermi="['action:/system/user:edit']"
               size="small"
               type="warning"
               @click="onEdit(row as UserListItem)"
@@ -54,7 +54,7 @@
               编辑
             </el-button>
             <el-button
-              v-hasPermi="['action:system:user:delete']"
+              v-hasPermi="['action:/system/user:delete']"
               size="small"
               type="danger"
               @click="onDelete(row as UserListItem)"
@@ -75,7 +75,7 @@
 
       <p class="meta-tip">
         按钮权限标识来自 permissions 表，如
-        <code>action:system:user:create</code>，可在 /system/role 中按角色分配。
+        <code>action:/system/user:create</code>，可在 /system/role 中按角色分配。
       </p>
     </ClientOnly>
   </div>

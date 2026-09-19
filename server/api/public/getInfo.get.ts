@@ -10,18 +10,9 @@ const ALL_PERMISSION = "*:*:*";
 const GUEST_ROLE = "guest";
 
 /**
- * 库内 perm_key → RuoYi 权限标识
- *   page:/system/user          → system:user
- *   action:/system/user:create → system:user:create
- */
-function toRuoYiPerm(permKey: string): string | null {
-  const matched = /(?:page|action):\/?(.+)/.exec(permKey);
-  if (!matched?.[1]) return null;
-  return matched[1].replace(/\/+$/, "").replace(/\//g, ":");
-}
-
-/**
- * 按角色解析 RuoYi 权限串数组（超管通配；其余查 role_permissions）
+ * 按角色解析权限数组（超管通配；其余查 role_permissions）
+ * 直接下发 perm_key 原值（page:/system/user、action:/system/user:create），
+ * 与 permissions 表 / 前端 v-hasPermi / checker 同一口径，无需格式转换
  * @param sql 数据库执行器
  * @param roleId 角色 id（null 表示无角色 → 空权限）
  * @param isAdmin 是否超管角色
@@ -34,15 +25,9 @@ async function resolvePermissions(
   if (isAdmin) return [ALL_PERMISSION];
   if (!roleId) return [];
   const permKeyRows = await sql`
-    SELECT perm_key FROM role_permissions WHERE role_id = ${roleId}
+    SELECT DISTINCT perm_key FROM role_permissions WHERE role_id = ${roleId}
   `;
-  return [
-    ...new Set(
-      permKeyRows
-        .map((r) => toRuoYiPerm(r.perm_key as string))
-        .filter((p): p is string => !!p),
-    ),
-  ];
+  return permKeyRows.map((r) => r.perm_key as string);
 }
 
 /**

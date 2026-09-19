@@ -11,17 +11,15 @@
         >{{ activity.content }}</el-timeline-item
       >
     </el-timeline>
-    <el-button v-if="btnVisible" type="primary" @click="handleLogin"
-      >重新登录</el-button
-    >
+    <el-button v-if="btnVisible" type="primary" @click="handleLogin">重新登录</el-button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { useAuthStore } from "~~/app/stores/auth";
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { useAuthStore } from '~~/app/stores/auth';
 
 definePageMeta({
   layout: false, // 不使用布局
@@ -36,12 +34,12 @@ const router = useRouter();
 // ============================================
 function createActivity(config = {}) {
   const defaults = {
-    timestamp: "",
-    size: "large",
-    idle: { content: "等待中...", type: "info", icon: "Clock" },
-    pending: { content: "处理中...", type: "primary", icon: "Loading" },
-    success: { content: "操作成功", type: "success", icon: "SuccessFilled" },
-    error: { content: "操作失败", type: "danger", icon: "CircleCloseFilled" },
+    timestamp: '',
+    size: 'large',
+    idle: { content: '等待中...', type: 'info', icon: 'Clock' },
+    pending: { content: '处理中...', type: 'primary', icon: 'Loading' },
+    success: { content: '操作成功', type: 'success', icon: 'SuccessFilled' },
+    error: { content: '操作失败', type: 'danger', icon: 'CircleCloseFilled' },
   };
 
   const states = {
@@ -67,13 +65,13 @@ function createActivity(config = {}) {
     },
     /** 从 idle 切到 pending，标记为当前进行中 */
     activate() {
-      this.setStatus("pending");
+      this.setStatus('pending');
     },
     markSuccess() {
-      this.setStatus("success");
+      this.setStatus('success');
     },
     markError() {
-      this.setStatus("error");
+      this.setStatus('error');
     },
   };
 }
@@ -81,14 +79,14 @@ function createActivity(config = {}) {
 // 预创建所有活动项，通过显式索引访问（避免原 curActivityIdx 越界 bug）
 const activities = ref([
   createActivity({
-    pending: { content: "尝试获取token..." },
-    success: { content: "获取token成功" },
-    error: { content: "获取token失败" },
+    pending: { content: '尝试获取token...' },
+    success: { content: '获取token成功' },
+    error: { content: '获取token失败' },
   }),
   createActivity({
-    pending: { content: "token持久化..." },
-    success: { content: "token已持久化" },
-    error: { content: "token持久化失败" },
+    pending: { content: 'token持久化...' },
+    success: { content: 'token已持久化' },
+    error: { content: 'token持久化失败' },
   }),
 ]);
 
@@ -101,8 +99,8 @@ const btnVisible = ref(false);
 /** 解析重定向路径，缺失时兜底首页并提示 */
 function resolveRedirectPath() {
   if (!route.query.redirect) {
-    ElMessage.error("无重定向路径，将重定向到首页");
-    return "/";
+    ElMessage.error('无重定向路径，将重定向到首页');
+    return '/';
   }
   return route.query.redirect;
 }
@@ -110,7 +108,7 @@ function resolveRedirectPath() {
 /** 校验授权码，缺失时返回 null */
 function getCode() {
   if (!route.query.code) {
-    ElMessage.error("缺少授权码，登录失败");
+    ElMessage.error('缺少授权码，登录失败');
     return null;
   }
   return route.query.code;
@@ -121,9 +119,9 @@ async function redeemToken(code) {
   activities.value[0].activate();
   const config = useRuntimeConfig();
   try {
-    const response = await $fetch("/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await $fetch('/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code,
         client_id: config.public.clientId,
@@ -141,7 +139,7 @@ async function redeemToken(code) {
 /** 持久化 token 到 Pinia store（写入 cookie，SSR/CSR 均可读），操作 timeline[1] */
 function persistToken(tokenResponse) {
   activities.value[1].activate();
-  // ✅ 使用 Pinia store 存储 token（useCookie 自动持久化）
+  // 使用 Pinia store 存储 token（useCookie 自动持久化）
   // 如果你还想存储 refresh_token，可以扩展 store 添加 refreshToken 字段
   const authStore = useAuthStore();
   const accessToken = tokenResponse?.access_token;
@@ -158,7 +156,7 @@ function persistToken(tokenResponse) {
   return false;
 }
 
-/** 主流程：校验参数 → 换 token → 持久化 → 跳转 */
+/** 主流程：校验参数 → 换 token → 持久化 → 重新确认身份刷新菜单 → 跳转 */
 async function handleCallback() {
   const backPath = resolveRedirectPath();
   const code = getCode();
@@ -169,8 +167,16 @@ async function handleCallback() {
 
   try {
     const tokenResponse = await redeemToken(code);
-    persistToken(tokenResponse);
-    ElMessage.success("登录成功");
+    // token 未成功持久化（响应缺 access_token / 写入失败）则中止，
+    // 绝不在无 token 状态下执行 reloadIdentity（否则会以游客身份重拉，反而清空菜单）
+    if (!persistToken(tokenResponse)) {
+      throw new Error('token 持久化失败，请重新登录');
+    }
+    // 登录成功后重新走一遍身份确认流程（app.vue 的 callOnce 不会二次执行）：
+    // 重拉 getInfo + getRouters + 全量目录，刷新侧边栏菜单与权限后再跳转，
+    // 避免旧（游客）菜单导致路由守卫把目标页判为无权限
+    await reloadIdentity();
+    ElMessage.success('登录成功');
     router.push(backPath);
   } catch (err) {
     btnVisible.value = true;

@@ -15,56 +15,78 @@
       </el-input>
       <el-button circle size="small" icon="Plus" />
     </div>
-
-    <!-- 会话列表 -->
-    <div class="chat-list">
-      <div class="chat-item">
-        <el-avatar src="https://picsum.photos/id/1010/40/40" />
-        <div class="chat-info">
-          <div class="chat-name">北斗七行</div>
-          <div class="chat-msg">王：人呢？</div>
+    <div class="chat-container" flex-1 overflow-hidden flex flex-col>
+      <!-- 置顶会话区域 -->
+      <div v-if="pinnedList.length > 0" class="pinned-wrap">
+        <div class="pinned-header" @click="isPinnedCollapse = !isPinnedCollapse">
+          <span class="pinned-title">置顶会话</span>
+          <el-icon class="pinned-arrow" :class="{ rotate: isPinnedCollapse }">
+            <ArrowDown />
+          </el-icon>
         </div>
-        <div class="chat-time">16:39</div>
-        <el-badge :value="37" class="badge-red" />
-      </div>
-
-      <div class="chat-item">
-        <el-avatar src="https://picsum.photos/id/1027/40/40" />
-        <div class="chat-info">
-          <div class="chat-name">小美</div>
-          <div class="chat-msg">ok</div>
+        <div v-show="!isPinnedCollapse" class="pinned-list">
+          <ChatItem v-for="item in pinnedList" :key="item.id" :item="item" />
         </div>
-        <div class="chat-time">15:35</div>
       </div>
-
-      <div class="chat-item">
-        <el-avatar src="https://picsum.photos/id/1025/40/40" />
-        <div class="chat-info">
-          <div class="chat-name">小美，小明，鲁迪...</div>
-          <div class="chat-msg">嗯哼: 好的</div>
-        </div>
-        <div class="chat-time">15:16</div>
+      <!-- 普通会话列表 -->
+      <div class="chat-list flex-1 overflow-y-auto">
+        <ChatItem v-for="item in normalList" :key="item.id" :item="item" />
       </div>
-    </div>
-
-    <div class="chat-list-footer">
-      <el-button text>折叠置顶聊天</el-button>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { Search, Plus } from '@element-plus/icons-vue';
+// 会话列表组件
+import ChatItem from './ChatItem.vue';
+import { Search, Plus, ArrowDown } from '@element-plus/icons-vue';
+import { ref } from 'vue';
+// 会话数据类型定义
+export interface ChatItemType {
+  id: string | number;
+  avatar: string;
+  name: string;
+  lastMsg: string;
+  time: string;
+  unread?: number;
+}
 
 defineProps<{
   searchKey: string;
 }>();
-
 defineEmits<{
   'update:searchKey': [value: string];
 }>();
+// 置顶会话列表
+const pinnedList = ref<ChatItemType[]>([
+  {
+    id: 1,
+    avatar: 'https://picsum.photos/id/1010/40/40',
+    name: '北斗七行',
+    lastMsg: '王：人呢？',
+    time: '16:39',
+    unread: 37,
+  },
+]);
+// 普通会话列表
+const normalList = ref<ChatItemType[]>([
+  {
+    id: 2,
+    avatar: 'https://picsum.photos/id/1027/40/40',
+    name: '小美',
+    lastMsg: 'ok',
+    time: '15:35',
+  },
+  {
+    id: 3,
+    avatar: 'https://picsum.photos/id/1025/40/40',
+    name: '小美，小明，鲁迪...',
+    lastMsg: '嗯哼: 好的',
+    time: '15:16',
+  },
+]);
+// 置顶折叠状态
+const isPinnedCollapse = ref(false);
 </script>
-
 <style scoped>
 .sidebar-center {
   height: 100%;
@@ -83,49 +105,39 @@ defineEmits<{
   background-color: #383838;
   box-shadow: none;
 }
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 置顶区域 */
+.pinned-wrap {
+  flex-shrink: 0;
+}
+.pinned-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.pinned-title {
+  font-size: 12px;
+  color: #888;
+}
+.pinned-arrow {
+  color: #888;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+.pinned-arrow.rotate {
+  transform: rotate(-90deg);
+}
+
+/* 普通会话列表 */
 .chat-list {
   flex: 1;
   overflow-y: auto;
-}
-.chat-item {
-  display: flex;
-  gap: 10px;
-  padding: 10px 12px;
-  cursor: pointer;
-  position: relative;
-}
-.chat-item:hover {
-  background: #383838;
-}
-.chat-info {
-  flex: 1;
-  overflow: hidden;
-}
-.chat-name {
-  color: #eee;
-  font-size: 14px;
-}
-.chat-msg {
-  color: #999;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chat-time {
-  font-size: 11px;
-  color: #777;
-  white-space: nowrap;
-}
-.badge-red :deep(.el-badge__content) {
-  background-color: #f53f3f;
-}
-.chat-list-footer {
-  padding: 8px;
-  text-align: center;
-}
-.chat-list-footer :deep(.el-button--text) {
-  color: #999;
-  font-size: 12px;
 }
 </style>

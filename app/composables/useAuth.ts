@@ -1,10 +1,35 @@
 // composables/useAuth.ts
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "~~/app/stores/auth";
-import { usePermissionStore } from "~~/app/stores/permission";
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '~~/app/stores/auth';
+import { usePermissionStore } from '~~/app/stores/permission';
+import { useUserInfoStore } from '~~/app/stores/userInfo';
 
 /** 弹窗引用，避免重复弹出 */
 let loginBoxInstance: Promise<unknown> | null = null;
+
+/**
+ * 重新确认身份并刷新菜单（与 app.vue 启动时 callOnce 同一套流程）
+ * @description 登录态变化（登出 / 重新登录）后调用：
+ *              并发重拉 getInfo + getRouters + 全量权限目录，
+ *              再同步权限串到 permissionStore，侧边栏与守卫随之更新
+ */
+export async function reloadIdentity(): Promise<void> {
+  const userInfoStore = useUserInfoStore();
+  const permissionStore = usePermissionStore();
+  await Promise.all([userInfoStore.getInfo(), userInfoStore.getRouters(), permissionStore.fetchAllPermissions()]);
+  permissionStore.setPermissions(userInfoStore.permissions);
+}
+
+/**
+ * 清理旧版（RuoYi 风格）遗留的本地存储键
+ * @description 现登录态以 cookie token 为准，admin-token / permission_config 已无任何读写方，
+ *              残留在 localStorage 会造成"看似已登录"的误判，登出 / 401 时顺带清除
+ */
+function removeLegacyAuthKeys(): void {
+  if (!import.meta.client) return;
+  localStorage.removeItem('admin-token');
+  localStorage.removeItem('permission_config');
+}
 
 /**
  * 统一认证逻辑 composable
@@ -29,22 +54,20 @@ export function useAuth() {
     const CLIENT_ID = config.public.clientId;
     const CALLBACK_URL = config.public.callbackUrl;
     if (!LOGIN_BASE || !CLIENT_ID || !CALLBACK_URL)
-      throw new Error("登录中心配置不完整（loginBase/clientId/callbackUrl）");
+      throw new Error('登录中心配置不完整（loginBase/clientId/callbackUrl）');
 
-    const url = new URL("/api/auth/authorize", LOGIN_BASE);
-    url.searchParams.set("client_id", CLIENT_ID);
-    url.searchParams.set("redirect_uri", CALLBACK_URL);
-    url.searchParams.set("response_type", "code");
-    url.searchParams.set("redirect", redirectPath);
+    const url = new URL('/api/auth/authorize', LOGIN_BASE);
+    url.searchParams.set('client_id', CLIENT_ID);
+    url.searchParams.set('redirect_uri', CALLBACK_URL);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('redirect', redirectPath);
 
     navigateTo(url.toString(), { external: true });
   }
 
   /** 当前页面路径（含 query），SSR 阶段兜底 "/" */
   function getCurrentPath(): string {
-    return process.client
-      ? window.location.pathname + window.location.search
-      : "/";
+    return process.client ? window.location.pathname + window.location.search : '/';
   }
 
   /**
@@ -69,15 +92,11 @@ export function useAuth() {
 
     const redirect = redirectPath || getCurrentPath();
 
-    loginBoxInstance = ElMessageBox.confirm(
-      "访问该页面需要先登录，是否立即登录？",
-      "登录提示",
-      {
-        confirmButtonText: "立即登录",
-        cancelButtonText: "暂不登录",
-        type: "warning",
-      },
-    )
+    loginBoxInstance = ElMessageBox.confirm('访问该页面需要先登录，是否立即登录？', '登录提示', {
+      confirmButtonText: '立即登录',
+      cancelButtonText: '暂不登录',
+      type: 'warning',
+    })
       .then(() => {
         navigateToLogin(redirect);
       })
@@ -97,10 +116,13 @@ export function useAuth() {
    * @returns 无返回值
    */
   function logout(): void {
-    console.log("登出", authStore);
+    console.log('登出', authStore);
     authStore.clearToken();
     permissionStore.clearPermissions();
-    ElMessage.success("已退出登录");
+    removeLegacyAuthKeys();
+    ElMessage.success('已退出登录');
+    // 登出后重新确认身份：以游客身份重拉 getInfo + getRouters，刷新菜单与权限
+    reloadIdentity();
   }
 
   /**
@@ -112,12 +134,17 @@ export function useAuth() {
   function handleUnauthorized(): void {
     authStore.clearToken();
     permissionStore.clearPermissions();
-    ElMessage.warning("登录已过期，请重新登录");
+    removeLegacyAuthKeys();
+    ElMessage.warning('登录已过期，请重新登录');
+    // 登录态失效后同样重新确认身份，避免旧菜单/权限残留
+    reloadIdentity();
   }
 
   return {
     /** 当前是否已登录（响应式 ref） */
     isLoggedIn,
+    /** 重新确认身份并刷新菜单（登出/重新登录后调用） */
+    reloadIdentity,
     /** 主动登录：直接跳转认证中心 */
     login,
     /** 访问受限资源被拦截时弹出确认弹窗 */

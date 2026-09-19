@@ -1,4 +1,5 @@
-import { createPermissionChecker } from "~~/app/composables/usePermission";
+import { createPermissionChecker } from '~~/app/composables/usePermission';
+import type { PermissionResource } from '~~/types/permission';
 
 /**
  * ============================================================
@@ -6,30 +7,29 @@ import { createPermissionChecker } from "~~/app/composables/usePermission";
  * ============================================================
  *
  * 设计思路:
- *   1. 单一数据源: 所有权限判断都基于 permissions 数组
+ *   1. 单一数据源: 所有权限判断都基于 permissions 数组（getInfo 按角色下发）
  *   2. 计算属性缓存: permissionSet 和 checker 通过 computed 缓存，避免重复创建
- *   3. 持久化策略: 通过 localStorage 缓存权限数据，刷新页面后自动恢复
- *
- * 说明: 当前无后端，权限数据来源于权限配置页（/admin/permissions）
- *       写入 localStorage 的 `permission_config` 键，store 与配置页共用该键。
+ *   3. 无本地缓存: 权限完全以服务端下发为准，拉取失败保持为空（失败即异常，不做兜底）
  */
 
-/** localStorage 键名（与权限配置页保持一致，单一数据源） */
-const CACHE_KEY = "permission_config";
-
-export const usePermissionStore = defineStore("permission", () => {
+export const usePermissionStore = defineStore('permission', () => {
   // ========== State ==========
-  /** 当前用户拥有的所有权限 ID */
+  /** 当前用户拥有的所有权限 perm_key（如 page:/system/user、action:/system/user:create；超管为 ["*:*:*"]） */
   const permissions = ref<string[]>([]);
 
   /** 权限是否已加载（用于防止重复请求） */
   const isLoaded = ref(false);
 
+  /**
+   * 全量菜单目录（目录→页面→按钮 三级树，raw permKey 如 page:/system/user）
+   * 来源 /api/admin/permissions（仅 admin 可访问），非 admin 恒为空数组；
+   * 菜单管理页据此渲染全量菜单树（menus 表已废弃，菜单以 permissions 为准）
+   */
+  const allPermissions = ref<PermissionResource[]>([]);
+
   // ========== Getters (Computed) ==========
   /** 扁平化权限集合（O(1) 查找） */
-  const permissionSet = computed(
-    () => new Set<string>(permissions.value),
-  );
+  const permissionSet = computed(() => new Set<string>(permissions.value));
 
   /** 权限判断器（缓存实例，避免每次调用都重新创建） */
   const checker = computed(() => createPermissionChecker(permissions.value));
@@ -37,28 +37,33 @@ export const usePermissionStore = defineStore("permission", () => {
   // ========== Actions ==========
 
   /**
-   * 设置权限（配置页保存或登录后调用）
-   * 同时写入本地缓存
+   * 设置权限（getInfo 拉取成功后由 app.vue callOnce 调用）
    */
   const setPermissions = (perms: readonly string[]): void => {
     permissions.value = [...perms];
     isLoaded.value = true;
-    saveToCache(perms);
+  };
+
+  /** 保存全量权限目录（启动时由 app.vue callOnce 调用） */
+  const setAllPermissions = (list: readonly PermissionResource[]): void => {
+    allPermissions.value = [...list];
   };
 
   /**
-   * 从缓存恢复权限（页面刷新时调用）
-   * @returns 是否成功恢复
+   * 尽力拉取全量权限目录（/api/admin/permissions，仅 admin 可访问）
+   * 非 admin 403 / 网络异常一律静默跳过，不阻塞启动
    */
-  const restoreFromCache = (): boolean => {
-    const cache = loadFromCache();
-    // 只要本地存在配置键（即使为空数组）即视为已加载，使权限管控生效
-    if (cache !== null) {
-      permissions.value = [...cache];
-      isLoaded.value = true;
-      return true;
+  const fetchAllPermissions = async (): Promise<void> => {
+    try {
+      // useRequestFetch：SSR 内部请求时透传浏览器 cookie（token），客户端等价 $fetch
+      const requestFetch = useRequestFetch();
+      const res = await requestFetch<{ code: number; message?: string; data: PermissionResource[] }>(
+        '/api/admin/permissions',
+      );
+      if (res.code === 200) setAllPermissions(res.data ?? []);
+    } catch {
+      // 非 admin（403）或异常：静默跳过，调用方回退角色权限串匹配
     }
-    return false;
   };
 
   /**
@@ -67,39 +72,26 @@ export const usePermissionStore = defineStore("permission", () => {
   const clearPermissions = (): void => {
     permissions.value = [];
     isLoaded.value = false;
-    removeCache();
-  };
-
-  /**
-   * 拉取权限（当前无后端，直接从本地配置加载）
-   * 保留方法名以便未来接入后端时替换实现
-   */
-  const fetchPermissions = async (): Promise<string[]> => {
-    restoreFromCache();
-    return permissions.value;
   };
 
   // ========== 代理 checker 方法（保持调用方式一致） ==========
-  const hasPermission = (id: string): boolean =>
-    checker.value.hasPermission(id);
-  const hasPageAccess = (id: string): boolean =>
-    checker.value.hasPageAccess(id);
-  const hasAnyPermission = (ids: readonly string[]): boolean =>
-    checker.value.hasAnyPermission(ids);
-  const hasAllPermissions = (ids: readonly string[]): boolean =>
-    checker.value.hasAllPermissions(ids);
+  const hasPermission = (id: string): boolean => checker.value.hasPermission(id);
+  const hasPageAccess = (id: string): boolean => checker.value.hasPageAccess(id);
+  const hasAnyPermission = (ids: readonly string[]): boolean => checker.value.hasAnyPermission(ids);
+  const hasAllPermissions = (ids: readonly string[]): boolean => checker.value.hasAllPermissions(ids);
 
   return {
     // state
     permissions,
     isLoaded,
+    allPermissions,
     // getters
     permissionSet,
     // actions
     setPermissions,
-    restoreFromCache,
+    setAllPermissions,
+    fetchAllPermissions,
     clearPermissions,
-    fetchPermissions,
     // proxy methods
     hasPermission,
     hasPageAccess,
@@ -107,40 +99,3 @@ export const usePermissionStore = defineStore("permission", () => {
     hasAllPermissions,
   };
 });
-
-// ========== 本地缓存工具函数 ==========
-function saveToCache(perms: readonly string[]): void {
-  if (process.client) {
-    localStorage.setItem(CACHE_KEY, JSON.stringify([...perms]));
-  }
-}
-
-function loadFromCache(): string[] | null {
-  if (process.client) {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          // 校验数据有效性：仅保留符合层级命名规则的字符串
-          return parsed.filter(
-            (k): k is string =>
-              typeof k === "string" &&
-              (k.startsWith("module:") ||
-                k.startsWith("page:") ||
-                k.startsWith("action:")),
-          );
-        }
-      } catch {
-        return null;
-      }
-    }
-  }
-  return null;
-}
-
-function removeCache(): void {
-  if (process.client) {
-    localStorage.removeItem(CACHE_KEY);
-  }
-}

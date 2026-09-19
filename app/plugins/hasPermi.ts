@@ -3,8 +3,8 @@
  * v-hasPermi / v-hasRole 按钮权限指令（RuoYi 规范，SSR + 客户端通用）
  * ============================================================
  *
- * 用法（值必须为非空数组，满足任一即可）：
- *   <el-button v-hasPermi="['system:user:add']">新增</el-button>
+ * 用法（值必须为非空数组，满足任一即可；权限标识为 perm_key 原值）：
+ *   <el-button v-hasPermi="['action:/system/user:create']">新增</el-button>
  *   <el-button v-hasRole="['admin', 'operator']">运营操作</el-button>
  *
  * 判定来源：userInfo store（roles / permissions），
@@ -14,7 +14,7 @@
  * SSR 端 getSSRProps 输出 display:none，服务端直出即隐藏（防越权内容闪现），
  * created 与服务端样式对齐避免水合不匹配，mounted 后再执行移除。
  */
-import type { Directive } from "vue";
+import type { Directive } from 'vue';
 
 /** 无权限时移除元素（RuoYi hasPermi/hasRole 指令行为） */
 function removeEl(el: HTMLElement) {
@@ -23,7 +23,7 @@ function removeEl(el: HTMLElement) {
 
 /** SSR/水合阶段用 display:none 隐藏（保持两端一致） */
 function hideEl(el: HTMLElement) {
-  el.style.display = "none";
+  el.style.display = 'none';
 }
 
 function createPermissionDirective(
@@ -41,24 +41,18 @@ function createPermissionDirective(
     // SSR：指令在服务端仅支持 getSSRProps
     getSSRProps(binding) {
       const store = useUserInfoStore();
-      return check(store, binding.value ?? [])
-        ? {}
-        : { style: { display: "none" } };
+      return check(store, binding.value ?? []) ? {} : { style: { display: 'none' } };
     },
   };
 }
 
-/** v-hasPermi：按权限标识校验（如 ['system:user:add']） */
-const hasPermi = createPermissionDirective((store, value) =>
-  store.checkPermi(value),
-);
+/** v-hasPermi：按权限标识校验（perm_key 原值，如 ['action:/system/user:create']） */
+const hasPermi = createPermissionDirective((store, value) => store.checkPermi(value));
 
 /** v-hasRole：按角色权限串校验（如 ['admin']） */
-const hasRole = createPermissionDirective((store, value) =>
-  store.checkRole(value),
-);
+const hasRole = createPermissionDirective((store, value) => store.checkRole(value));
 
 export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.vueApp.directive("hasPermi", hasPermi);
-  nuxtApp.vueApp.directive("hasRole", hasRole);
+  nuxtApp.vueApp.directive('hasPermi', hasPermi);
+  nuxtApp.vueApp.directive('hasRole', hasRole);
 });

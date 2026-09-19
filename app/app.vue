@@ -1,7 +1,5 @@
-<!-- app.vue -->
 <template>
   <div class="app-container">
-    <!-- 传入自定义水印内容 -->
     <Watermark
       v-if="0"
       text="张三｜用户ID：2026001｜内部文档，严禁截图外传"
@@ -12,162 +10,77 @@
       :gap-x="240"
       :gap-y="160"
     />
-    <!-- 页面内容 -->
     <NuxtLayout>
       <KeepAlive>
         <NuxtPage />
       </KeepAlive>
     </NuxtLayout>
-    <!-- 过场动画覆盖层 -->
-    <ClientOnly>
-      <div v-if="loadingStore.isRouteChanging" class="transition-overlay">
-        <div class="slide-container">
-          <div class="slide-block" style="background: #3b82f6" />
-          <div class="slide-block" style="background: #ef4444" />
-          <div class="slide-block" style="background: #10b981" />
-          <div class="slide-block" style="background: #f59e0b" />
-          <!-- 加载 -->
-          <div class="loading-block">
-            <div class="loading-block-after"></div>
-          </div>
-        </div>
-      </div>
-    </ClientOnly>
+    <PageTransition :is-full-screen="isFullScreenTransition" :loading="loading" />
   </div>
 </template>
-
 <script setup>
-import gsap from 'gsap';
-const loadingStore = useLoadingStore();
+import { useRouter, useNuxtApp } from 'nuxt/app';
+import { ref } from 'vue';
+const router = useRouter();
+const nuxtApp = useNuxtApp();
+const isFullScreenTransition = ref(true);
+// 初始为 true：SSR 首屏即渲染全屏遮罩（启动加载），page:finish 后关闭
+const loading = ref(true);
 
 // ---------- 用户信息（RuoYi 规范：getInfo + getRouters）SSR 拉取 ----------
-// callOnce：SSR 期间执行一次，客户端水合时跳过；
-// pinia 状态随 Nuxt payload 序列化下发，v-hasPermi/v-hasRole 指令两端读到一致数据
-// 菜单路由树由 userInfoStore.getRouters 拉取（store 状态），useMenuConfig 负责视图转换
 const userInfoStore = useUserInfoStore();
+const permissionStore = usePermissionStore();
 await callOnce('user-info', async () => {
-  await Promise.all([userInfoStore.getInfo(), userInfoStore.getRouters()]);
-  // 权限标识由接口按角色下发，同步到本地权限 store（pinia + localStorage 持久化），
-  // 供 PermissionButton / $hasPermission 等本地判定；游客回退本地缓存
-  const permissionStore = usePermissionStore();
+  await Promise.all([userInfoStore.getInfo(), userInfoStore.getRouters(), permissionStore.fetchAllPermissions()]);
   if (userInfoStore.user) {
     permissionStore.setPermissions(userInfoStore.permissions);
-  } else {
-    permissionStore.restoreFromCache();
+    if (userInfoStore.roles.includes('guest')) {
+      console.log('[app.vue] 当前为游客模式，权限来自角色表 guest 角色');
+    }
   }
+  console.log(`[app.vue] 角色: [${userInfoStore.roles.join(', ') || '无'}]`);
+  console.log('[app.vue] 可访问菜单:', userInfoStore.routers.map((r) => r.path).join('、') || '无');
 });
 
-let tl = null;
+router.beforeEach((to, from) => {
+  loading.value = true;
+  if (!from) {
+    // 首页
+    console.log('【首页】');
+    isFullScreenTransition.value = true;
+    return true;
+  }
+  const oldLayout = from?.meta?.layout;
+  const newLayout = to?.meta?.layout;
+  if (oldLayout === undefined || newLayout === undefined || oldLayout !== newLayout) {
+    console.log('【全局过渡】');
+    isFullScreenTransition.value = true;
+  } else {
+    console.log('【局部过渡】');
+    isFullScreenTransition.value = false;
+  }
+  return true;
+});
 
-watch(
-  () => loadingStore.isRouteChanging,
-  async (playing) => {
-    if (!playing) {
-      if (tl) {
-        tl.kill();
-        tl = null;
-      }
-      return;
-    }
-    await nextTick();
-    gsap.set('.slide-block', { y: 0 });
-    tl = gsap.timeline(); // 不再需要 repeat:-1
-    tl.to('.slide-block', {
-      y: -100,
-      stagger: 0.12,
-      duration: 0.6,
-      opacity: 1,
-      ease: 'power2.out',
-      yoyo: true,
-      repeat: -1, // 每个元素独立无限往复
-    });
-    tl.to(
-      '.loading-block-after',
-      {
-        left: 'calc(100% - 50px)',
-        width: '100px',
-        duration: 0.6,
-        ease: 'power2.inOut',
-        yoyo: true,
-        repeat: -1,
-      },
-      '-=0.5',
-    );
-  },
-);
+nuxtApp.hook('page:finish', (page) => {
+  console.log('===== 路由跳转【完成】页面DOM与数据加载完毕 =====');
+  console.log('当前页面路由meta：', page?.route?.meta);
+  // 仅客户端关闭：服务端若关闭会导致 SSR HTML 不含遮罩，且与客户端 hydration 不一致
+  if (import.meta.client) {
+    loading.value = false;
+  }
+});
 </script>
-
 <style lang="scss">
+.app-container {
+  position: relative;
+}
 .container-scroll {
-  // 声明变量
   --el-main-padding: 40px;
   height: calc(100vh - 60px - var(--el-main-padding));
   overflow: auto;
 }
-
 .iconfont {
   font-family: 'iconfont' !important;
-}
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.45);
-}
-
-/* ---------- 过场动画相关样式 ---------- */
-.transition-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  overflow: hidden;
-  background: var(--el-bg-color-overlay);
-}
-.slide-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  gap: 20px;
-  .loading-block {
-    position: absolute;
-    bottom: -10px;
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    overflow: hidden;
-    background: var(--el-bg-color-page);
-    .loading-block-after {
-      position: absolute;
-      top: 0;
-      left: -50px;
-      width: 100px;
-      height: inherit;
-      border-radius: inherit;
-      background: var(--el-color-primary);
-    }
-  }
-}
-.slide-block {
-  height: 100px;
-  width: 100px;
-  opacity: 0;
-}
-
-@media (max-width: 768px) {
-  .slide-block {
-    height: 50px;
-    width: 50px;
-  }
 }
 </style>

@@ -34,7 +34,7 @@ export function useRoutesDebug() {
       name: String(r.name ?? '-'),
       meta: r.meta && Object.keys(r.meta).length > 0 ? JSON.stringify(r.meta) : '',
     }));
-    console.table(routes);
+    // console.table(routes);
   }
 
   /**

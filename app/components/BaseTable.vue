@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T">
 import { useSlots } from 'vue';
 import type { FormItemRule } from 'element-plus';
+import { RefreshLeft, Search } from '@element-plus/icons-vue';
 // ========== 类型定义 ==========
 export type SearchFormItem = {
   label: string; // 表单项标签
@@ -30,6 +31,8 @@ const props = defineProps<{
   showPagination?: boolean;
   // 总记录数
   total?: number;
+  // 变更时强制重渲染表格（default-expand-all 等仅初始化生效的属性需要）
+  tableKey?: number | string;
 }>();
 
 // 分页双向绑定：父组件使用 v-model:current-page / v-model:page-size
@@ -151,90 +154,93 @@ defineExpose({ handleReset });
 <template>
   <div class="base-table-wrapper">
     <!-- 搜索栏区域：优先渲染自定义插槽 -->
-    <div v-if="hasCustomSearchBar || renderDefaultSearchBar" class="search-bar">
+    <div v-if="hasCustomSearchBar" class="search-bar">
       <slot name="search-bar" />
-      <!-- 默认搜索栏（配置化表单） -->
-      <template v-if="renderDefaultSearchBar && !hasCustomSearchBar">
-        <el-form :inline="true" :model="searchFormData" @submit.native.prevent="handleSearch" class="search-form">
-          <el-form-item
-            v-for="field in searchItems"
-            :key="field.prop"
-            :label="field.label"
-            :label-width="field.label ? 'auto' : '0'"
-            :rules="field.rules || []"
-            :prop="field.prop"
-          >
-            <!-- 输入框 -->
-            <el-input
-              v-if="field.type === 'input'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder"
-              clearable
-              v-bind="field.attrs || {}"
-            />
-            <!-- 数字输入 -->
-            <el-input-number
-              v-else-if="field.type === 'number'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder"
-              controls-position="right"
-              v-bind="field.attrs || {}"
-            />
-            <!-- 文本域 -->
-            <el-input
-              v-else-if="field.type === 'textarea'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder"
-              type="textarea"
-              :rows="2"
-              v-bind="field.attrs || {}"
-            />
-            <!-- 下拉选择 -->
-            <el-select
-              v-else-if="field.type === 'select'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder"
-              clearable
-              v-bind="field.attrs || {}"
-            >
-              <el-option v-for="opt in field.options || []" :key="opt.value" :label="opt.label" :value="opt.value" />
-            </el-select>
-            <!-- 日期选择器（单日期） -->
-            <el-date-picker
-              v-else-if="field.type === 'date'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder"
-              type="date"
-              value-format="YYYY-MM-DD"
-              v-bind="field.attrs || {}"
-            />
-            <!-- 日期范围 -->
-            <el-date-picker
-              v-else-if="field.type === 'daterange'"
-              v-model="searchFormData[field.prop]"
-              :placeholder="field.placeholder || '开始日期 ~ 结束日期'"
-              type="daterange"
-              range-separator="~"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              v-bind="field.attrs || {}"
-            />
-            <!-- 其他类型可继续扩展 -->
-          </el-form-item>
-
-          <!-- 操作按钮 -->
-          <el-form-item class="search-form-operation">
-            <el-button type="primary" native-type="submit">搜索</el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </template>
     </div>
+
+    <!-- 默认筛选卡片（配置化表单，样式对齐 system/role 筛选区） -->
+    <el-card v-else-if="renderDefaultSearchBar" class="filter-card" shadow="never">
+      <el-form class="filter-form" :model="searchFormData" inline @submit.prevent="handleSearch">
+        <el-form-item
+          v-for="field in searchItems"
+          :key="field.prop"
+          :label="field.label"
+          :label-width="field.label ? 'auto' : '0'"
+          :rules="field.rules || []"
+          :prop="field.prop"
+        >
+          <!-- 输入框 -->
+          <el-input
+            v-if="field.type === 'input'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder"
+            clearable
+            v-bind="field.attrs || {}"
+          />
+          <!-- 数字输入 -->
+          <el-input-number
+            v-else-if="field.type === 'number'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder"
+            controls-position="right"
+            v-bind="field.attrs || {}"
+          />
+          <!-- 文本域 -->
+          <el-input
+            v-else-if="field.type === 'textarea'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder"
+            type="textarea"
+            :rows="2"
+            v-bind="field.attrs || {}"
+          />
+          <!-- 下拉选择 -->
+          <el-select
+            v-else-if="field.type === 'select'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder"
+            clearable
+            v-bind="field.attrs || {}"
+          >
+            <el-option v-for="opt in field.options || []" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <!-- 日期选择器（单日期） -->
+          <el-date-picker
+            v-else-if="field.type === 'date'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder"
+            type="date"
+            value-format="YYYY-MM-DD"
+            v-bind="field.attrs || {}"
+          />
+          <!-- 日期范围 -->
+          <el-date-picker
+            v-else-if="field.type === 'daterange'"
+            v-model="searchFormData[field.prop]"
+            :placeholder="field.placeholder || '开始日期 ~ 结束日期'"
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            v-bind="field.attrs || {}"
+          />
+          <!-- 其他类型可继续扩展 -->
+        </el-form-item>
+
+        <!-- 操作按钮 -->
+        <el-form-item class="filter-form-operation">
+          <el-button type="primary" :icon="Search" native-type="submit">查询</el-button>
+          <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 表格 + 分页 -->
     <div class="base-table">
-      <el-table ref="tableRef" v-bind="$attrs">
+      <!-- 工具栏插槽：标题 / 操作按钮等，位于表格上方 -->
+      <slot name="toolbar" />
+      <el-table ref="tableRef" :key="tableKey" v-bind="$attrs">
         <template v-for="col in columns" :key="col.prop || col.type">
           <el-table-column v-bind="col">
             <template #header="headerScope">
@@ -269,20 +275,29 @@ defineExpose({ handleReset });
 .base-table-wrapper {
   width: 100%;
 }
+
+/* 自定义插槽搜索栏 */
 .search-bar {
   margin-bottom: 16px;
 }
-.search-form {
-  max-width: 100%;
+
+/* 筛选卡片（样式对齐 system/role 筛选区） */
+.filter-card {
+  margin-bottom: 16px;
+  border-color: var(--el-border-color-lighter);
+  border-radius: 8px;
+}
+
+/* 用 flex 接管换行与间距，避免 inline 表单自带 margin 造成的错位 */
+.filter-form {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
-  .search-form-operation {
-    margin-left: auto;
-  }
+  gap: 12px 16px;
 }
-.search-form :deep(.el-form-item) {
-  margin-bottom: 0;
+
+.filter-form :deep(.el-form-item) {
+  flex: none;
+  margin: 0;
 }
 </style>

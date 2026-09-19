@@ -1,30 +1,37 @@
-// GET /api/public/menus/list —— 菜单管理列表：返回 menus 全量树（含禁用项，供后台管理页筛选）
+// GET /api/public/menus/list —— 菜单管理列表：返回 permissions 全量树（含禁用项，供后台管理页筛选）
+// 数据源：permissions 表（type 0=目录 / 1=页面 / 2=按钮；menus 表已废弃）
 import { setupDatabase } from '~~/server/utils/database';
 
-/** 菜单类型映射：M 目录 / C 页面 / F 按钮（与 RuoYi 约定一致） */
-const TYPE_MAP = { M: 'module', C: 'page', F: 'action' } as const;
+/** 权限类型映射：0 目录 / 1 页面 / 2 按钮 */
+const TYPE_MAP: Record<number, 'module' | 'page' | 'action'> = {
+  0: 'module',
+  1: 'page',
+  2: 'action',
+};
 
-/** menus 表行中列表所需的字段 */
-type MenuRow = {
-  menu_id: number;
+/** permissions 表行中列表所需的字段 */
+type PermRow = {
+  id: number;
   parent_id: number;
-  menu_name: string;
+  perm_key: string;
+  label: string;
   path: string | null;
   icon: string | null;
-  perms: string | null;
-  menu_type: string;
+  type: number;
   sort_order: number;
   status: number;
   created_at: Date | string;
 };
 
-/** 前端菜单节点（与 pages/system/role/index.vue 的 MenuItem 结构对齐） */
+/** 前端菜单节点 */
 interface MenuNode {
-  /** 权限标识；目录/页面通常无 perms，回退为稳定占位 menu:{id} */
+  /** 权限标识（page:/xxx、action:/xxx:code、dir:/xxx） */
   id: string;
+  /** permissions 表主键（供 CRUD 定位） */
+  dbId: number;
   label: string;
   type: 'module' | 'page' | 'action';
-  /** 路由地址（目录/菜单） */
+  /** 路由地址（目录/菜单；按钮=所属页面） */
   path?: string;
   /** 菜单图标（目录/菜单） */
   icon?: string;
@@ -47,30 +54,40 @@ export default defineEventHandler(async () => {
   try {
     // 管理页需要看到禁用项，不做 status 过滤；排序与侧边栏渲染口径一致
     const rows = (await sql`
-      SELECT menu_id, parent_id, menu_name, path, icon, perms, menu_type, sort_order, status, created_at
-      FROM menus
-      ORDER BY sort_order ASC, menu_id ASC
-    `) as MenuRow[];
+      SELECT id, parent_id, perm_key, label, path, icon, type, sort_order, status, created_at
+      FROM permissions
+      ORDER BY sort_order ASC, id ASC
+    `) as unknown as PermRow[];
 
-    // 两遍循环建树：先建 Map 再按 parent_id 挂接，避免排序后父行晚于子行导致断链
+    // 两遍循环建树：先建 Map 再按 parent_id 挂接；按钮(type=2)按 path 归到同路径页面下
     const nodeMap = new Map<number, MenuNode>();
+    const pageByPath = new Map<string, MenuNode>();
     for (const row of rows) {
-      nodeMap.set(row.menu_id, {
-        id: row.perms ?? `menu:${row.menu_id}`,
-        label: row.menu_name,
-        type: TYPE_MAP[row.menu_type as keyof typeof TYPE_MAP] ?? 'page',
+      const node: MenuNode = {
+        id: row.perm_key,
+        dbId: row.id,
+        label: row.label,
+        type: TYPE_MAP[row.type] ?? 'page',
         path: row.path ?? undefined,
         icon: row.icon ?? undefined,
         sort: row.sort_order,
         status: row.status === 1 ? 1 : 0,
         createTime: formatDateTime(row.created_at),
-      });
+      };
+      nodeMap.set(row.id, node);
+      if (row.type === 1 && row.path) pageByPath.set(row.path, node);
     }
 
     const tree: MenuNode[] = [];
     for (const row of rows) {
-      const node = nodeMap.get(row.menu_id)!;
-      const parent = row.parent_id === 0 ? null : nodeMap.get(row.parent_id);
+      const node = nodeMap.get(row.id)!;
+      // 按钮挂所属页面；目录/页面按 parent_id 挂接
+      const parent =
+        row.type === 2
+          ? pageByPath.get(row.path ?? '')
+          : row.parent_id === 0
+            ? null
+            : nodeMap.get(row.parent_id);
       if (parent) {
         (parent.children ??= []).push(node);
       } else {
