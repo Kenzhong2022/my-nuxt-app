@@ -109,7 +109,8 @@ export default defineNuxtConfig({
       amapKey: process.env.VITE_AMAP_KEY,
       /** 高德地图安全密钥（JS API 加载前设置） */
       amapSecurityCode: process.env.VITE_AMAP_SECURITY_CODE,
-      socketUrl: process.env.NUXT_PUBLIC_SOCKET_URL || 'http://localhost:5555',
+      /** 聊天 WebSocket 服务地址（原生 WebSocket，路径 /room/<roomId>） */
+      wsUrl: process.env.NUXT_PUBLIC_WS_URL || 'wss://zkchat.dpdns.org',
     },
   },
   app: {
