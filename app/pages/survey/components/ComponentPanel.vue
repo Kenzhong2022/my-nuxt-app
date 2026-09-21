@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { componentMetaList } from "../config/componentMeta";
+import { componentMetaList } from "./componentMeta";
 import type { Survey, Question, QuestionType } from "~~/types/survey";
 
 // 全局注册图标（确保图标可用）

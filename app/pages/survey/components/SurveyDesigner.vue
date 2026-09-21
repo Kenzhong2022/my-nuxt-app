@@ -64,7 +64,7 @@ import { reactive, ref, computed } from "vue";
 import ComponentPanel from "./ComponentPanel.vue";
 import PreviewArea from "./PreviewArea.vue";
 import ConfigPanel from "./ConfigPanel.vue";
-import { componentMetaList } from "../config/componentMeta";
+import { componentMetaList } from "./componentMeta";
 import type {
   Survey as SurveyType,
   Question,
