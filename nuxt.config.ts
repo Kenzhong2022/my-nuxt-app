@@ -8,9 +8,6 @@ import svgLoader from 'vite-svg-loader';
 /** 环境判定：nuxt dev 为 true，nuxt build（含 Netlify 部署构建）为 false */
 const isDev = process.dev;
 
-/** OAuth2 回调地址按环境区分（需与认证中心 clientDB 白名单注册的 redirect_uri 完全一致） */
-const CALLBACK_URL = 'http://localhost:3000/CallBack';
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
@@ -103,8 +100,8 @@ export default defineNuxtConfig({
       loginBase: process.env.LOGIN_BASE,
       /** OAuth2 客户端标识（需与认证中心注册的 client 一致） */
       clientId: process.env.OAUTH_CLIENT_ID || 'business-a',
-      /** OAuth2 回调地址（环境变量优先，其次按 dev/prod 取默认值） */
-      callbackUrl: CALLBACK_URL,
+      /** OAuth2 回调地址覆盖项：默认留空，运行时按当前站点 origin 拼接 /CallBack（见 useAuth.getCallbackUrl）；仅在需要固定地址时设置 NUXT_PUBLIC_CALLBACK_URL */
+      callbackUrl: process.env.NUXT_PUBLIC_CALLBACK_URL || '',
       /** 高德地图 Web 端 Key（临时复用 .env 的 VITE_AMAP_*） */
       amapKey: process.env.VITE_AMAP_KEY,
       /** 高德地图安全密钥（JS API 加载前设置） */

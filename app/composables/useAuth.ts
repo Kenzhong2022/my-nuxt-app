@@ -43,6 +43,18 @@ export function useAuth() {
   const { isLoggedIn } = storeToRefs(authStore);
 
   /**
+   * 解析 OAuth2 回调地址：配置项优先，否则按当前站点 origin 拼接 /CallBack
+   * @description redirect_uri 需与认证中心 clientDB 白名单注册的地址完全一致；
+   *              运行时拼接保证任意部署域名（localhost / Pages 域名）自动对齐
+   * @returns 完整回调地址；SSR 阶段无 origin 且未配置时返回空串
+   */
+  function getCallbackUrl(): string {
+    const configured = config.public.callbackUrl;
+    if (configured) return configured;
+    return import.meta.client ? `${window.location.origin}/CallBack` : '';
+  }
+
+  /**
    * 跳转到认证中心授权入口（内部方法）
    * @description 走 OAuth2 授权码模式：未登录时 authorize 会自动 302 到登录页
    *              并透传 client_id 等参数，登录成功后发 code 回调业务方 CallBack
@@ -52,7 +64,7 @@ export function useAuth() {
   function navigateToLogin(redirectPath: string): void {
     const LOGIN_BASE = config.public.loginBase;
     const CLIENT_ID = config.public.clientId;
-    const CALLBACK_URL = config.public.callbackUrl;
+    const CALLBACK_URL = getCallbackUrl();
     if (!LOGIN_BASE || !CLIENT_ID || !CALLBACK_URL)
       throw new Error('登录中心配置不完整（loginBase/clientId/callbackUrl）');
 
@@ -143,6 +155,8 @@ export function useAuth() {
   return {
     /** 当前是否已登录（响应式 ref） */
     isLoggedIn,
+    /** OAuth2 回调地址（配置优先，否则当前 origin 拼接 /CallBack） */
+    getCallbackUrl,
     /** 重新确认身份并刷新菜单（登出/重新登录后调用） */
     reloadIdentity,
     /** 主动登录：直接跳转认证中心 */

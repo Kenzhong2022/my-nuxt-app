@@ -118,6 +118,8 @@ function getCode() {
 async function redeemToken(code) {
   activities.value[0].activate();
   const config = useRuntimeConfig();
+  // 与发起授权时同一来源：配置优先，否则当前 origin 拼接 /CallBack
+  const { getCallbackUrl } = useAuth();
   try {
     const response = await $fetch('/api/token', {
       method: 'POST',
@@ -125,7 +127,7 @@ async function redeemToken(code) {
       body: JSON.stringify({
         code,
         client_id: config.public.clientId,
-        redirect_uri: config.public.callbackUrl,
+        redirect_uri: getCallbackUrl(),
       }),
     });
     activities.value[0].markSuccess();
