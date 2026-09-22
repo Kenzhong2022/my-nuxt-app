@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     id_token: { userId: string; role: string };
   };
   try {
-    const LOGIN_BASE = 'https://auth-center.netlify.app';
+    const LOGIN_BASE = 'https://zkchat.dpdns.org';
     // 请求线上认证中心兑换令牌
     const tokenInfo = await $fetch(LOGIN_BASE + '/api/auth/token', {
       method: 'POST',
