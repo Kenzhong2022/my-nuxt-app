@@ -1,15 +1,24 @@
 // server/utils/deepseek.ts
 import OpenAI from "openai";
+import type { H3Event } from "h3";
 
-// 从 Nuxt 运行时配置中读取 DeepSeek 配置
-const config = useRuntimeConfig();
+// 懒加载单例：环境变量在运行时才注入，客户端必须延迟到首次请求时创建
+let client: OpenAI | null = null;
 
-// 创建一个 DeepSeek 客户端实例（单例模式）
-export const deepseekClient = new OpenAI({
-  apiKey: config.deepseek.apiKey,
-  baseURL: config.deepseek.baseURL,
-  timeout: 30000, // 30秒超时
-});
+/**
+ * 获取 DeepSeek 客户端（懒加载单例）
+ * @param event 请求事件（透传给 useRuntimeConfig 以读取请求时刻的环境变量）
+ */
+export function getDeepseekClient(event?: H3Event): OpenAI {
+  if (client) return client;
+  const config = useRuntimeConfig(event);
+  client = new OpenAI({
+    apiKey: config.deepseek.apiKey,
+    baseURL: config.deepseek.baseURL,
+    timeout: 30000, // 30秒超时
+  });
+  return client;
+}
 
 /**
  * DeepSeek 官方最新模型列表（2026年6月）

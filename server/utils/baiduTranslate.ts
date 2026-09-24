@@ -26,7 +26,7 @@ function getBaiduConfig() {
   const config = useRuntimeConfig().baidu;
   if (!config?.appId || !config?.appKey) {
     throw new Error(
-      "百度翻译未配置：请在 .env 中填写 BAIDU_APPID / BAIDU_APPKEY，并在 nuxt.config.ts runtimeConfig 中声明 baidu",
+      "百度翻译未配置：请设置环境变量 NUXT_BAIDU_APP_ID / NUXT_BAIDU_APP_KEY（映射 runtimeConfig.baidu）",
     );
   }
   return config as { appId: string; appKey: string };

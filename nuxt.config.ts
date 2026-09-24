@@ -5,8 +5,9 @@ import IconsResolver from 'unplugin-icons/resolver';
 import viteCompression from 'vite-plugin-compression';
 import svgLoader from 'vite-svg-loader';
 
-/** 环境判定：nuxt dev 为 true，nuxt build（含 Netlify 部署构建）为 false */
-const isDev = process.dev;
+/** 环境判定：nuxt dev 为 true，nuxt build（含部署构建）为 false
+ *  注意：nuxt.config 上下文中 process.dev 未被 @nuxt/cli 赋值（恒为 undefined），改用 NODE_ENV 判定 */
+const isDev = process.env.NODE_ENV === 'development';
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -53,23 +54,27 @@ export default defineNuxtConfig({
       },
     },
   },
+  // 全部字段留空/默认值，值一律由 NUXT_ 前缀环境变量在运行时自动映射注入
+  // （映射规则：runtimeConfig.a.bC → NUXT_A_BC，public 层多一段 NUXT_PUBLIC_）
   runtimeConfig: {
     // 私有配置：只有服务端能访问，客户端永远看不到
     deepseek: {
-      apiKey: process.env.DEEPSEEK_API_KEY,
-      baseURL: process.env.DEEPSEEK_BASE_URL,
+      // NUXT_DEEPSEEK_API_KEY / NUXT_DEEPSEEK_BASE_URL
+      apiKey: '',
+      baseURL: '',
     },
-    databaseUrl: process.env.NUXT_DATABASE_URL,
-    // JWT 签名密钥（与登录中心保持一致，声明后 NUXT_JWT_ACCESS_SECRET 才会映射到此处）
+    // NUXT_DATABASE_URL
+    databaseUrl: '',
+    // JWT 签名密钥（与登录中心保持一致）：NUXT_JWT_ACCESS_SECRET / NUXT_JWT_REFRESH_SECRET
     jwt: {
-      accessSecret: process.env.NUXT_JWT_ACCESS_SECRET,
-      refreshSecret: process.env.NUXT_JWT_REFRESH_SECRET,
+      accessSecret: '',
+      refreshSecret: '',
     },
-    // Cloudinary 媒体上传
+    // Cloudinary 媒体上传：NUXT_CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET
     cloudinary: {
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      apiSecret: process.env.CLOUDINARY_API_SECRET,
+      cloudName: '',
+      apiKey: '',
+      apiSecret: '',
     },
     // Cloudflare 各服务的凭据按服务命名空间隔离，未来扩展 R2/KV/Images 互不干扰
     cloudflare: {
@@ -80,34 +85,42 @@ export default defineNuxtConfig({
         apiToken: '',
       },
     },
-    // 阿里百炼多模态生图
+    // 阿里百炼多模态生图：NUXT_DASHSCOPE_API_KEY / NUXT_DASHSCOPE_BASE_URL
     dashscope: {
-      apiKey: process.env.DASHSCOPE_API_KEY,
-      baseUrl: process.env.DASHSCOPE_BASE_URL,
+      apiKey: '',
+      baseUrl: '',
     },
-    // 百度翻译
+    // 百度翻译：NUXT_BAIDU_APP_ID / NUXT_BAIDU_APP_KEY（注意 appId→APP_ID 蛇形映射）
     baidu: {
-      appId: process.env.BAIDU_APPID,
-      appKey: process.env.BAIDU_APPKEY,
+      appId: '',
+      appKey: '',
     },
+    // Upstash Redis：NUXT_UPSTASH_REDIS_REST_URL / NUXT_UPSTASH_REDIS_REST_TOKEN
+    upstash: {
+      redisRestUrl: '',
+      redisRestToken: '',
+    },
+    // 取餐码防伪签名密钥：NUXT_QRCODE_SECRET
+    qrcodeSecret: '',
 
     // 公共配置：客户端也能访问（这里不要放任何敏感信息！）
     public: {
       title: 'My Nuxt App',
       version: '1.0.0',
-      agentBaseUrl: process.env.NUXT_AGENT_BASE_URL,
-      /** 登录页地址 */
-      loginBase: process.env.LOGIN_BASE,
-      /** OAuth2 客户端标识（需与认证中心注册的 client 一致） */
-      clientId: process.env.OAUTH_CLIENT_ID || 'business-a',
+      // NUXT_PUBLIC_AGENT_BASE_URL
+      agentBaseUrl: '',
+      /** 登录页地址：NUXT_PUBLIC_LOGIN_BASE */
+      loginBase: '',
+      /** OAuth2 客户端标识（需与认证中心注册的 client 一致）：NUXT_PUBLIC_CLIENT_ID */
+      clientId: 'business-a',
       /** OAuth2 回调地址覆盖项：默认留空，运行时按当前站点 origin 拼接 /CallBack（见 useAuth.getCallbackUrl）；仅在需要固定地址时设置 NUXT_PUBLIC_CALLBACK_URL */
-      callbackUrl: process.env.NUXT_PUBLIC_CALLBACK_URL || '',
-      /** 高德地图 Web 端 Key（临时复用 .env 的 VITE_AMAP_*） */
-      amapKey: process.env.VITE_AMAP_KEY,
-      /** 高德地图安全密钥（JS API 加载前设置） */
-      amapSecurityCode: process.env.VITE_AMAP_SECURITY_CODE,
-      /** 聊天 WebSocket 服务地址（原生 WebSocket，路径 /room/<roomId>） */
-      wsUrl: process.env.NUXT_PUBLIC_WS_URL || 'wss://zkchat.dpdns.org',
+      callbackUrl: '',
+      /** 高德地图 Web 端 Key：NUXT_PUBLIC_AMAP_KEY */
+      amapKey: '',
+      /** 高德地图安全密钥（JS API 加载前设置）：NUXT_PUBLIC_AMAP_SECURITY_CODE */
+      amapSecurityCode: '',
+      /** 聊天 WebSocket 服务地址（原生 WebSocket，路径 /room/<roomId>）：NUXT_PUBLIC_WS_URL */
+      wsUrl: 'wss://chat.kkyy.dpdns.org',
     },
   },
   app: {
@@ -173,14 +186,20 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'cloudflare-pages',
-    cloudflare: {
-      deployConfig: false, // ← 禁用自动生成的 wrangler.json
-    },
+    // dev 用默认 node-server，跳过 Cloudflare(workerd) 本地仿真的启动开销；生产构建走 cloudflare-pages
+    preset: isDev ? undefined : 'cloudflare-pages',
+    // Cloudflare 专属配置仅生产构建需要；未来新增生产专属项都收进此条件展开
+    ...(isDev
+      ? {}
+      : {
+          cloudflare: {
+            deployConfig: false, // ← 禁用自动生成的 wrangler.json
+          },
+        }),
     output: {
       dir: 'dist',
     },
-    compressPublicAssets: true,
+    compressPublicAssets: !isDev,
     // devProxy: {
     //   "/api/ai": {
     //     target: "https://chief-agent-alpha.vercel.app",

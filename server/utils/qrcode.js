@@ -6,7 +6,11 @@ import crypto from "crypto";
 // 1. 加载签名密钥（绝密）
 // 说明：这是整个防伪系统的“命根子”。必须从环境变量读取，防止密钥泄露导致签名被伪造。
 // 原理：HMAC 算法需要这个密钥来生成哈希，坏人不知道密钥就无法算出正确的 4 位码。
-const SECRET = process.env.QRCODE_SECRET || "demo-secret-key";
+// 注意：值来自 runtimeConfig.qrcodeSecret（环境变量 NUXT_QRCODE_SECRET 运行时注入），
+//       因此延迟到调用时读取，不能在模块顶层固化。
+function getSecret() {
+  return useRuntimeConfig().qrcodeSecret || "demo-secret-key";
+}
 
 /**
  * 生成取餐二维码的 4 位防伪签名
@@ -23,7 +27,7 @@ export function generateQRCodeSign(storeId, shortNumber) {
   // 2. 初始化 HMAC-SHA256 加密器
   // 说明：HMAC（哈希消息认证码）是国际标准签名算法，比自己拼字符串做 MD5 更安全。
   //      选择 SHA256 是因为它长度足够且性能优秀，虽然我们只截取前 4 位，但底层仍受完整算法保护。
-  const hmac = crypto.createHmac("sha256", SECRET);
+  const hmac = crypto.createHmac("sha256", getSecret());
 
   // 3. 写入待签名的数据
   // 内容：门店 ID 和下划线拼接短号（例如 "1001_28"）

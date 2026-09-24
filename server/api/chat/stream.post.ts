@@ -1,7 +1,7 @@
 // 👇 导入我们之前在 server/utils/deepseek.ts 中封装好的 DeepSeek 客户端和模型枚举
 // 导入类型定义，让 TypeScript 能够提供类型检查和代码提示
 import {
-  deepseekClient,
+  getDeepseekClient,
   DeepSeekModel,
   ThinkingEffort,
 } from "~~/server/utils/deepseek";
@@ -43,8 +43,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 👇 调用 DeepSeek API，开启流式输出
-    // deepseekClient 是我们之前封装好的 OpenAI 客户端实例
-    const stream = await deepseekClient.chat.completions.create({
+    // getDeepseekClient 是我们之前封装好的懒加载 OpenAI 客户端
+    const stream = await getDeepseekClient(event).chat.completions.create({
       // 指定使用的模型，默认用 V4-Flash（性价比最高）
       // 如果客户端在请求体中指定了 model，就用客户端指定的
       model: body.model || DeepSeekModel.V4_FLASH,

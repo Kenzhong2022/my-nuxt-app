@@ -1,5 +1,5 @@
 // server/api/search/suggestions.post.ts
-import { deepseekClient, DeepSeekModel } from "~~/server/utils/deepseek";
+import { getDeepseekClient, DeepSeekModel } from "~~/server/utils/deepseek";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 /**
@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
     ];
 
     // 4. 调用 DeepSeek 大模型
-    const stream = await deepseekClient.chat.completions.create({
+    const stream = await getDeepseekClient(event).chat.completions.create({
       // 联想词生成用 V4-Flash 足够，性价比最高
       model: DeepSeekModel.V4_FLASH,
       // 传入构造好的消息数组

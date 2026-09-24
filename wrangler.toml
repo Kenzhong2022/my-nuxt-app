@@ -1,29 +1,83 @@
+# ============================================================
+# wrangler.toml — Cloudflare 部署配置文件（由 wrangler CLI 读取）
+#
+# 【作用】
+#   - name：指定部署到哪个 Cloudflare Pages 项目
+#   - pages_build_output_dir：构建产物目录
+#   - compatibility_date / compatibility_flags：workerd 运行时版本与
+#     Node.js 兼容开关（nodejs_compat）
+#   - [vars]：非敏感环境变量（URL、云名、账号 ID、AppID 等）
+#
+# 【为什么需要它】
+#   1. 部署：`wrangler deploy` 按本文件上传 ./dist 产物并绑定到线上项目；
+#   2. 本地仿真：`pnpm preview`（wrangler dev）用 workerd 模拟线上环境时，
+#      [vars] 会注入到仿真沙箱；
+#   3. 注意：`pnpm dev`（nuxt dev）不读本文件，本地开发变量来自 .env。
+#
+# 【NUXT_ 前缀约定】
+#   所有变量统一使用 NUXT_ / NUXT_PUBLIC_ 前缀，Nuxt 运行时自动映射到
+#   runtimeConfig（规则：runtimeConfig.a.bC ← NUXT_A_BC，public 层 ← NUXT_PUBLIC_...），
+#   修改后无需重新构建即可生效。
+#
+# 【它做不到的事：存放敏感变量】
+#   本文件会提交进 Git 仓库，里面写什么所有人都能看到，
+#   因此密钥类变量绝不能写在这里，例如：
+#   - NUXT_UPSTASH_REDIS_REST_TOKEN（Redis Token）
+#   - NUXT_DEEPSEEK_API_KEY / NUXT_DASHSCOPE_API_KEY
+#   - NUXT_JWT_ACCESS_SECRET / NUXT_JWT_REFRESH_SECRET
+#   - NUXT_DATABASE_URL（含数据库账号密码）
+#   - NUXT_CLOUDINARY_API_KEY / NUXT_CLOUDINARY_API_SECRET
+#   - NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN
+#   - NUXT_BAIDU_APP_KEY / NUXT_QRCODE_SECRET
+#   这些必须用 secret 方式单独设置（CF 加密存储，不进版本库）。
+#
+# 【命令行操作：把变量更新到 CF 项目】
+#   第一步：登录 Cloudflare 账号（浏览器授权，一次即可）
+#     npx wrangler login
+#   第二步：逐个变量写入线上，每个变量一行命令，回车后粘贴对应值：
+#     npx wrangler pages secret put NUXT_DATABASE_URL --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_DEEPSEEK_API_KEY --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_JWT_ACCESS_SECRET --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_JWT_REFRESH_SECRET --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_CLOUDINARY_API_KEY --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_CLOUDINARY_API_SECRET --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_DASHSCOPE_API_KEY --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_BAIDU_APP_KEY --project-name my-nuxt-app
+#     npx wrangler pages secret put NUXT_UPSTASH_REDIS_REST_TOKEN --project-name my-nuxt-app
+#   非敏感变量：改本文件 [vars] 后重新 `pnpm deploy` 即可；
+#   也可在 Dashboard → Pages → 项目 → Settings → Environment variables 覆盖。
+# ============================================================
+
 name = "my-nuxt-app"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-08-29"
 compatibility_flags = ["nodejs_compat"]
 
 # 普通环境变量（非敏感：URL、云名、账号 ID、AppID）
+# 全部带 NUXT_ / NUXT_PUBLIC_ 前缀，运行时自动映射到 runtimeConfig
 [vars]
+# ===== 公共（客户端也会加载）=====
 # 登录服务地址（本地/线上统一走线上的 auth-center）
-LOGIN_BASE = "https://zkchat.dpdns.org"
-# Upstash Redis REST 地址（Token 是敏感信息，用 secret 设置）
-UPSTASH_REDIS_REST_URL = "https://growing-hen-38395.upstash.io"
-# DeepSeek API 地址
-DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+NUXT_PUBLIC_LOGIN_BASE = "https://auth.kkyy.dpdns.org"
 # Agent API 地址
-NUXT_AGENT_BASE_URL = "https://chief-agent-alpha.vercel.app"
-# Cloudinary 云名（API Key/Secret 是敏感信息，用 secret 设置）
-CLOUDINARY_CLOUD_NAME = "dlji1nmdj"
-# Cloudflare 账号 ID（非机密；NUXT_ 前缀自动映射到 runtimeConfig.cloudflare.accountId，Token 用 secret 设置）
-NUXT_CLOUDFLARE_ACCOUNT_ID = "65844ae2478b17ef0b07680420bc454f"
-# 阿里百炼 API 地址
-DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
-# 百度翻译 AppID（AppKey 是敏感信息，用 secret 设置）
-BAIDU_APPID = "20260815002666664"
+NUXT_PUBLIC_AGENT_BASE_URL = "https://chief-agent-alpha.vercel.app"
+# 前端要连的 Socket 地址（生产环境在 Pages Dashboard 覆盖为公网地址）
+NUXT_PUBLIC_WS_URL = "wss://chat.kkyy.dpdns.org"
 # 高德地图 Web 端 Key（JS API 设计上前端公开，靠高德控制台域名白名单防护）
-VITE_AMAP_KEY = "74308dcc0a8d524936a1468fe6599e13"
-VITE_AMAP_SECURITY_CODE = "948b43075553eea53be2fe9fd9714ea6"
-# 前端要连的 Socket 地址（本地开发用 localhost；生产环境在 Pages Dashboard 覆盖为公网地址）
-NUXT_PUBLIC_SOCKET_URL = "http://localhost:5555"
+NUXT_PUBLIC_AMAP_KEY = "74308dcc0a8d524936a1468fe6599e13"
+NUXT_PUBLIC_AMAP_SECURITY_CODE = "948b43075553eea53be2fe9fd9714ea6"
 
+# ===== 私有（只有服务端能读）=====
+# Upstash Redis REST 地址（Token 是敏感信息，用 secret 设置）
+NUXT_UPSTASH_REDIS_REST_URL = "https://growing-hen-38395.upstash.io"
+# DeepSeek API 地址
+NUXT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+# 阿里百炼 API 地址
+NUXT_DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
+# Cloudinary 云名（API Key/Secret 是敏感信息，用 secret 设置）
+NUXT_CLOUDINARY_CLOUD_NAME = "dlji1nmdj"
+# Cloudflare 账号 ID（非机密；Token 用 secret 设置）
+NUXT_CLOUDFLARE_ACCOUNT_ID = "65844ae2478b17ef0b07680420bc454f"
+# 百度翻译 AppID（AppKey 是敏感信息，用 secret 设置；appId 蛇形映射为 APP_ID）
+NUXT_BAIDU_APP_ID = "20260815002666664"

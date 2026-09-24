@@ -1,5 +1,6 @@
 export default defineNitroPlugin(async () => {
-  // 如果 redis 未初始化（环境变量缺失），跳过
+  // 懒加载获取客户端（环境变量缺失时为 null，跳过连接测试）
+  const redis = useRedis();
   if (!redis) {
     console.warn('[Redis Plugin] Redis 客户端未初始化，跳过连接测试');
     return;

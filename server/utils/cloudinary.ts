@@ -12,7 +12,7 @@ export function getCloudinaryConfig(): CloudinaryConfig {
   const config = useRuntimeConfig().cloudinary;
   if (!config?.cloudName || !config?.apiKey || !config?.apiSecret) {
     throw new Error(
-      "Cloudinary 未配置：请在 .env 中填写 CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET",
+      "Cloudinary 未配置：请设置环境变量 NUXT_CLOUDINARY_CLOUD_NAME / NUXT_CLOUDINARY_API_KEY / NUXT_CLOUDINARY_API_SECRET",
     );
   }
   return config as CloudinaryConfig;

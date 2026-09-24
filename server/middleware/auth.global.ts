@@ -26,6 +26,7 @@ const WHITE_LIST = [
   '/api/ai/image',
   '/api/ai/models',
   '/api/ai/unavailable-models',
+  '/api/debug',
 ];
 
 /**
@@ -50,7 +51,7 @@ function handleUnauthorized(message?: string): never {
  * 设计上就无 token 的端点（令牌兑换/刷新/回调）：调用时客户端尚未持有 token，
  * 尽力鉴权分支不对它们打游客诊断日志，避免误导排查
  */
-const NO_TOKEN_DIAG = ['/api/token', '/api/refresh-token', '/api/callback'];
+const NO_TOKEN_DIAG = ['/api/token', '/api/refresh-token', '/api/callback', '/api/debug'];
 
 /**
  * 提取 token：优先 Authorization 头（客户端 fetch 插件注入），其次 cookie（SSR 服务端请求）

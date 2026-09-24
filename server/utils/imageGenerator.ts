@@ -90,7 +90,7 @@ const BAILIAN_MAX_POLLS = 60; // 最长约 3 分钟
 function getDashscopeConfig() {
   const { apiKey, baseUrl } = useRuntimeConfig().dashscope || {};
   if (!apiKey) {
-    throw new Error("百炼未配置：请在 .env 中填写 DASHSCOPE_API_KEY");
+    throw new Error("百炼未配置：请设置环境变量 NUXT_DASHSCOPE_API_KEY");
   }
   return {
     apiKey: apiKey as string,
