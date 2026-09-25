@@ -29,18 +29,6 @@ html.dark {
   color: var(--el-text-color-primary);
 }
 
-/* ===== v-loading 指令样式 ===== */
-.v-loading-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--el-mask-color, rgba(255, 255, 255, 0.8));
-  z-index: 100;
-  border-radius: inherit;
-}
-
 .image-placeholder {
   width: 50px;
   height: 50px;

@@ -12,6 +12,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         if (token) {
           const headers = new Headers(options.headers || {});
           headers.set("Authorization", `Bearer ${token}`);
+          headers.set("custom-header", `zhongkai123`);
           options.headers = headers;
         }
       }

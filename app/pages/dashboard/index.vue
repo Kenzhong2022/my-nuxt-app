@@ -30,7 +30,7 @@
 
     <!-- 图表行 -->
     <div class="charts-row" ref="chartsRowRef">
-      <el-card class="chart-card" v-custom-loading="hourlyLoading">
+      <el-card class="chart-card" v-loading="hourlyLoading">
         <div class="chart-content">
           <!-- 操作行 -->
           <AnalyticsFilterBar
@@ -51,7 +51,7 @@
         </div>
       </el-card>
 
-      <el-card class="chart-card" v-custom-loading="dailyLoading">
+      <el-card class="chart-card" v-loading="dailyLoading">
         <div class="chart-content">
           <!-- 操作行 -->
           <AnalyticsFilterBar
@@ -69,7 +69,7 @@
     </div>
 
     <!-- 热力图行 -->
-    <div class="heatmap-row" v-custom-loading="heatmapLoading">
+    <div class="heatmap-row" v-loading="heatmapLoading">
       <el-card class="chart-card">
         <!-- 文本描述 -->
         <AnalyticsFilterBar

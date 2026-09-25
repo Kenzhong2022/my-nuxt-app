@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import gsap from "gsap";
+import { useMediaQuery } from "@vueuse/core";
 definePageMeta({
   title: "首页",
   layout: "default",
@@ -141,7 +142,10 @@ function handleMouseMove(e: MouseEvent) {
   });
 }
 
-const { isDesktop } = useDevice(); // 监听鼠标移动事件，更新卡片位置
+// 桌面端判定：视口宽 > 768px 且非触屏设备（触屏探测是静态能力，无需响应）
+const isWide = useMediaQuery("(min-width: 769px)");
+const isDesktop = computed(() => isWide.value && !("ontouchstart" in window));
+
 /**注册GSAP时间线 */
 let tl: ReturnType<typeof gsap.timeline> | null = gsap.timeline();
 

@@ -1,7 +1,5 @@
 /**
- * ============================================================
  * v-hasPermi / v-hasRole 按钮权限指令（RuoYi 规范，SSR + 客户端通用）
- * ============================================================
  *
  * 用法（值必须为非空数组，满足任一即可；权限标识为 perm_key 原值）：
  *   <el-button v-hasPermi="['action:/system/user:create']">新增</el-button>
@@ -17,18 +15,18 @@
 import type { Directive } from 'vue';
 
 /** 无权限时移除元素（RuoYi hasPermi/hasRole 指令行为） */
-function removeEl(el: HTMLElement) {
+const removeEl = (el: HTMLElement) => {
   el.parentNode && el.parentNode.removeChild(el);
-}
+};
 
 /** SSR/水合阶段用 display:none 隐藏（保持两端一致） */
-function hideEl(el: HTMLElement) {
+const hideEl = (el: HTMLElement) => {
   el.style.display = 'none';
-}
+};
 
-function createPermissionDirective(
+const createPermissionDirective = (
   check: (store: ReturnType<typeof useUserInfoStore>, value: string[]) => boolean,
-): Directive<HTMLElement, string[]> {
+): Directive<HTMLElement, string[]> => {
   return {
     created(el, binding) {
       const store = useUserInfoStore();
@@ -44,15 +42,10 @@ function createPermissionDirective(
       return check(store, binding.value ?? []) ? {} : { style: { display: 'none' } };
     },
   };
-}
+};
 
 /** v-hasPermi：按权限标识校验（perm_key 原值，如 ['action:/system/user:create']） */
-const hasPermi = createPermissionDirective((store, value) => store.checkPermi(value));
+export const hasPermi = createPermissionDirective((store, value) => store.checkPermi(value));
 
 /** v-hasRole：按角色权限串校验（如 ['admin']） */
-const hasRole = createPermissionDirective((store, value) => store.checkRole(value));
-
-export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.vueApp.directive('hasPermi', hasPermi);
-  nuxtApp.vueApp.directive('hasRole', hasRole);
-});
+export const hasRole = createPermissionDirective((store, value) => store.checkRole(value));
