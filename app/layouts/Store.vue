@@ -114,11 +114,11 @@ const route = useRoute();
 const showSearch = computed(() => route.meta.showSearch !== false);
 
 function goCart() {
-  navigateTo('/store/cart');
+  navigateTo('/myStore/cart');
 }
 
 function goHome() {
-  navigateTo('/store');
+  navigateTo('/myStore');
 }
 
 const { login } = useAuth();

@@ -74,7 +74,7 @@ const cardList: CardConfig[] = [
     title: "商城系统",
     description: "这是一个商城模块，用于展示商品信息、购物车功能和订单管理。",
     buttonText: "去逛逛",
-    action: () => window.open("/store", "_blank"),
+    action: () => window.open("/myStore", "_blank"),
   },
   {
     id: "survey",

@@ -44,7 +44,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
   collect(userInfoStore.routers, '');
 
-  // 用 matched 的路径模式匹配，兼容 /store/:id() 这类动态路由
+  // 用 matched 的路径模式匹配，兼容 /myStore/:id() 这类动态路由
   const isAllowed = to.matched.some((record) => allowed.has(record.path.replace(/\/+/g, '/')));
   if (!isAllowed) {
     return navigateTo('/403', { replace: true });

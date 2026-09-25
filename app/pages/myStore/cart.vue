@@ -69,7 +69,7 @@ onMounted(() => {
 });
 
 function goShopping() {
-  navigateTo('/store');
+  navigateTo('/myStore');
 }
 
 function handleCheckout() {

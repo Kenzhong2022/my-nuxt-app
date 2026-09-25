@@ -149,13 +149,13 @@ const defaultOpeneds = computed(() => menuAncestorsMap.value.get(route.path) ?? 
 // 菜单路由配置：app.vue 首次进入（SSR callOnce）时经 userInfoStore.getRouters 拉取，
 // useMenuConfig 负责 RuoYi 路由树 → 菜单树转换，此处仅消费转换结果 menuConfig
 const { menuConfig } = useMenuConfig();
-const { logRegisteredRoutes, syncRoutesToServer } = useRoutesDebug();
+const { logRegisteredRoutes, saveRoutesToSession } = useRoutesDebug();
 
-// dev 下自动上报路由同步菜单（补建/补名）；非管理员或异常时静默忽略
+// dev 下将当前路由表存入 sessionStorage（key: routes_debug）供本地调试排查
 onBeforeMount(() => {
   logRegisteredRoutes();
   if (import.meta.dev) {
-    syncRoutesToServer().catch(() => {});
+    saveRoutesToSession();
   }
 });
 

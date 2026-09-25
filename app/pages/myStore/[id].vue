@@ -14,7 +14,7 @@
       :sub-title="error || '商品不存在或已下架'"
     >
       <template #extra>
-        <el-button type="primary" @click="navigateTo('/store')">
+        <el-button type="primary" @click="navigateTo('/myStore')">
           返回商城
         </el-button>
       </template>
@@ -23,7 +23,7 @@
     <template v-else>
       <!-- 面包屑 -->
       <el-breadcrumb separator="/" class="mb-4">
-        <el-breadcrumb-item :to="{ path: '/store' }">商城</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/myStore' }">商城</el-breadcrumb-item>
         <el-breadcrumb-item>{{ product.category }}</el-breadcrumb-item>
         <el-breadcrumb-item>{{ product.name }}</el-breadcrumb-item>
       </el-breadcrumb>
