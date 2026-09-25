@@ -89,14 +89,11 @@ export function useAiChat() {
 
   /** CF 官方模型 ID 列表（@cf/{org}/{name}，org 为 HF 组织名，无法从目录 author 拼出） */
   const cfModels = ref<{ id: string }[] | null>(null);
-  // 服务端登记的不可用模型名单（403 自动入库，共享状态不重复请求）
-  const { names: unavailableNames, load: loadUnavailable } = useUnavailableModels();
 
   onMounted(async () => {
     catalog.value = await $fetch<LlmModelCatalog>("/allModels/llm-modules.json");
     // 列表失败不阻断对话（resolveChatModelId 兜底走 slug 拼接 / API 默认模型）
     cfModels.value = await $fetch<{ id: string }[]>("/api/ai/models").catch(() => null);
-    loadUnavailable();
   });
 
   /** 按模型名反查目录中的模型 */
@@ -115,8 +112,9 @@ export function useAiChat() {
   function resolveChatModelId(modelName: string): string | undefined {
     const selected = findModel(modelName);
     if (!selected || !CHAT_TASKS.includes(selected.taskType)) return undefined;
-    // 已弃用 / 不可用名单（403）中的模型回退 API 默认模型
-    if (isDeprecatedModel(selected) || unavailableNames.value.has(modelName)) return undefined;
+    // 仅已弃用模型（CF 已下线）回退 API 默认模型；
+    // 付费模型放行真实调用，由服务端 403 报错提示并自动登记 unavailable_models
+    if (isDeprecatedModel(selected)) return undefined;
     return cfModels.value?.find((m) => m.id.endsWith(`/${modelName}`))?.id
       ?? toModelId(selected.author, selected.name);
   }
@@ -172,10 +170,16 @@ export function useAiChat() {
         },
       });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        parser.feed(decoder.decode(value, { stream: true }));
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          parser.feed(decoder.decode(value, { stream: true }));
+        }
+      } finally {
+        // 异常退出（error 事件抛出）时释放流锁：悬挂的 reader 会让 vConsole 的 fetch 钩子
+        // 处理不完整流时崩出 TypeError（仅调试工具受影响，线上无 vconsole）
+        reader.cancel().catch(() => {});
       }
     } finally {
       loading.value = false;

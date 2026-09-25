@@ -16,6 +16,7 @@ export interface BadgeUi {
   tag: BadgeTag;
 }
 export const BADGE_UI: readonly BadgeUi[] = [
+  { key: 'paid', label: '付费', tag: 'warning' },
   { key: 'cloudflareHosted', label: 'CF 托管', tag: 'info' },
   { key: 'beta', label: '公测', tag: 'warning' },
   { key: 'deprecated', label: '已弃用', tag: 'danger' },

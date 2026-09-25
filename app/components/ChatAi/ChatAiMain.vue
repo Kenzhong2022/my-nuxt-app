@@ -1,19 +1,30 @@
 <template>
-  <div class="main-container">
+  <div ref="mainRef" class="main-container">
     <!-- 欢迎首页（仅首次发送前展示，发送过一次消息后永久隐藏；手机端媒体查询隐藏） -->
     <ChatAiWelcome v-if="!hasStarted" class="welcome" />
-    <!-- 流式回复展示 -->
-    <div v-else class="reply-preview">
-      <!-- 推理模型的思维链（流式期间自动展开实时展示，完成后自动收起，普通模型无此区域） -->
-      <el-collapse v-if="reasoning" v-model="activeReasoning" class="reasoning-collapse">
-        <el-collapse-item name="think">
-          <template #title>
-            <span class="reasoning-title">思考过程</span>
-          </template>
-          <div class="reasoning-text">{{ reasoning }}</div>
-        </el-collapse-item>
-      </el-collapse>
-      {{ output }}
+    <!-- 会话消息列表：用户消息右侧气泡，AI 回复左侧气泡（流式回复完成后才计入 history，避免重复渲染） -->
+    <div v-else class="message-list">
+      <div
+        v-for="(msg, i) in history"
+        :key="i"
+        class="message-row"
+        :class="msg.role === 'human' ? 'is-user' : 'is-ai'"
+      >
+        <img v-if="msgImage(msg)" :src="msgImage(msg)" alt="用户发送的图片" class="message-image" />
+        <div v-if="msgText(msg)" class="bubble">{{ msgText(msg) }}</div>
+      </div>
+      <!-- 流式中的 AI 回复（带思维链折叠区，完成后计入 history） -->
+      <div v-if="loading" class="message-row is-ai">
+        <el-collapse v-if="reasoning" v-model="activeReasoning" class="reasoning-collapse">
+          <el-collapse-item name="think">
+            <template #title>
+              <span class="reasoning-title">思考过程</span>
+            </template>
+            <div class="reasoning-text">{{ reasoning }}</div>
+          </el-collapse-item>
+        </el-collapse>
+        <div class="bubble">{{ output || '…' }}</div>
+      </div>
     </div>
     <!-- 底部输入框 -->
     <div class="input-wrap">
@@ -52,6 +63,28 @@ const history = ref<BaseMessageLike[]>([])
 // 是否已发送过消息（首次发送后欢迎页不再展示，避免每轮清空输出时闪回）
 const hasStarted = ref(false)
 
+// 容器引用（消息区自动滚动用）
+const mainRef = ref<HTMLElement | null>(null)
+
+// 消息新增 / 流式输出增长时滚动到底部，保证最新气泡可见
+watch([() => history.value.length, output, reasoning], () => {
+  nextTick(() => mainRef.value?.scrollTo({ top: mainRef.value.scrollHeight }))
+})
+
+// ===================== 消息渲染辅助（气泡内容提取） =====================
+/** 提取消息展示文本：字符串直接返回，多模态分片取 text 分片拼接 */
+function msgText(m: BaseMessageLike): string {
+  if (typeof m.content === 'string') return m.content
+  return m.content.map((p) => (p.type === 'text' ? p.text : '')).join('')
+}
+
+/** 提取多模态消息中的图片（base64 data URL），纯文本消息返回空串 */
+function msgImage(m: BaseMessageLike): string {
+  if (typeof m.content === 'string') return ''
+  const part = m.content.find((p) => p.type === 'image_url')
+  return part && part.type === 'image_url' ? part.image_url.url : ''
+}
+
 async function onSend() {
   const prompt = text.value.trim()
   if (!prompt) {
@@ -80,11 +113,14 @@ async function onSend() {
     // 失败的消息回滚，避免脏数据进入后续上下文
     history.value.pop()
     console.error("[ai/chat] 发送失败:", err)
-    // CF Free 计划无权调用该模型（403 / 错误码 5035，已弃用模型已被前置筛除）→ 映射为友好文案
+    // CF Free 计划无权调用该模型（403 / 错误码 5035，已弃用模型已被前置筛除）→ 映射为友好文案；
+    // 服务端重试（maxRetries=3）全部失败后的网络类错误（Connect Timeout / fetch failed）→ 提示稍后重试
     const raw = err instanceof Error ? err.message : String(err)
     const msg = raw.startsWith('Workers AI API error (403 Forbidden)')
       ? '当前会员等级不足，该模型需要 Cloudflare 付费计划'
-      : raw
+      : raw.includes('Connect Timeout') || raw.includes('fetch failed')
+        ? '网络连接不稳定，服务端已自动重试仍失败，请稍后重新发送'
+        : raw
     ElMessage.error(`发送失败: ${msg}`)
   }
 }
@@ -110,11 +146,33 @@ async function onSend() {
   }
 }
 
-// 流式回复展示区
-.reply-preview {
+// ===================== 会话消息列表 =====================
+.message-list {
   width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-bottom: 8rem;
-  padding: 1rem;
+}
+.message-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  // 用户消息：右对齐 + 主题色浅底气泡
+  &.is-user {
+    align-items: flex-end;
+
+    .bubble {
+      background: var(--el-color-primary-light-8);
+      border-color: var(--el-color-primary-light-7);
+    }
+  }
+}
+.bubble {
+  max-width: 85%;
+  padding: 0.625rem 0.875rem;
   white-space: pre-wrap;
   word-break: break-word;
   font-size: var(--kk-font-size-small);
@@ -122,7 +180,13 @@ async function onSend() {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 0.75rem;
-  overflow: auto;
+}
+// 用户发送的图片缩略图
+.message-image {
+  max-width: 12rem;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 0.5rem;
+  cursor: zoom-in;
 }
 
 // 思维链折叠区（弱化视觉，与正文区分）
@@ -161,7 +225,7 @@ async function onSend() {
     width: 100%;
   }
 
-  .reply-preview {
+  .message-list {
     width: 100%;
     margin-bottom: 6rem;
   }

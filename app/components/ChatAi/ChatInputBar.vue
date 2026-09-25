@@ -87,7 +87,7 @@ const emit = defineEmits<{ send: [] }>()
 // ===================== 模型选择 =====================
 const catalog = ref<LlmModelCatalog | null>(null)
 const badgeUi = (b: LlmModelBadge) => BADGE_UI.find((x) => x.key === b)!
-// 服务端登记的不可用模型名单（CF 账号无权调用，选择器摘除）
+// 服务端登记的付费模型名单（CF 账号 403 自动登记，选择器内标注「付费」徽标）
 const { names: unavailableNames, load: loadUnavailable } = useUnavailableModels()
 
 // 加载失败的 logo URL 集合（COEP/防盗链等被拦截时），命中则显示图标兜底
@@ -98,22 +98,20 @@ onMounted(async () => {
   loadUnavailable()
 })
 
-/** 对话可用模型（文本生成 / 图生文，排除已弃用与不可用名单），平铺各任务分组 */
+/** 对话可用模型（文本生成 / 图生文，排除已弃用；付费名单命中时注入「付费」徽标），平铺各任务分组 */
 const chatModels = computed<LlmModel[]>(
   () =>
     catalog.value?.taskTypes
       .flatMap((g) => g.models)
-      .filter(
-        (m) =>
-          CHAT_TASKS.includes(m.taskType) &&
-          !isDeprecatedModel(m) &&
-          !unavailableNames.value.has(m.name),
+      .filter((m) => CHAT_TASKS.includes(m.taskType) && !isDeprecatedModel(m))
+      .map((m) =>
+        unavailableNames.value.has(m.name) ? { ...m, badges: [...m.badges, 'paid'] } : m,
       ) ?? [],
 )
 
 // 目录加载后若未选模型则默认选第一个（同 ModelFilterSelect 的自动选中逻辑）
 watch(chatModels, (list) => {
-  if (list.length && !list.some((m) => m.name === modelId.value)) {
+  if (list?.length && !list.some((m) => m.name === modelId.value)) {
     modelId.value = list[0]?.name ?? ''
   }
 })

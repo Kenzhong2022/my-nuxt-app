@@ -1,6 +1,6 @@
 // server/api/ai/unavailable-models.get.ts - 当前 CF 账号不可用的模型名单
 // 数据来源：chat.post.ts 流式错误捕获（403 自动入库）+ 人工预置；
-// 前端模型选择器拉取此名单后摘除对应模型，避免用户选到必然失败的模型
+// 前端模型选择器拉取此名单后标注「付费」徽标，提示用户该模型 Free 计划无法调用
 
 export interface UnavailableModel {
   /** 完整调用 ID（@cf/{org}/{name}） */

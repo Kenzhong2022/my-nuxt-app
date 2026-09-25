@@ -65,7 +65,9 @@ export type LlmModelBadge =
   /** 推理型模型（思维链） */
   | 'reasoning'
   /** 支持图像输入（多模态） */
-  | 'vision';
+  | 'vision'
+  /** 付费模型（CF Free 计划调用返回 403，运行时由服务端自动登记，见 unavailable_models 表） */
+  | 'paid';
 
 /** 单个模型条目（对应目录页一张模型卡片） */
 export interface LlmModel {

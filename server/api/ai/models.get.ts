@@ -33,7 +33,7 @@ export default defineEventHandler(async () => {
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} ${(await res.text()).slice(0, 200)}`)
       }
-      const json: any = await res.json()
+      const json: any = await res.json()// CF 返回项的 id 是内部 UUID，调用 ID 在 name 字段（如 "@cf/meta/llama-3.2-3b-instruct"）
       const list: any[] = json?.result ?? []
       models.push(...list.map((m: any) => ({ id: m.name as string })))
       if (list.length < 100) break

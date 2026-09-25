@@ -73,6 +73,10 @@ export default defineEventHandler(async (event) => {
   const result = streamText({
     model: workersai(modelId),
     messages: mapped,
+    // 上游瞬时网络故障（Connect Timeout / fetch failed）服务端自动重试：
+    // SDK 默认 maxRetries=2，提高为 3（共 4 次尝试，指数退避 2s/4s/8s），
+    // 跨境链路抖动通常几十秒内恢复；全部失败才走 onError 序列化 error 分片返回用户
+    maxRetries: 3,
   })
   // UI 消息流（SSE）：输出结构化分片（text-delta 正文 / reasoning-delta 思维链 / error），
   // 前端按 type 分流；模型差异（llava 整体 JSON、GLM 的 reasoning_content）由 provider 归一化
@@ -85,7 +89,7 @@ export default defineEventHandler(async (event) => {
       onError: (error) => {
         console.error("[ai/chat] 流式错误:", error)
         // 403 = 当前账号无权调用该模型（Free 计划限制 / 已弃用），
-        // 自动登记进 unavailable_models 表，前端选择器据此摘除（fire-and-forget，不阻塞错误返回）
+        // 自动登记进 unavailable_models 表，前端选择器据此标注「付费」徽标（fire-and-forget，不阻塞错误返回）
         const msg = error instanceof Error ? error.message : String(error)
         if (msg.includes("403 Forbidden")) {
           const { sql } = setupDatabase()
