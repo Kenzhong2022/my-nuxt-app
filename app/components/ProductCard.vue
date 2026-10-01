@@ -88,10 +88,20 @@ const props = defineProps<{
 }>();
 
 const cart = useCartStore();
+const { isLoggedIn, login } = useAuth();
 
-function handleAdd() {
-  cart.addToCart(props.product, 1);
-  ElMessage.success("已加入购物车");
+async function handleAdd() {
+  // 未登录先跳登录（加购落库需归属用户会话）
+  if (!isLoggedIn.value) {
+    login();
+    return;
+  }
+  try {
+    await cart.addToCart(props.product, 1);
+    ElMessage.success("已加入购物车");
+  } catch (err) {
+    ElMessage.error((err as Error).message);
+  }
 }
 </script>
 

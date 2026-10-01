@@ -30,21 +30,51 @@
 
       <!-- 主信息区：图集 + 购买面板 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <!-- 图集 -->
+        <!-- 图集：主图随 currentImageIndex 切换，与缩略图联动 -->
         <div class="gallery">
           <div class="gallery-main rounded-lg overflow-hidden">
             <el-image
               :src="
-                cloudinaryUrl(product.image, 'w_800,h_800,c_fill,q_auto,f_webp')
+                cloudinaryUrl(
+                  galleryImages[currentImageIndex] ?? product.image,
+                  'w_800,h_800,c_fill,q_auto,f_webp',
+                )
               "
               :alt="product.name"
               fit="cover"
-              :preview-src-list="galleryImages"
+              :preview-src-list="previewImageUrls"
               :initial-index="currentImageIndex"
               preview-teleported
               class="w-full h-full"
             />
+            <!-- 上/下一张：首尾循环，单图不展示 -->
+            <div v-if="galleryImages.length > 1" class="gallery-nav">
+              <button
+                type="button"
+                class="gallery-nav-btn"
+                aria-label="上一张"
+                @click="goPrevImage"
+              >
+                <el-icon><ArrowLeft /></el-icon>
+              </button>
+              <button
+                type="button"
+                class="gallery-nav-btn"
+                aria-label="下一张"
+                @click="goNextImage"
+              >
+                <el-icon><ArrowRight /></el-icon>
+              </button>
+            </div>
           </div>
+          <!-- 预加载相邻两张（w_800 同规格）：切换时主图即显，无网络等待 -->
+          <link
+            v-for="url in preloadImageUrls"
+            :key="url"
+            rel="preload"
+            as="image"
+            :href="url"
+          />
           <div v-if="galleryImages.length > 1" class="gallery-thumbs">
             <div
               v-for="(img, i) in galleryImages"
@@ -180,7 +210,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loading, CircleCheckFilled } from "@element-plus/icons-vue";
+import { Loading, CircleCheckFilled, ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
 
 definePageMeta({
   layout: "store",
@@ -230,6 +260,41 @@ watch(product, () => {
   quantity.value = 1;
 });
 
+/** 切换到上一张/下一张（首尾循环） */
+function goPrevImage() {
+  const len = galleryImages.value.length;
+  if (len) currentImageIndex.value = (currentImageIndex.value - 1 + len) % len;
+}
+
+function goNextImage() {
+  const len = galleryImages.value.length;
+  if (len) currentImageIndex.value = (currentImageIndex.value + 1) % len;
+}
+
+/**
+ * 预加载相邻图集（上一张 + 下一张，与主图同规格 w_800）
+ * @description 用 link rel=preload 提前拉取，切换时浏览器直读缓存，避免等待
+ */
+const preloadImageUrls = computed(() => {
+  const list = galleryImages.value;
+  const len = list.length;
+  if (len < 2) return [];
+  const idx = currentImageIndex.value;
+  return [(idx - 1 + len) % len, (idx + 1) % len]
+    .map((i) => cloudinaryUrl(list[i], 'w_800,h_800,c_fill,q_auto,f_webp'))
+    .filter((url, i, arr) => arr.indexOf(url) === i); // 两图相同时只留一个（len === 2）
+});
+
+/**
+ * 预览大图列表：与主图同规格 w_800（原 galleryImages 是未变换的原始 URL，
+ * 点开预览会整批下载原图；统一 w_800 后命中主图/预加载缓存，秒开）
+ */
+const previewImageUrls = computed(() =>
+  galleryImages.value.map((img) =>
+    cloudinaryUrl(img, 'w_800,h_800,c_fill,q_auto,f_webp'),
+  ),
+);
+
 onMounted(() => {
   if (Number.isInteger(id) && id > 0) {
     fetchById(id);
@@ -238,20 +303,63 @@ onMounted(() => {
   }
 });
 
-function handleAddToCart() {
+const { isLoggedIn, login } = useAuth();
+
+async function handleAddToCart() {
   if (!product.value) {
     return;
   }
-  cart.addToCart(product.value, quantity.value);
-  ElMessage.success(`已加入购物车 ${quantity.value} 件`);
+  // 未登录先跳登录（加购落库需归属用户会话）
+  if (!isLoggedIn.value) {
+    login();
+    return;
+  }
+  try {
+    await cart.addToCart(product.value, quantity.value);
+    ElMessage.success(`已加入购物车 ${quantity.value} 件`);
+  } catch (err) {
+    ElMessage.error((err as Error).message);
+  }
 }
 </script>
 
 <style scoped lang="scss">
 // ===================== 图集 =====================
 .gallery-main {
+  position: relative;
   aspect-ratio: 1;
   background: var(--el-fill-color-light);
+}
+
+// 上/下一张圆形按钮：悬浮于主图左右两侧垂直居中
+.gallery-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--el-text-color-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  &:first-of-type {
+    left: 0.75rem;
+  }
+
+  &:last-of-type {
+    right: 0.75rem;
+  }
 }
 
 .gallery-thumbs {

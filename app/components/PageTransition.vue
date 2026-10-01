@@ -1,6 +1,6 @@
 <!-- components/PageLoader.vue -->
 <template>
-  <div v-show="showOverlay" class="page-loader" :class="fullscreen ? 'full' : 'local'">
+  <div v-show="showOverlay" class="page-loader" :class="isFullScreen ? 'full' : 'local'">
     <div class="loader-scene">
       <div class="bounce-block" style="background: #3b82f6" />
       <div class="bounce-block" style="background: #ef4444" />
@@ -16,7 +16,7 @@
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
-  fullscreen: boolean;
+  isFullScreen: boolean;
   loading: boolean;
 }>();
 

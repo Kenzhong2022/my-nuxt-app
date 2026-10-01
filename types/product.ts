@@ -1,4 +1,5 @@
 import type { ApiResponse } from "./common";
+import type { StoreAddress } from "./address";
 
 export interface Product {
   id: number;
@@ -86,4 +87,35 @@ export interface ProductDetail extends Product {
   packaging: string[];
   services: string[];
   viewCount: number;
+}
+
+/**
+ * 购物车单项（前端形态）：商品快照 + 数量 + 加购时间
+ * 服务端 GET /api/cart 返回的 items 元素即此结构
+ */
+export interface CartItem extends Product {
+  qty: number;
+  addedAt: string;
+}
+
+/**
+ * 结算预览中被标记为库存不足的商品
+ * stock = 商品当前剩余库存，qty = 购物车中的购买数量
+ */
+export interface CheckoutInsufficient {
+  productId: number;
+  name: string;
+  stock: number;
+  qty: number;
+}
+
+/**
+ * 结算预览（前端形态）：GET /api/checkout 返回的 data 结构
+ * totalAmount 为服务端重算的勾选商品总价（不信任前端金额）
+ */
+export interface CheckoutPreview {
+  items: CartItem[];
+  totalAmount: number;
+  insufficient: CheckoutInsufficient[];
+  addresses: StoreAddress[];
 }

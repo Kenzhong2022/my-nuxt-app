@@ -10,16 +10,22 @@ export interface AmapLocation {
 }
 
 /**
- * useAmap 的返回值契约
+ * useAmap 初始化完成后的返回集合（一次拿到高德命名空间、地图实例与封装方法）
  *
- * 调用方式：
+ * 获取方式（异步：首次调用需动态加载高德 JS SDK v2.0）：
  *   const amap = await useAmap(containerRef.value);
- *   amap.map;             // 拿地图实例
- *   amap.AMap;            // 拿命名空间，创建 Marker 等
- *   await amap.getLocation(); // 定位
+ *   amap.AMap;                                              // 命名空间：new Marker / InfoWindow 等
+ *   amap.map.setCenter([lng, lat]);                         // 地图实例：视角 / 缩放 / 事件监听
+ *   const { lng, lat, address } = await amap.getLocation(); // 封装好的定位
  *
- * 说明：本接口是调用方与 useAmap 之间的约定，
- *       实现方返回时必须满足此结构（少字段/类型不符 TS 会报错）。
+ * 实例行为：
+ *   - 全局单例：重复调用返回首次创建的 bundle，container 与 options 仅首次初始化生效；
+ *     加载进度经 amapState（mapLoading / locating / isLoaded / error）观测（composables/useAmap.ts）
+ *   - 预置插件：AMap.Geolocation（geolocation 字段，视觉控件已关闭由页面接管）、
+ *     AMap.Geocoder（geocoder 字段，默认 radius 1000 / extensions all）
+ *
+ * 生命周期：map 由调用方负责销毁（onBeforeUnmount 中 map.destroy()），
+ * Marker / Circle 等覆盖物随 map.destroy() 一并回收。
  */
 export interface AmapBundle {
   /**
@@ -119,4 +125,17 @@ export interface AmapBundle {
     destroy: () => void;
   };
   geocoder: AMap.Geocoder;
+
+  /**
+   * 切换底图亮/暗主题（跟随页面暗色模式）
+   *
+   * 类型：`(dark: boolean) => void`
+   * 参数：true = 暗色「幻影黑」(amap://styles/dark)，false = 亮色「标准白天」(amap://styles/normal)
+   * 行为：内部调用 map.setMapStyle() 重载瓦片，期间自动置 amapState.mapLoading 盖遮罩；
+   *       切换瞬间闪烁属正常现象
+   *
+   * 注意：complete 事件只在首次瓦片加载触发一次，样式切换不会再次触发，
+   *       加载态由内部定时器兜底还原，无需调用方管理
+   */
+  setMapTheme: (dark: boolean) => void;
 }

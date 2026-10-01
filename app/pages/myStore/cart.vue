@@ -72,12 +72,21 @@ function goShopping() {
   navigateTo('/myStore');
 }
 
-function handleCheckout() {
+/** 去结算：先刷新购物车拿最新库存，勾选商品有缺货则不跳转并标红提示 */
+async function handleCheckout() {
   if (cart.selectedCount === 0) {
     ElMessage.warning('请先选择商品');
     return;
   }
-  ElMessage.success(`已提交 ${cart.selectedCount} 件商品，合计 ¥${cart.selectedPrice.toFixed(2)}`);
+  await cart.fetchCart();
+  const shortage = cart.selectedItems.filter((i) => i.qty > (i.stock ?? 0));
+  const first = shortage[0];
+  if (first) {
+    ElMessage.warning(`「${first.name}」等 ${shortage.length} 件商品库存不足，请调整数量`);
+    return;
+  }
+  // 携带勾选的商品 id 跳转确认订单页
+  navigateTo(`/myStore/checkout?ids=${cart.selectedIds.join(',')}`);
 }
 </script>
 

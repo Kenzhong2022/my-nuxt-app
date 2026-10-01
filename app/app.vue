@@ -15,7 +15,7 @@
         <NuxtPage />
       </KeepAlive>
     </NuxtLayout>
-    <PageTransition :is-full-screen="isFullScreenTransition" :loading="loading" />
+    <PageTransition :isFullScreen="isFullScreenTransition" :loading="loading" />
   </div>
 </template>
 <script setup>

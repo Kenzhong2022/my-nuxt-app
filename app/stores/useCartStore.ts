@@ -1,21 +1,11 @@
 import { defineStore } from "pinia";
-import type { Product } from "~~/types/product";
+import type { ApiResponse } from "~~/types/common";
+import type { CartItem, Product } from "~~/types/product";
 
-// 购物车里的单项：商品 + 数量 + 加购时间
-export interface CartItem extends Product {
-  qty: number;
-  addedAt: string;
-}
-
-// 后端返回的购物车数据形状
-interface CartResponse {
-  code: number;
-  data: {
-    items: CartItem[];
-    totalCount: number;
-    totalPrice: number;
-  };
-}
+// 后端加购/改数量的响应形状（data.qty = 该商品购物车总数量；购物车不占库存，无 stock 回传）
+type CartMutationData = ApiResponse<{ qty: number } | null>;
+// 后端删除的响应形状
+type CartDeleteData = ApiResponse<{ qty: number } | null>;
 
 export const useCartStore = defineStore("cart", () => {
   // ---------- state ----------
@@ -74,8 +64,15 @@ export const useCartStore = defineStore("cart", () => {
   async function fetchCart() {
     loading.value = true;
     try {
-      const res = await $fetch<CartResponse>("/api/cart");
-      items.value = res.data.items;
+      const res = await $fetch<ApiResponse<{ items: CartItem[] } | null>>(
+        "/api/cart",
+      );
+      if (res.code === 200 && res.data) {
+        items.value = res.data.items;
+        // 剔除已不存在商品（下架/被删）的勾选残留
+        const validIds = new Set(items.value.map((i) => i.id));
+        selectedIds.value = selectedIds.value.filter((id) => validIds.has(id));
+      }
     } catch (err) {
       console.error("获取购物车失败:", err);
     } finally {
@@ -84,10 +81,17 @@ export const useCartStore = defineStore("cart", () => {
   }
 
   /**
-   * 添加商品到购物车
-   * 已存在则 +qty，否则新增
+   * 添加商品到购物车（后端校验库存 + 落库，本地乐观镜像；库存留到结算环节扣）
+   * 失败（库存不足 409 / 商品下架 404）抛 Error，由调用方提示
    */
-  function addToCart(product: Product, qty = 1) {
+  async function addToCart(product: Product, qty = 1) {
+    const res = await $fetch<CartMutationData>("/api/cart", {
+      method: "POST",
+      body: { productId: product.id, qty },
+    });
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "加入购物车失败");
+    }
     const exist = items.value.find((i) => i.id === product.id);
     if (exist) {
       exist.qty += qty;
@@ -105,23 +109,37 @@ export const useCartStore = defineStore("cart", () => {
   }
 
   /**
-   * 修改某商品数量
-   * qty <= 0 时自动删除
+   * 修改某商品数量（后端校验目标数量 <= 剩余库存，不调整库存）
+   * qty <= 0 时走删除；库存不足（409）抛 Error 由调用方提示
    */
-  function updateQty(id: number, qty: number) {
+  async function updateQty(id: number, qty: number) {
     const item = items.value.find((i) => i.id === id);
     if (!item) return;
     if (qty <= 0) {
-      removeFromCart(id);
-    } else {
-      item.qty = qty;
+      await removeFromCart(id);
+      return;
     }
+    const res = await $fetch<CartMutationData>(`/api/cart/${id}`, {
+      method: "PUT",
+      body: { qty },
+    });
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "修改数量失败");
+    }
+    item.qty = qty;
   }
 
   /**
-   * 删除单个商品
+   * 删除单个商品（仅移除购物车记录，库存未被占用无需归还；404 视为已删除）
+   * 失败抛 Error 由调用方提示
    */
-  function removeFromCart(id: number) {
+  async function removeFromCart(id: number) {
+    const res = await $fetch<CartDeleteData>(`/api/cart/${id}`, {
+      method: "DELETE",
+    });
+    if (res.code !== 200 && res.code !== 404) {
+      throw new Error(res.message || "删除失败");
+    }
     const idx = items.value.findIndex((i) => i.id === id);
     if (idx > -1) items.value.splice(idx, 1);
     // 同步移除勾选

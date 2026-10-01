@@ -1,174 +1,69 @@
-import type { ApiResponse } from "./common";
-
-// ==================== 门店相关类型 ====================
-
-export interface Store {
-  id: number;
-  name: string;
-  address?: string;
-  phone?: string;
-  codePrefix: string;
-  status: 0 | 1; // 1:营业 0:停业
-  createdAt?: string;
-  updatedAt?: string;
+/**
+ * 提交订单请求载荷
+ * addressId：收货地址 id（服务端校验归属后做 JSONB 快照）
+ * productIds：勾选结算的商品 id 列表（与购物车行取交集下单）
+ * remark：订单备注（可空，≤200 字）
+ */
+export interface CreateOrderPayload {
+  addressId: number;
+  productIds: number[];
+  remark?: string;
 }
-
-// ==================== 商品（菜单）相关类型 ====================
-
-export interface Product {
-  id: number;
-  storeId: number;
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl?: string;
-  category?: string;
-  sortOrder?: number;
-  status: 0 | 1; // 1:上架 0:下架
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// ==================== 订单状态枚举 ====================
 
 /**
- * 订单状态枚举
- * @description 订单状态流转：pending(待支付) -> paid(待取餐) -> completed(已完成) | expired(已过期)
- *              cancelled(已取消) 可从 pending 状态触发
+ * 下单成功返回结果
+ * orderNo：展示用订单号；totalAmount：服务端重算的订单总额
  */
+export interface OrderCreateResult {
+  orderId: number;
+  orderNo: string;
+  totalAmount: number;
+}
+
+/** 订单状态（与 store_orders.status CHECK 约束一致） */
 export type OrderStatus =
   | "pending"
   | "paid"
+  | "shipped"
   | "completed"
   | "cancelled"
   | "expired";
 
-// ==================== 订单商品明细 ====================
+/** 订单收货地址快照（下单时固化，后续删改地址不影响历史订单） */
+export interface OrderAddressSnapshot {
+  receiver: string;
+  phone: string;
+  region: string;
+  detail: string;
+}
 
-/**
- * 订单商品明细（订单项）
- */
-export interface OrderItem {
-  id?: number;
-  orderId?: number;
+/** 订单明细行（商品快照冗余） */
+export interface StoreOrderItem {
   productId: number;
   productName: string;
-  price: number;
-  quantity: number;
-  totalPrice: number;
+  productImage: string;
+  unitPrice: number;
+  qty: number;
 }
 
-/**
- * 订单商品明细请求体（创建订单时使用）
- */
-export interface OrderItemRequest {
-  productId: number;
-  quantity: number;
-}
-
-// ==================== 订单创建 ====================
-
-/**
- * 订单创建请求体
- */
-export interface CreateOrderRequest {
-  storeId: number;
-  items: OrderItemRequest[];
-}
-
-/**
- * 订单创建响应体
- */
-export interface CreateOrderResponse {
-  orderId: number;
-  orderNo: string;
-  totalAmount: number;
-  status: OrderStatus;
-  qrcodeFull?: string; // 支付完成后才有值
-  qrcodeShort?: number;
-  qrcodeSign?: string;
-  qrcodeExpiredAt?: string;
-  paidAt?: string;
-  createdAt: string;
-}
-
-// ==================== 订单查询/详情 ====================
-
-/**
- * 订单详情响应体
- */
-export interface OrderDetail {
+/** 订单（前端形态）：GET /api/orders 返回的 items 元素 */
+export interface StoreOrder {
   id: number;
   orderNo: string;
-  userId: number;
-  storeId: number;
-  storeName?: string;
   totalAmount: number;
   status: OrderStatus;
-  qrcodeShort?: number;
-  qrcodeSign?: string;
-  qrcodeFull?: string;
-  qrcodeExpiredAt?: string;
-  paidAt?: string;
-  completedAt?: string;
+  remark: string | null;
   createdAt: string;
-  updatedAt: string;
-  items: OrderItem[];
+  /** 待支付截止时间（仅 pending 订单有意义） */
+  expiredAt: string | null;
+  address: OrderAddressSnapshot;
+  items: StoreOrderItem[];
 }
 
-// ==================== 订单列表查询 ====================
-
-export interface OrderQuery {
-  page?: number;
-  pageSize?: number;
-  userId?: number;
-  storeId?: number;
-  status?: OrderStatus;
-  startDate?: string;
-  endDate?: string;
-}
-
-// ==================== 支付相关 ====================
-
-/**
- * 订单支付请求体
- */
-export interface PayOrderRequest {
-  orderId: number;
-}
-
-/**
- * 订单支付响应体
- */
-export interface PayOrderResponse {
-  orderId: number;
-  orderNo: string;
-  status: OrderStatus;
-  qrcodeFull: string;
-  qrcodeShort: number;
-  qrcodeSign: string;
-  qrcodeExpiredAt: string;
-  paidAt: string;
-}
-
-// ==================== 核销相关 ====================
-
-/**
- * 取餐码核销请求体
- */
-export interface VerifyQrcodeRequest {
-  storeId: number;
-  qrcodeShort: number;
-  qrcodeSign: string;
-}
-
-/**
- * 取餐码核销响应体
- */
-export interface VerifyQrcodeResponse {
-  orderId: number;
-  orderNo: string;
-  totalAmount: number;
-  status: OrderStatus;
-  completedAt: string;
+/** 订单列表分页结果 */
+export interface OrderListResult {
+  items: StoreOrder[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

@@ -8,13 +8,16 @@
         class="color-item"
         :class="{ active: primaryColor === color.value }"
         :style="{ backgroundColor: color.value }"
-        @click="primaryColor = color.value"
+        @click="handlePick(color.value)"
       ></div>
     </div>
     <div class="color-text">
       <span>当前：{{ primaryColor }}</span>
-      <el-color-picker v-model="primaryColor" show-alpha />
+      <!-- 不开 show-alpha：主题变量需实色，alpha 会被 toHexString 静默丢弃（选了透明却显示实色，体验困惑） -->
+      <el-color-picker :model-value="primaryColor" @update:model-value="handlePick" />
     </div>
+    <!-- 校验提示：清空/灰阶拒绝/无法识别（红），亮度自动校正（主色） -->
+    <p v-if="tip" class="color-tip" :class="{ error: tipIsError }">{{ tip }}</p>
 
     <!-- 恢复上一次主题色 -->
     <div
@@ -37,6 +40,8 @@
 </template>
 
 <script setup lang="ts">
+import { DEFAULT_PRIMARY_COLOR, THEME_COLOR_LIMITS, clampLightColor, hexToHsl } from '~/utils/color';
+
 interface PresetColor {
   label: string;
   value: string;
@@ -63,6 +68,48 @@ const primaryColor = useState<string>('CUSTOM-PRIMARY-COLOR-KEY');
 
 // 上一次主题色（插件 watch 自动维护）
 const prevColor = useState<string | null>('CUSTOM-PRIMARY-COLOR-PREV-KEY');
+
+// 校验提示文案与类型（error 红 / info 主色）
+const tip = ref('');
+const tipIsError = ref(false);
+
+/**
+ * 拾色器 / 预设色统一入口：清空回退、灰阶拒绝、亮度越界自动校正
+ * 规则与 utils/color.ts 的主题色安全值域一致
+ * @param val 新颜色（拾色器清空时为 null）
+ */
+function handlePick(val: string | null): void {
+  tip.value = '';
+  tipIsError.value = false;
+
+  // 清空拾色器：状态未变更，:model-value 自动回弹，仅提示
+  if (!val) {
+    tip.value = '已清空，保持原主题色';
+    tipIsError.value = true;
+    return;
+  }
+
+  const hsl = hexToHsl(val);
+  if (!hsl) {
+    tip.value = '无法识别的颜色值';
+    tipIsError.value = true;
+    return;
+  }
+
+  // 灰度色系拒绝（自动提饱和会改变色相观感，参考 demo 的处理方式）
+  if (hsl.s < THEME_COLOR_LIMITS.sMin) {
+    tip.value = '饱和度不足，不能使用灰度色系作为主题色';
+    tipIsError.value = true;
+    return;
+  }
+
+  // 亮度越界：夹取到安全区间后应用
+  const corrected = clampLightColor(val);
+  if (corrected.toLowerCase() !== val.toLowerCase()) {
+    tip.value = `亮度超出安全区间，已自动校正为 ${corrected}`;
+  }
+  primaryColor.value = corrected;
+}
 
 // 主题色切换：临时启用全局过渡，切换完成后移除
 let transitionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -94,6 +141,11 @@ onClickOutside(
     if (target?.closest('.el-color-picker__panel') || target?.closest('.el-color-picker__trigger')) {
       return;
     }
+    // 开关按钮自身不算"外部"：显隐 toggle 完全由按钮 @click 负责，
+    // 否则本次点击先被判定外部关闭、再被 @click 取反重开，按钮永远无法收起面板
+    if (target?.closest('.theme-btn')) {
+      return;
+    }
     emit('close');
   },
   // 面板本身不能被算作"内部"之外的干扰，这里只监听 click
@@ -103,6 +155,7 @@ onClickOutside(
 
 <style scoped lang="scss">
 .color-picker-container {
+  user-select: none;
   padding: 0.75rem;
   background-color: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
@@ -142,6 +195,17 @@ onClickOutside(
     gap: 0.5rem;
     font-size: var(--kk-font-size-small);
     color: var(--el-text-color-secondary);
+  }
+
+  .color-tip {
+    margin: 0.5rem 0 0;
+    font-size: var(--kk-font-size-extra-small);
+    line-height: 1.4;
+    color: var(--el-color-primary);
+
+    &.error {
+      color: var(--el-color-danger);
+    }
   }
 
   .color-prev {

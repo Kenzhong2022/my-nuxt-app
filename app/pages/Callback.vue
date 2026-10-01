@@ -19,7 +19,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { useAuthStore } from '~~/app/stores/auth';
 
 definePageMeta({
   layout: false, // 不使用布局
@@ -84,9 +83,9 @@ const activities = ref([
     error: { content: '获取token失败' },
   }),
   createActivity({
-    pending: { content: 'token持久化...' },
-    success: { content: 'token已持久化' },
-    error: { content: 'token持久化失败' },
+    pending: { content: '建立服务端会话...' },
+    success: { content: '服务端会话已建立' },
+    error: { content: '服务端会话建立失败' },
   }),
 ]);
 
@@ -114,19 +113,27 @@ function getCode() {
   return route.query.code;
 }
 
+/** 从地址栏摘除授权码（code 一次性消费，刷新页面重放必然 400），保留其余参数（如 redirect） */
+function stripCodeFromUrl() {
+  const query = { ...route.query };
+  delete query.code;
+  const search = new URLSearchParams(query).toString();
+  // replaceState 不产生历史记录，避免回退又回到带旧 code 的地址
+  window.history.replaceState(window.history.state, '', search ? `${route.path}?${search}` : route.path);
+}
+
 /** 用授权码换取 token，操作 timeline[0]（redirect_uri 走运行时配置，须与 authorize 发码时一致） */
 async function redeemToken(code) {
   activities.value[0].activate();
-  const config = useRuntimeConfig();
   // 与发起授权时同一来源：配置优先，否则当前 origin 拼接 /CallBack
   const { getCallbackUrl } = useAuth();
   try {
+    // client_secret 由服务端持有并提交认证中心；成功后服务端直接写 HttpOnly cookie
     const response = await $fetch('/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code,
-        client_id: config.public.clientId,
         redirect_uri: getCallbackUrl(),
       }),
     });
@@ -138,19 +145,10 @@ async function redeemToken(code) {
   }
 }
 
-/** 持久化 token 到 Pinia store（写入 cookie，SSR/CSR 均可读），操作 timeline[1] */
-function persistToken(tokenResponse) {
+/** 确认服务端会话建立（令牌已写入 HttpOnly cookie，前端不经手），操作 timeline[1] */
+function confirmSession(response) {
   activities.value[1].activate();
-  // 使用 Pinia store 存储 token（useCookie 自动持久化）
-  // 如果你还想存储 refresh_token，可以扩展 store 添加 refreshToken 字段
-  const authStore = useAuthStore();
-  const accessToken = tokenResponse?.access_token;
-  if (!accessToken) {
-    activities.value[1].markError();
-    return false;
-  }
-  authStore.setToken(accessToken);
-  if (authStore.token) {
+  if (response?.code === 200) {
     activities.value[1].markSuccess();
     return true;
   }
@@ -158,10 +156,12 @@ function persistToken(tokenResponse) {
   return false;
 }
 
-/** 主流程：校验参数 → 换 token → 持久化 → 重新确认身份刷新菜单 → 跳转 */
+/** 主流程：校验参数 → 换 token → 确认会话 → 重新确认身份刷新菜单 → 跳转 */
 async function handleCallback() {
   const backPath = resolveRedirectPath();
   const code = getCode();
+  // 无论兑换成败立即摘除地址栏 code，防刷新/回退重放一次性授权码
+  stripCodeFromUrl();
   if (!code) {
     router.push(backPath);
     return;
@@ -169,10 +169,10 @@ async function handleCallback() {
 
   try {
     const tokenResponse = await redeemToken(code);
-    // token 未成功持久化（响应缺 access_token / 写入失败）则中止，
-    // 绝不在无 token 状态下执行 reloadIdentity（否则会以游客身份重拉，反而清空菜单）
-    if (!persistToken(tokenResponse)) {
-      throw new Error('token 持久化失败，请重新登录');
+    // 服务端未确认会话建立（响应缺 code 200）则中止，
+    // 绝不在无会话状态下执行 reloadIdentity（否则会以游客身份重拉，反而清空菜单）
+    if (!confirmSession(tokenResponse)) {
+      throw new Error('服务端会话建立失败，请重新登录');
     }
     // 登录成功后重新走一遍身份确认流程（app.vue 的 callOnce 不会二次执行）：
     // 重拉 getInfo + getRouters + 全量目录，刷新侧边栏菜单与权限后再跳转，

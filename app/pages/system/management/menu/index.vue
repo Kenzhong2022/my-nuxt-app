@@ -1,5 +1,31 @@
 <template>
   <div class="menu-admin">
+    <!-- ==================== 未配置页面检测提示（路由表与菜单差集，可一键回填新增） ==================== -->
+    <el-alert
+      v-if="unconfiguredPages.length"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="unconfig-alert"
+    >
+      <template #title>
+        <span class="unconfig-toggle" @click="showUnconfig = !showUnconfig">
+          检测到 {{ unconfiguredPages.length }} 个项目页面尚未配置到菜单，点击{{ showUnconfig ? '收起' : '展开查看' }}
+        </span>
+      </template>
+      <div v-show="showUnconfig" class="unconfig-list">
+        <div v-for="page in unconfiguredPages" :key="page.path" class="unconfig-item">
+          <div class="unconfig-info">
+            <span class="unconfig-path">{{ page.file || page.path }}</span>
+            <span class="unconfig-meta">{{ page.detail }}</span>
+          </div>
+          <el-button type="primary" size="small" :icon="Plus" @click="handleCreateFromPage(page)">
+            新增
+          </el-button>
+        </div>
+      </div>
+    </el-alert>
+
     <!-- ==================== 筛选 + 菜单表格（BaseTable：配置化搜索与列） ==================== -->
     <BaseTable
       :table-key="tableKey"
@@ -366,6 +392,108 @@ async function reloadMenus(): Promise<void> {
   await permissionStore.fetchAllPermissions();
   rawMenus.value = buildMenuTree();
   tableKey.value += 1;
+  detectUnconfiguredPages();
+}
+
+/* ==================== 未配置页面检测（路由表 vs permissions 页面行差集，仅收集 .vue 页面文件） ==================== */
+
+/** 未配置到菜单的项目页面 */
+interface UnconfiguredPage {
+  /** 页面源文件路径（dev 下从懒加载 import 解析；生产构建取不到时为空串） */
+  file: string;
+  /** 路由路径 */
+  path: string;
+  /** 名称预填值（meta.title ?? meta.name ?? 路由名，与 sync 规则一致） */
+  metaName: string;
+  /** 详情展示文案（来源文件时含路由地址，后接 meta 信息） */
+  detail: string;
+  /** 是否默认隐藏（动态路由 / 无布局页，与 sync 规则一致） */
+  defaultHidden: boolean;
+}
+
+const router = useRouter();
+const showUnconfig = ref(false);
+const unconfiguredPages = ref<UnconfiguredPage[]>([]);
+
+/**
+ * 解析路由记录对应的页面源文件路径（从懒加载 import 函数源码中提取）
+ * 仅 dev 有效（生产构建已打包，恒返回空串）；失败或非函数组件返回空串
+ */
+function extractPageFile(record: { components?: Record<string, unknown> | null }): string {
+  if (!import.meta.dev) return '';
+  const comp = record.components?.default;
+  if (typeof comp !== 'function') return '';
+  const m = /import\(["']([^"']+)["']\)/.exec(String(comp));
+  return m?.[1]?.replace(/[?#].*$/, '') ?? '';
+}
+
+/** 递归收集已配置为菜单（type=page）的路由路径集合 */
+function collectConfiguredPaths(list: MenuItem[], set: Set<string>): void {
+  for (const node of list) {
+    if (node.type === 'page' && node.path) set.add(normalizeMenuPath(node.path));
+    if (node.children?.length) collectConfiguredPaths(node.children, set);
+  }
+}
+
+/**
+ * 对比当前注册路由与已配置菜单，找出未配置的页面
+ * 收集时筛选源文件后缀为 .vue 的页面（排除 .client.vue / .server.vue 局部组件）；
+ * 跳过根路径 / 匿名重定向 / Nuxt 内部 catchAll；按路径去重后按字母排序
+ */
+function detectUnconfiguredPages(): void {
+  const configured = new Set<string>();
+  collectConfiguredPaths(rawMenus.value, configured);
+
+  const seen = new Set<string>();
+  const result: UnconfiguredPage[] = [];
+  for (const record of router.getRoutes()) {
+    const routeName = String(record.name ?? '');
+    if (!routeName || routeName === 'catchAll') continue;
+    const path = normalizeMenuPath(record.path);
+    if (path === '/' || seen.has(path) || configured.has(path)) continue;
+
+    // 仅收集 .vue 页面文件（dev 下解析源文件；生产构建取不到时放行）
+    const file = extractPageFile(record);
+    if (file && (!file.endsWith('.vue') || /\.client\.vue$|\.server\.vue$/.test(file))) continue;
+    if (import.meta.dev && !file) continue;
+    seen.add(path);
+
+    const meta = (record.meta ?? {}) as Record<string, unknown>;
+    const metaName = String(meta.title ?? meta.name ?? routeName).trim() || path;
+    const metaParts: string[] = [];
+    if (meta.name !== undefined) metaParts.push(`meta.name：${String(meta.name)}`);
+    if (meta.title !== undefined) metaParts.push(`meta.title：${String(meta.title)}`);
+    const metaText = metaParts.length > 0 ? metaParts.join('，') : `路由名：${routeName}`;
+    result.push({
+      file,
+      path,
+      metaName,
+      detail: [file ? `路由 ${path}` : '', metaText].filter(Boolean).join(' · '),
+      defaultHidden: meta.layout === false || path.includes(':'),
+    });
+  }
+  result.sort((a, b) => a.path.localeCompare(b.path));
+  unconfiguredPages.value = result;
+}
+
+/** 按最长目录前缀查找路由路径归属的目录节点（无匹配返回 null → 根目录） */
+function findModuleByPrefix(path: string): MenuItem | null {
+  let best: MenuItem | null = null;
+  let bestLen = -1;
+  function walk(list: MenuItem[]): void {
+    for (const node of list) {
+      if (node.type === 'module' && node.path) {
+        const np = normalizeMenuPath(node.path);
+        if ((path === np || path.startsWith(`${np}/`)) && np.length > bestLen) {
+          best = node;
+          bestLen = np.length;
+        }
+      }
+      if (node.children?.length) walk(node.children);
+    }
+  }
+  walk(rawMenus.value);
+  return best;
 }
 
 /* ==================== 筛选交互 ==================== */
@@ -629,6 +757,29 @@ function handleCreate(parent?: MenuItem): void {
   });
 }
 
+/**
+ * 由未配置页面一键新增：预填上级（最长目录前缀目录）/ 名称 / 路由地址 / 权限标识
+ * 动态路由（:param）与无布局页默认「隐藏」，与 sync 规则一致
+ */
+function handleCreateFromPage(page: UnconfiguredPage): void {
+  const parent = findModuleByPrefix(page.path);
+  dialogMeta.mode = 'create';
+  dialogMeta.createParentType = parent?.type ?? '';
+  dialogMeta.currentType = 'page';
+  liveForm.parentId = parent ? String(parent.dbId) : ROOT_PARENT_KEY;
+  liveForm.path = page.path;
+  liveForm.code = '';
+  formDialogRef.value?.open({
+    parentId: liveForm.parentId,
+    type: 'page',
+    label: page.metaName,
+    path: page.path,
+    id: `page:${page.path}`,
+    sort: 1,
+    status: page.defaultHidden ? 0 : 1,
+  });
+}
+
 /** 打开编辑弹窗（回填行数据；按钮从 perm 末段解析操作类型；上级回显名称） */
 function handleEdit(row: MenuItem): void {
   dialogMeta.mode = 'edit';
@@ -804,6 +955,52 @@ onMounted(() => {
   min-height: 100%;
   padding: 16px;
   background-color: var(--el-bg-color-page);
+}
+
+/* ==================== 未配置页面检测提示 ==================== */
+.unconfig-toggle {
+  cursor: pointer;
+}
+
+.unconfig-toggle:hover {
+  color: var(--el-color-primary);
+}
+
+.unconfig-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.unconfig-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: var(--el-fill-color-light);
+}
+
+.unconfig-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.unconfig-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+}
+
+.unconfig-meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 /* ==================== BaseTable 高度链 ==================== */

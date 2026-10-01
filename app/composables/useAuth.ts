@@ -1,6 +1,4 @@
 // composables/useAuth.ts
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '~~/app/stores/auth';
 import { usePermissionStore } from '~~/app/stores/permission';
 import { useUserInfoStore } from '~~/app/stores/userInfo';
 
@@ -36,11 +34,14 @@ function removeLegacyAuthKeys(): void {
  * @description 集中管理登录跳转、登出、未授权处理，供组件 / 中间件 / 插件调用
  */
 export function useAuth() {
-  const authStore = useAuthStore();
+  const userInfoStore = useUserInfoStore();
   const permissionStore = usePermissionStore();
   const config = useRuntimeConfig();
-  // storeToRefs 保持 computed 的响应式（直接取属性会变成一次性快照）
-  const { isLoggedIn } = storeToRefs(authStore);
+  // 登录态单一事实源 = 服务端 getInfo 验证结果（HttpOnly cookie 自动携带）：
+  // 游客 userId 为 0，真实用户 > 0；不再是本地 cookie 有无的客户端猜测
+  const isLoggedIn = computed(
+    () => userInfoStore.isLoaded && (userInfoStore.user?.userId ?? 0) > 0,
+  );
 
   /**
    * 解析 OAuth2 回调地址：配置项优先，否则按当前站点 origin 拼接 /CallBack
@@ -124,12 +125,18 @@ export function useAuth() {
 
   /**
    * 登出
-   * @description 清空 token 和权限，弹出登录提示
+   * @description 服务端清除 HttpOnly 会话 cookie（前端 JS 无法删除），
+   *              再清权限与本地残留，以游客身份重拉身份信息
    * @returns 无返回值
    */
-  function logout(): void {
-    console.log('登出', authStore);
-    authStore.clearToken();
+  async function logout(): Promise<void> {
+    try {
+      await $fetch('/api/logout', { method: 'POST' });
+    } catch {
+      // cookie 未清除时本地清空没有意义（下次 getInfo 会重新识别出登录态），提示重试
+      ElMessage.error('退出登录失败，请重试');
+      return;
+    }
     permissionStore.clearPermissions();
     removeLegacyAuthKeys();
     ElMessage.success('已退出登录');
@@ -138,13 +145,12 @@ export function useAuth() {
   }
 
   /**
-   * 处理接口 401 未授权响应
+   * 处理接口 401 未授权响应（续期也失败时的最终兜底）
    * @description 仅轻提示 + 清登录态，不弹窗不跳转（区别于页面级无权限的 login 弹窗），
    *              避免接口失败打断用户当前操作
    * @returns 无返回值
    */
   function handleUnauthorized(): void {
-    authStore.clearToken();
     permissionStore.clearPermissions();
     removeLegacyAuthKeys();
     ElMessage.warning('登录已过期，请重新登录');
@@ -153,7 +159,7 @@ export function useAuth() {
   }
 
   return {
-    /** 当前是否已登录（响应式 ref） */
+    /** 当前是否已登录（computed，随 userInfo store 实时更新） */
     isLoggedIn,
     /** OAuth2 回调地址（配置优先，否则当前 origin 拼接 /CallBack） */
     getCallbackUrl,

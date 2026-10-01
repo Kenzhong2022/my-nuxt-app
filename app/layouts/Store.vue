@@ -24,9 +24,19 @@
               <div class="iconfont icon-cart-empty"></div>
             </el-button>
           </el-badge>
-          <el-button circle class="cursor-pointer" @click="goUser">
-            <div class="iconfont icon-yonghu"></div>
-          </el-button>
+          <!-- 登录态入口：已登录显示头像 icon + 下拉菜单，未登录显示「登录」文本 -->
+          <el-dropdown v-if="isLoggedIn" trigger="click" @command="handleUserCommand">
+            <el-button circle class="cursor-pointer">
+              <div class="iconfont icon-yonghu"></div>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-button v-else type="primary" round @click="login">登录</el-button>
         </div>
       </div>
     </el-header>
@@ -97,6 +107,9 @@
         </div>
       </div>
     </footer>
+
+    <!-- 测试悬浮窗：仅开发环境挂载（接口侧同样有 import.meta.dev 保护） -->
+    <TestFloatPanel v-if="isDev" />
   </div>
 </template>
 
@@ -106,6 +119,9 @@ import { navigateTo } from 'nuxt/app';
 import HomeButton from '@/components/HomeButton.vue';
 
 const drawerVisible = ref(false);
+
+// 仅开发环境显示测试悬浮窗
+const isDev = import.meta.dev;
 
 const cart = useCartStore();
 
@@ -121,10 +137,23 @@ function goHome() {
   navigateTo('/myStore');
 }
 
-const { login } = useAuth();
+const { login, logout, isLoggedIn } = useAuth();
 
-function goUser() {
-  login();
+/** 用户下拉菜单命令分发 */
+function handleUserCommand(command: string) {
+  if (command === 'orders') {
+    navigateTo('/myStore/orders');
+    return;
+  }
+  if (command === 'logout') {
+    ElMessageBox.confirm('确定退出登录吗？', '提示', {
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+      .then(() => logout())
+      .catch(() => {});
+  }
 }
 
 function onSearch({ query, mode }: { query: string; mode: string }) {

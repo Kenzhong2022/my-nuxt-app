@@ -1,5 +1,4 @@
 // middleware/auth.global.ts
-import { useAuthStore } from '~~/app/stores/auth';
 // 如果没有用 @element-plus/nuxt 自动导入，需要手动引入：
 // import { ElMessage } from 'element-plus';
 
@@ -15,14 +14,13 @@ export default defineNuxtRouteMiddleware((to) => {
   const requiredAny = to.meta.requiredPermissionAny;
   if (!required && !requiredAny) return;
 
-  // 3. SSR 阶段拿不到 localStorage 里的 token，跳过鉴权
-  //    注意：这意味着受保护页面 SSR 会照常渲染，客户端再补判
+  // 3. SSR 阶段跳过（app.vue callOnce 的身份数据会随 payload 水合，客户端再补判）
   if (import.meta.server) return;
 
-  const authStore = useAuthStore();
-  if (!authStore.token) {
+  // 4. 登录态以身份为准（getInfo 服务端验证结果），不再是本地 cookie 有无的猜测
+  const { isLoggedIn, requireLogin } = useAuth();
+  if (!isLoggedIn.value) {
     console.log('未登录，跳转到登录页', to.fullPath);
-    const { requireLogin } = useAuth();
     requireLogin(to.fullPath);
     // 若 requireLogin 内部没 await navigateTo，这里补一个中止
     return;

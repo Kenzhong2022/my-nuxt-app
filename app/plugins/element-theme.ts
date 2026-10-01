@@ -1,4 +1,5 @@
-import { TinyColor } from "@ctrl/tinycolor";
+import { TinyColor } from '@ctrl/tinycolor';
+import { adjustDarkColor, clampLightColor } from '~/utils/color';
 
 /**
  * 生成 Element Plus 色阶变量
@@ -7,30 +8,29 @@ import { TinyColor } from "@ctrl/tinycolor";
  */
 function generateVars(color: string, isDark: boolean): string {
   const base = new TinyColor(color);
-  if (!base.isValid) return "";
+  if (!base.isValid) return '';
+
+  // 亮度边界安全化：亮色夹取 [28,85]（过亮与白底融合），暗色保底 30（过暗在暗底不可读）
+  const safeHex = isDark ? adjustDarkColor(color) : clampLightColor(color);
 
   // Light 向白色混合，Dark 向暗色背景混合
-  const mixTarget = isDark
-    ? new TinyColor("#1d1d1d")
-    : new TinyColor("#ffffff");
+  const mixTarget = isDark ? new TinyColor('#1d1d1d') : new TinyColor('#ffffff');
 
   // Element Plus 实际用到的 light 级别：3, 5, 7, 8, 9
   // 注意：TinyColor.mix 是 mutating 方法，必须每次 new 新实例
   const levels = [3, 5, 7, 8, 9];
   const lightVars = levels
     .map((l) => {
-      const mixed = new TinyColor(color).mix(mixTarget, l * 10).toHexString();
+      const mixed = new TinyColor(safeHex).mix(mixTarget, l * 10).toHexString();
       return `--el-color-primary-light-${l}: ${mixed};`;
     })
-    .join("\n    ");
+    .join('\n    ');
 
   // dark-2：混合 20% 黑色
-  const dark2 = new TinyColor(color)
-    .mix(new TinyColor("#000000"), 20)
-    .toHexString();
+  const dark2 = new TinyColor(safeHex).mix(new TinyColor('#000000'), 20).toHexString();
 
   return `
-    --el-color-primary: ${base.toHexString()};
+    --el-color-primary: ${new TinyColor(safeHex).toHexString()};
     ${lightVars}
     --el-color-primary-dark-2: ${dark2};
   `;
@@ -38,31 +38,36 @@ function generateVars(color: string, isDark: boolean): string {
 
 export default defineNuxtPlugin(() => {
   // cookie 只负责 SSR 初始值 + 持久化
-  const cookie = useCookie("el-primary-color", {
-    default: () => "#ff6b6b",
+  const cookie = useCookie('el-primary-color', {
+    default: () => '#ff6b6b',
     maxAge: 60 * 60 * 24 * 365,
   });
 
+  // 初始化消毒：cookie 值非法（篡改/历史脏数据）时立即回退默认色并修正 cookie，
+  // 避免 SSR 输出空主题（generateVars 对非法值返回空串）
+  if (!cookie.value || !new TinyColor(cookie.value).isValid) {
+    cookie.value = '#ff6b6b';
+  }
+
   // 上一次主题色（用于"恢复上次"功能），同样 cookie 持久化
-  const prevCookie = useCookie<string | null>("el-primary-color-prev", {
+  const prevCookie = useCookie<string | null>('el-primary-color-prev', {
     default: () => null,
     maxAge: 60 * 60 * 24 * 365,
   });
 
   // 用 useState 做跨组件响应式共享，初始值取自 cookie
-  const primaryColor = useState<string>(
-    "CUSTOM-PRIMARY-COLOR-KEY",
-    () => cookie.value,
-  );
+  const primaryColor = useState<string>('CUSTOM-PRIMARY-COLOR-KEY', () => cookie.value);
 
   // 共享"上一次颜色"状态，初始值取自 cookie
-  const prevColor = useState<string | null>(
-    "CUSTOM-PRIMARY-COLOR-PREV-KEY",
-    () => prevCookie.value,
-  );
+  const prevColor = useState<string | null>('CUSTOM-PRIMARY-COLOR-PREV-KEY', () => prevCookie.value);
 
   // 颜色变化时：旧值存为"上一次"，新值同步回 cookie
   watch(primaryColor, (newVal, oldVal) => {
+    // 防御：非法/被清空的值（null）不落库不进历史，回退默认色（正常路径已在选择器组件拦截）
+    if (!newVal || !new TinyColor(newVal).isValid) {
+      primaryColor.value = '#ff6b6b';
+      return;
+    }
     if (oldVal && oldVal !== newVal) {
       prevColor.value = oldVal;
       prevCookie.value = oldVal;
@@ -76,14 +81,14 @@ export default defineNuxtPlugin(() => {
   const themeCss = computed(() => {
     const light = `:root:not(.dark) {\n    ${generateVars(primaryColor.value, false)}\n  }`;
     const dark = `:root.dark {\n    ${generateVars(primaryColor.value, true)}\n  }`;
-    return light + "\n" + dark;
+    return light + '\n' + dark;
   });
 
   // 用函数形式确保 useHead 响应式更新 innerHTML
   useHead(() => ({
     style: [
       {
-        id: "dynamic-element-theme",
+        id: 'dynamic-element-theme',
         innerHTML: themeCss.value,
       },
     ],

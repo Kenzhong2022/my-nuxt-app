@@ -11,10 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    IIconParkfrigate: typeof import('~icons/icon-park/frigate')['default']
-    IIconParkFrigate: typeof import('~icons/icon-park/frigate')['default']
     IIconParkLocal: typeof import('~icons/icon-park/local')['default']
-    IIconParkLocation: typeof import('~icons/icon-park/location')['default']
     IIconParkRepositioning: typeof import('~icons/icon-park/repositioning')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
