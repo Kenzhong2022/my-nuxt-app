@@ -1,18 +1,26 @@
 # ============================================================
 # wrangler.toml — Cloudflare 部署配置文件（由 wrangler CLI 读取）
+# 【部署形态】Workers（非 Pages）：SSR/API 跑在 Worker 入口，静态资源走 Assets 绑定
 #
 # 【作用】
-#   - name：指定部署到哪个 Cloudflare Pages 项目
-#   - pages_build_output_dir：构建产物目录
+#   - name：指定部署到哪个 Cloudflare Workers 项目
+#   - main：Worker 入口（SSR/API 请求的处理代码）
+#   - [assets]：静态资源目录 + 绑定名（命中文件的请求不进 Worker，直接回源 CDN）
 #   - compatibility_date / compatibility_flags：workerd 运行时版本与
 #     Node.js 兼容开关（nodejs_compat）
 #   - [vars]：非敏感环境变量（URL、云名、账号 ID、AppID 等）
 #
 # 【为什么需要它】
-#   1. 部署：`wrangler deploy` 按本文件上传 ./dist 产物并绑定到线上项目；
+#   1. 部署：`wrangler deploy` 按本文件上传 Worker 代码与静态资源并绑定到线上项目；
 #   2. 本地仿真：`pnpm preview`（wrangler dev）用 workerd 模拟线上环境时，
 #      [vars] 会注入到仿真沙箱；
 #   3. 注意：`pnpm dev`（nuxt dev）不读本文件，本地开发变量来自 .env。
+#
+# 【Workers 相对 Pages 多出的能力（改造动机）】
+#   - Cron Triggers：[triggers] crons 定时任务（如订单超时释放）
+#   - 各类 binding：[[d1_databases]] / [[kv_namespaces]] / [[r2_buckets]] / [ai]
+#   - Durable Objects、版本灰度发布（wrangler versions）
+#   - 域名：*.workers.dev 子域；自定义域名配在 Routes（替代 Pages 自定义域）
 #
 # 【NUXT_ 前缀约定】
 #   所有变量统一使用 NUXT_ / NUXT_PUBLIC_ 前缀，Nuxt 运行时自动映射到
@@ -29,30 +37,39 @@
 #   - NUXT_CLOUDINARY_API_KEY / NUXT_CLOUDINARY_API_SECRET
 #   - NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN
 #   - NUXT_BAIDU_APP_KEY / NUXT_QRCODE_SECRET
+#   - NUXT_CLIENT_SECRET（OAuth2 客户端密钥，与认证中心 oauth_clients 注册值一致）
 #   这些必须用 secret 方式单独设置（CF 加密存储，不进版本库）。
 #
 # 【命令行操作：把变量更新到 CF 项目】
 #   第一步：登录 Cloudflare 账号（浏览器授权，一次即可）
 #     npx wrangler login
-#   第二步：逐个变量写入线上，每个变量一行命令，回车后粘贴对应值：
-#     npx wrangler pages secret put NUXT_DATABASE_URL --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_DEEPSEEK_API_KEY --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_JWT_ACCESS_SECRET --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_JWT_REFRESH_SECRET --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_CLOUDINARY_API_KEY --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_CLOUDINARY_API_SECRET --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_DASHSCOPE_API_KEY --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_BAIDU_APP_KEY --project-name my-nuxt-app
-#     npx wrangler pages secret put NUXT_UPSTASH_REDIS_REST_TOKEN --project-name my-nuxt-app
+#   第二步：逐个变量写入线上（Workers 形态的 secret 命令无 pages 子命令，
+#   项目名自动读本文件 name），回车后粘贴对应值：
+#     npx wrangler secret put NUXT_DATABASE_URL
+#     npx wrangler secret put NUXT_DEEPSEEK_API_KEY
+#     npx wrangler secret put NUXT_JWT_ACCESS_SECRET
+#     npx wrangler secret put NUXT_JWT_REFRESH_SECRET
+#     npx wrangler secret put NUXT_CLOUDINARY_API_KEY
+#     npx wrangler secret put NUXT_CLOUDINARY_API_SECRET
+#     npx wrangler secret put NUXT_CLOUDFLARE_WORKERS_AI_API_TOKEN
+#     npx wrangler secret put NUXT_DASHSCOPE_API_KEY
+#     npx wrangler secret put NUXT_BAIDU_APP_KEY
+#     npx wrangler secret put NUXT_UPSTASH_REDIS_REST_TOKEN
+#     npx wrangler secret put NUXT_CLIENT_SECRET
 #   非敏感变量：改本文件 [vars] 后重新 `pnpm deploy` 即可；
-#   也可在 Dashboard → Pages → 项目 → Settings → Environment variables 覆盖。
+#   也可在 Dashboard → Workers → 项目 → Settings → Variables 覆盖。
 # ============================================================
 
 name = "my-nuxt-app"
-pages_build_output_dir = "./dist"
+# Worker 入口：SSR/API 请求的处理代码（nitro cloudflare preset 产物）
+main = "./dist/server/index.mjs"
 compatibility_date = "2026-08-29"
 compatibility_flags = ["nodejs_compat"]
+
+# 静态资源：命中文件的请求由 Assets 直接返回，不进 Worker（省 CPU 计费）
+[assets]
+directory = "./dist/public"
+binding = "ASSETS"
 
 # 普通环境变量（非敏感：URL、云名、账号 ID、AppID）
 # 全部带 NUXT_ / NUXT_PUBLIC_ 前缀，运行时自动映射到 runtimeConfig

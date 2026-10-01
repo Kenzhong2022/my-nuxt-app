@@ -70,6 +70,8 @@ export default defineNuxtConfig({
       accessSecret: '',
       refreshSecret: '',
     },
+    // OAuth2 客户端密钥（换 token / 刷新 token 时提交给登录中心）：NUXT_CLIENT_SECRET
+    clientSecret: '',
     // Cloudinary 媒体上传：NUXT_CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET
     cloudinary: {
       cloudName: '',
@@ -186,14 +188,14 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // dev 用默认 node-server，跳过 Cloudflare(workerd) 本地仿真的启动开销；生产构建走 cloudflare-pages
-    preset: isDev ? undefined : 'cloudflare-pages',
+    // dev 用默认 node-server，跳过 Cloudflare(workerd) 本地仿真的启动开销；生产构建走 Workers 部署（cloudflare preset）
+    preset: isDev ? undefined : 'cloudflare',
     // Cloudflare 专属配置仅生产构建需要；未来新增生产专属项都收进此条件展开
     ...(isDev
       ? {}
       : {
           cloudflare: {
-            deployConfig: false, // ← 禁用自动生成的 wrangler.json
+            deployConfig: false, // ← 禁用自动生成的 wrangler.json，根目录手写 wrangler.toml 统一维护
           },
         }),
     output: {
