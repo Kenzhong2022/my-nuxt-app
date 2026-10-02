@@ -200,6 +200,9 @@ export default defineNuxtConfig({
       dir: 'dist',
     },
     compressPublicAssets: !isDev,
+    // 关闭生产 Source Map：减小 server bundle 体积（降低 CF 构建机 2GB 堆 OOM 风险），
+    // 且线上产物不暴露源码结构；dev 不受影响，调试走本地 sourcemap
+    sourceMap: false,
     // devProxy: {
     //   "/api/ai": {
     //     target: "https://chief-agent-alpha.vercel.app",
