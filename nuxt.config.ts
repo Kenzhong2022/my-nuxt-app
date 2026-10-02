@@ -193,7 +193,7 @@ export default defineNuxtConfig({
       ? {}
       : {
           cloudflare: {
-            deployConfig: false, // ← 禁用自动生成的 wrangler.json，根目录手写 wrangler.toml 统一维护
+            deployConfig: true, // ← 禁用自动生成的 wrangler.json，根目录手写 wrangler.toml 统一维护
             // Node.js 兼容：配合 wrangler.toml 的 nodejs_compat 标志，让 node:* 模块
             // 走运行时原生实现而非 unenv polyfill 打包（wrangler.toml 已声明时此处可省略，显式写出防遗漏）
             nodeCompat: true,
