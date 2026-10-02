@@ -60,7 +60,7 @@
 #   也可在 Dashboard → Workers → 项目 → Settings → Variables 覆盖。
 # ============================================================
 
-name = "my-nuxt-app"
+name = "my-nuxt-app-v2"
 # Worker 入口：SSR/API 请求的处理代码（nitro cloudflare preset 产物）
 main = "./dist/server/index.mjs"
 compatibility_date = "2026-08-29"
