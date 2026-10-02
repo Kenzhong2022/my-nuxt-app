@@ -66,6 +66,10 @@ main = "./dist/server/index.mjs"
 compatibility_date = "2026-08-29"
 compatibility_flags = ["nodejs_compat"]
 
+# 与 Dashboard 远程配置保持一致：关闭 workers.dev 子域和 preview URL（自定义域名走 Routes）
+workers_dev = false
+preview_urls = false
+
 # 静态资源：命中文件的请求由 Assets 直接返回，不进 Worker（省 CPU 计费）
 [assets]
 directory = "./dist/public"

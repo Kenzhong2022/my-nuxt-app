@@ -186,8 +186,10 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // dev 用默认 node-server，跳过 Cloudflare(workerd) 本地仿真的启动开销；生产构建走 Workers 部署（cloudflare preset）
-    preset: isDev ? undefined : 'cloudflare',
+    // dev 用默认 node-server，跳过 Cloudflare(workerd) 本地仿真的启动开销；生产构建走 Workers 部署
+    // 注意：'cloudflare' 是 legacy service-worker 格式别名，会导致 node:* 模块上传校验失败，
+    // 必须用 'cloudflare_module'（ES module 格式，配合 wrangler.toml 的 nodejs_compat）
+    preset: isDev ? undefined : 'cloudflare_module',
     // Cloudflare 专属配置仅生产构建需要；未来新增生产专属项都收进此条件展开
     ...(isDev
       ? {}
