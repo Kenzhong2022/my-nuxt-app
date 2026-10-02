@@ -167,8 +167,6 @@ export default defineNuxtConfig({
     },
     optimizeDeps: {
       include: [
-        '@mediapipe/selfie_segmentation',
-        '@mediapipe/camera_utils',
         '@element-plus/icons-vue',
         'dayjs', // CJS
         'dayjs/plugin/*.js',
