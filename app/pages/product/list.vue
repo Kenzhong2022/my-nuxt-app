@@ -21,20 +21,16 @@
       @fetch="fetchData"
       @search="(form) => handleSearch(form as SearchForm)"
     >
-      <!-- 自定义列：商品图片 -->
+      <!-- 自定义列：商品图片（加载失败占位走全局 .image-fallback 伪元素样式） -->
       <template #imageSlot="{ row }">
         <el-image
           :alt="row.image"
           :src="thumbUrl(row.image)"
-          style="width: 50px; height: 50px"
+          class="el-image-fallback"
           fit="cover"
           :preview-src-list="[row.image]"
           preview-teleported
-        >
-          <template #error>
-            <div class="image-placeholder">无图</div>
-          </template>
-        </el-image>
+        />
       </template>
 
       <!-- 自定义价格表头 -->
@@ -110,27 +106,29 @@ type SearchFormData<T extends readonly SearchFormItem[]> = {
   [K in T[number]['prop']]: FormValueType<Extract<T[number], { prop: K }>['type']>;
 };
 
-// ========== 表格列配置 ==========
+// ========== 表格列配置（align: 默认内容居中） ==========
 const columns = [
-  { prop: 'id', label: 'ID', minWidth: 70, resizable: false, fixed: 'left' },
-  { label: '商品图片', slotName: 'imageSlot', minWidth: 90, resizable: false },
+  { prop: 'id', label: 'ID', minWidth: 70, align: 'center', headerAlign: 'center', resizable: false, fixed: 'left' },
+  { label: '商品图片', slotName: 'imageSlot', minWidth: 150, align: 'center', headerAlign: 'center', resizable: false },
   { prop: 'name', label: '商品名称', minWidth: 140, resizable: false },
   { prop: 'title', label: '标题', minWidth: 180, showOverflowTooltip: true, resizable: false },
   {
     label: '价格',
     slotName: 'priceSlot',
-    headerSlotName: 'priceHeader', // 新增：表头自定义
+    headerSlotName: 'priceHeader', // 表头自定义
     prop: 'price', // 用于排序时的字段名
     minWidth: 120,
+    align: 'center',
+    headerAlign: 'center',
     resizable: false,
   },
-  { prop: 'category', label: '分类', minWidth: 100, resizable: false },
-  { prop: 'stock', label: '库存', minWidth: 80, resizable: false },
-  { prop: 'sales', label: '销量', minWidth: 80, resizable: false },
-  { label: '评分', slotName: 'ratingSlot', minWidth: 180, resizable: false },
-  { label: '标签', slotName: 'tagsSlot', minWidth: 160 },
-  { label: '创建时间', slotName: 'createdAtSlot', minWidth: 170, resizable: false },
-  { label: '操作', slotName: 'actionsSlot', width: 150, fixed: 'right', resizable: false },
+  { prop: 'category', label: '分类', minWidth: 100, align: 'center', headerAlign: 'center', resizable: false },
+  { prop: 'stock', label: '库存', minWidth: 80, align: 'center', headerAlign: 'center', resizable: false },
+  { prop: 'sales', label: '销量', minWidth: 80, align: 'center', headerAlign: 'center', resizable: false },
+  { label: '评分', slotName: 'ratingSlot', minWidth: 180, align: 'center', headerAlign: 'center', resizable: false },
+  { label: '标签', slotName: 'tagsSlot', minWidth: 160, align: 'center', headerAlign: 'center' },
+  { label: '创建时间', slotName: 'createdAtSlot', minWidth: 170, align: 'center', headerAlign: 'center', resizable: false },
+  { label: '操作', slotName: 'actionsSlot', width: 150, align: 'center', headerAlign: 'center', fixed: 'right', resizable: false },
 ];
 const searchConfig = [
   {
@@ -279,13 +277,11 @@ function formatTime(iso?: string) {
 }
 
 /**
- * 列表缩略图：100×100 裁剪 + 自动质量 + webp
- * 若未配置 cloudinary，可直接返回原图 url 或使用其他裁剪服务
+ * 列表缩略图：与购物车同规格（w_150,h_150 裁剪 + 自动质量 + webp）
+ * 命中浏览器/CDN 缓存，避免二次下载
  */
 function thumbUrl(url: string) {
-  // 如果你使用了 Cloudinary，可替换为真实函数
-  // return cloudinaryUrl(url, 'w_100,h_100,c_fill,q_auto,f_webp')
-  return url; // 临时返回原图
+  return cloudinaryUrl(url, 'w_150,h_150,c_fill,q_auto,f_webp');
 }
 
 // ========== 生命周期 ==========
@@ -293,9 +289,6 @@ onMounted(fetchData);
 </script>
 
 <style scoped>
-.product-list {
-}
-
 .page-title {
   margin: 0 0 16px 0;
   font-size: 20px;
@@ -321,16 +314,5 @@ onMounted(fetchData);
   font-size: 12px;
   color: var(--el-text-color-secondary);
   text-decoration: line-through;
-}
-
-.image-placeholder {
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
 }
 </style>

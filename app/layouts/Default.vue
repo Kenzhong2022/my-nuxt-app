@@ -34,9 +34,18 @@ onBeforeMount(() => {
 </script>
 
 <style scoped lang="scss">
-.el-container {
-  overflow: hidden;
+/* el-main 的 EP 默认样式是 overflow: auto——即使它从不滚动，也会成为子孙
+   position: sticky 的吸附参照（sticky 绑定最近的 overflow≠visible 祖先），
+   必须改回 visible 让滚动口回到 window，BaseTable 分页吸底才生效 */
+.el-main {
+  overflow: visible;
+  /* flex 子项默认 min-width:auto，会被表格 min-width 合计（1580px）撑宽，
+     导致内容溢出到 window 横向滚动、el-table 固定列失效；
+     置 0 让 main 收缩到可视宽度，横向滚动交还给表格内部滚动条 */
+  min-width: 0;
 }
+
+/* 注意：也不能在此布局任何祖先上设 overflow: hidden/auto/scroll，同理 */
 
 @media (max-width: 768px) {
   .el-main {

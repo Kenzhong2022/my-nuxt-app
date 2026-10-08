@@ -2,9 +2,14 @@
  * 拼接 Cloudinary 投递 URL 变换参数，按需缩放/压缩/转格式（CDN 自动缓存）
  * 仅对 Cloudinary 域名的 URL 生效，其他 URL（如生图直链）原样返回
  *
+ * 【拉取尺寸约定】w_/h_ 是图片资源的真实物理像素，展示尺寸是 CSS 逻辑像素：
+ *   - 缩略图/小图统一拉取 w_150,h_150（展示 ≤150px 均向下兼容，覆盖 2x/3x 高清屏）
+ *   - 展示大于 150px 逻辑像素的图会放大模糊，应改用更大规格（现有：主图 600/800）
+ *   - 同规格展示处共用同一 transform，命中浏览器/CDN 缓存，避免二次下载
+ *
  * @param url 原始图片 URL
  * @param transform Cloudinary 变换参数串
- * @example cloudinaryUrl(url, "w_100,h_100,c_fill,q_auto,f_webp")
+ * @example cloudinaryUrl(url, "w_150,h_150,c_fill,q_auto,f_webp")
  * @see https://cloudinary.com/documentation/transformation_reference
  */
 export function cloudinaryUrl(url: string | null | undefined, transform: string): string {

@@ -141,8 +141,10 @@ export interface CreatePermissionRequest {
   description?: string;
 }
 
-/** 更新权限请求（type/path 不可变，如需调整请删除重建） */
+/** 更新权限请求（type 不可变；path 可改，后端级联更新 perm_key 及按钮/角色授权引用） */
 export interface UpdatePermissionRequest {
+  /** 路由路径（目录/页面级；变更时级联更新自身 perm_key、下属按钮 perm_key 与 role_permissions） */
+  path?: string;
   label?: string;
   routeName?: string | null;
   menuVisible?: boolean;

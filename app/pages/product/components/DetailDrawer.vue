@@ -21,18 +21,14 @@
             >
               <div v-for="(img, index) in detailForm.gallery" :key="img" class="gallery-item">
                 <el-image
-                  :src="cloudinaryUrl(img, 'w_120,h_120,c_fill,q_auto,f_webp')"
+                  :src="cloudinaryUrl(img, 'w_150,h_150,c_fill,q_auto,f_webp')"
                   :alt="`图集-${index + 1}`"
                   fit="cover"
-                  class="gallery-img"
+                  class="gallery-img el-image-fallback"
                   :preview-src-list="detailForm.gallery"
                   :initial-index="index"
                   preview-teleported
-                >
-                  <template #error>
-                    <div class="image-placeholder">无图</div>
-                  </template>
-                </el-image>
+                />
                 <el-icon class="gallery-remove" :size="16" @click.stop="removeGallery(index)">
                   <CircleClose />
                 </el-icon>
@@ -460,17 +456,6 @@ async function saveDetail() {
   height: 100%;
   border-radius: 4px;
   cursor: move;
-}
-
-.image-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-light);
 }
 
 /* 悬停删除按钮 */

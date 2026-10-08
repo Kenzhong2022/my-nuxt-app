@@ -47,7 +47,7 @@
         <div class="image-edit">
           <el-image
             v-if="editForm.image"
-            :src="cloudinaryUrl(editForm.image, 'w_160,h_160,c_fill,q_auto,f_webp')"
+            :src="cloudinaryUrl(editForm.image, 'w_150,h_150,c_fill,q_auto,f_webp')"
             fit="cover"
             class="edit-image"
             :preview-src-list="[editForm.image]"
@@ -233,5 +233,11 @@ async function handleRegenerateImage() {
   width: 80px;
   height: 80px;
   border-radius: 4px;
+}
+
+.image-edit .image-placeholder {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
 }
 </style>

@@ -1,8 +1,17 @@
 <script setup lang="ts" generic="T">
 import { useSlots } from 'vue';
 import type { FormItemRule } from 'element-plus';
+import { ElTableColumn } from 'element-plus';
 import { RefreshLeft, Search } from '@element-plus/icons-vue';
 // ========== 类型定义 ==========
+import type { ComponentProps } from 'vue-component-type-helpers';
+
+export type ColumnConfig = Partial<ComponentProps<typeof ElTableColumn>> & {
+  slotName?: string;
+  headerSlotName?: string;
+};
+
+
 export type SearchFormItem = {
   label: string; // 表单项标签
   prop: string; // 字段名，绑定到表单数据对象
@@ -26,7 +35,8 @@ defineOptions({ inheritAttrs: false });
 const props = defineProps<{
   // 搜索栏开关/配置
   showSearch?: ShowSearchOption;
-  columns: any[];
+  // 列配置：el-table-column 全部可选 props + slotName/headerSlotName 扩展
+  columns: ColumnConfig[];
   // 分页开关
   showPagination?: boolean;
   // 总记录数
@@ -149,6 +159,22 @@ function onPageSizeChange() {
 
 // 暴露给父组件调用（如 list.vue 的重置按钮）
 defineExpose({ handleReset });
+
+// ========== 分页吸底阴影 ==========
+const paginationSentinelRef = ref<HTMLElement | null>(null);
+/** 分页是否处于吸附状态（true = 悬浮滚动中，显示上阴影） */
+const isPaginationStuck = ref(false);
+
+onMounted(() => {
+  // 哨兵在视口内 = 分页已回到底部自然位置；视口外 = 正在吸附悬浮
+  const sentinel = paginationSentinelRef.value;
+  if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+  const io = new IntersectionObserver(([entry]) => {
+    if(!entry) return
+    isPaginationStuck.value = !entry.isIntersecting;
+  });
+  io.observe(sentinel);
+});
 </script>
 
 <template>
@@ -255,7 +281,11 @@ defineExpose({ handleReset });
         <slot />
       </el-table>
 
-      <div v-if="showPagination !== false" class="pagination-wrapper">
+      <div
+        v-if="showPagination !== false"
+        class="pagination-container"
+        :class="{ 'is-stuck': isPaginationStuck }"
+      >
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -267,6 +297,9 @@ defineExpose({ handleReset });
           @size-change="onPageSizeChange"
         />
       </div>
+      <!-- 吸底哨兵：随文档流停在表格末尾。分页吸附时哨兵在视口外 → 加阴影；
+           分页回到底部时哨兵进入视口 → 去阴影（IntersectionObserver 精确对应 stuck 状态） -->
+      <div v-if="showPagination !== false" ref="paginationSentinelRef" class="pagination-sentinel" aria-hidden="true"></div>
     </div>
   </div>
 </template>
@@ -299,5 +332,50 @@ defineExpose({ handleReset });
 .filter-form :deep(.el-form-item) {
   flex: none;
   margin: 0;
+}
+
+/* 分页吸底：sticky 相对滚动口吸附在底部，滚到父容器（.base-table）底边进入
+   视口后自然回到文档流位置（长表格滚动时始终可见，表格尽头不再悬浮） */
+.pagination-container {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--el-bg-color);
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0;
+}
+
+/* 单侧阴影：贴在容器顶边，向下渐隐 */
+.pagination-container::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  transform: translateY(-100%);
+  height: 12px;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.1) 0%,
+    transparent 100%
+  );
+
+  /* 默认隐藏：顶边裁掉全部 → 完全看不见 */
+  clip-path: inset(100% 0 0 0);
+
+  /* clip-path 过渡：隐藏 → 显示 从底边往上展开，
+     显示 → 隐藏 从顶边往下收起（即“从上到下消失”） */
+  transition: clip-path 0.2s linear;
+
+  /* 提示浏览器对裁剪做合成层优化 */
+  will-change: clip-path;
+}
+
+/* 吸附悬浮时显形 */
+.pagination-container.is-stuck::before {
+  clip-path: inset(0 0 0 0);
 }
 </style>

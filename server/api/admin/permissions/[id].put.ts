@@ -1,8 +1,10 @@
 import { setupDatabase } from '~~/server/utils/database';
 import { requireAdmin } from '~~/server/utils/requireAdmin';
 import {
+  derivePermKey,
   isUniqueViolation,
   isValidButtonType,
+  isValidPath,
   isValidRouteName,
   toPermissionResource,
 } from '~~/server/utils/permission';
@@ -11,11 +13,13 @@ import type { PermissionResource, PermissionRow, UpdatePermissionRequest } from 
 import { PermissionType } from '~~/types/permission';
 
 /**
- * 更新权限资源的可编辑字段（名称/路由元数据/排序/层级/状态等）
+ * 更新权限资源的可编辑字段（名称/路由地址/路由元数据/排序/层级/状态等）
  * url: /api/admin/permissions/:id
  * method: PUT（仅管理员）
  *
- * 注意: type/path 不可变更（权限身份键，调整请删除重建）；
+ * 注意: type 不可变更（身份键，调整请删除重建）；
+ *       path 可变更（目录/页面级）：级联更新自身 perm_key、下属按钮的 path 与 perm_key、
+ *       以及 role_permissions 中对旧 perm_key 的引用；
  *       route_name/menu_visible/icon/sort_order/parent_id 仅目录/页面级有意义，
  *       button_type 仅按钮级有意义；parent_id 仅接受目录或 0（根）
  * return: 更新后的权限资源
@@ -47,6 +51,25 @@ export default defineEventHandler(async (event): Promise<ApiResponse<PermissionR
 
     const currentType = Number(current.type);
     const isAction = currentType === PermissionType.ACTION;
+
+    // ---------- 路由地址变更（目录/页面级）：校验并派生新 perm_key ----------
+    let finalPath = current.path;
+    let finalPermKey = current.perm_key;
+    if (!isAction && body.path !== undefined) {
+      const newPath = String(body.path).trim();
+      if (newPath !== current.path) {
+        if (!newPath || !isValidPath(newPath)) {
+          return {
+            code: 400,
+            message: '路由路径格式无效：需 / 开头，段为小写字母/数字/:参数/-/_',
+            data: null,
+          };
+        }
+        finalPath = newPath;
+        // perm_key 由 path 派生：页面 page:{path}，目录 dir:{path}（按钮无 path 概念，走不到这）
+        finalPermKey = derivePermKey(currentType, newPath, '');
+      }
+    }
 
     // 路由元数据仅目录/页面级可填
     let routeName: string | null;
@@ -115,9 +138,41 @@ export default defineEventHandler(async (event): Promise<ApiResponse<PermissionR
       body.description === undefined ? (current.description ?? null) : String(body.description).trim() || null;
     const status = [0, 1].includes(Number(body.status)) ? Number(body.status) : Number(current.status);
 
+    // ---------- 页面 path 变更前置处理 ----------
+    // role_permissions.perm_key 有外键指向 permissions.perm_key，主 UPDATE 改键前必须先清掉旧引用：
+    // 记录授权角色 → 删子表旧键（页面键 + 下属按钮键），新键在主 UPDATE 后回插
+    const pathChanged = finalPath !== current.path && currentType === PermissionType.PAGE;
+    let pageGrants: { role_id: number }[] = [];
+    let actionGrants: { role_id: number; perm_key: string }[] = [];
+    if (pathChanged) {
+      const oldPath = current.path;
+      // 记录页面键与下属按钮旧键的授权角色（按钮逐键查询，neon 模板不支持 IN 列表展开）
+      pageGrants = (await sql`
+          SELECT role_id FROM role_permissions WHERE perm_key = ${current.perm_key}
+        `) as unknown as { role_id: number }[];
+      const actionKeys = (await sql`
+          SELECT perm_key FROM permissions
+          WHERE type = ${PermissionType.ACTION} AND path = ${oldPath}
+        `) as unknown as { perm_key: string }[];
+      for (const { perm_key } of actionKeys) {
+        const grants = (await sql`
+            SELECT role_id FROM role_permissions WHERE perm_key = ${perm_key}
+          `) as unknown as { role_id: number }[];
+        for (const { role_id } of grants) actionGrants.push({ role_id, perm_key });
+      }
+
+      // 删除旧键引用（先删子表，才能改父表键）
+      await sql`DELETE FROM role_permissions WHERE perm_key = ${current.perm_key}`;
+      for (const { perm_key } of actionKeys) {
+        await sql`DELETE FROM role_permissions WHERE perm_key = ${perm_key}`;
+      }
+    }
+
     const rows = (await sql`
         UPDATE permissions
         SET label = ${label},
+            path = ${finalPath},
+            perm_key = ${finalPermKey},
             route_name = ${routeName},
             menu_visible = ${menuVisible},
             icon = ${icon},
@@ -134,6 +189,37 @@ export default defineEventHandler(async (event): Promise<ApiResponse<PermissionR
       `) as unknown as PermissionRow[];
     if (rows.length === 0 || !rows[0]) {
       return { code: 404, message: '权限节点不存在', data: null };
+    }
+
+    // ---------- 页面 path 变更后置处理：更新下属按钮 + 按新键回插角色授权 ----------
+    if (pathChanged) {
+      const oldPath = current.path;
+
+      // 按钮行：path 指向新页面路径，perm_key = action:{newPath}:{code}（code 取旧键末段）
+      await sql`
+          UPDATE permissions
+          SET path = ${finalPath},
+              perm_key = 'action:' || ${finalPath} || ':' || split_part(perm_key, ':', 3),
+              updated_at = NOW()
+          WHERE type = ${PermissionType.ACTION} AND path = ${oldPath}
+        `;
+
+      // 回插角色授权（页面键 + 按钮键）
+      for (const { role_id } of pageGrants) {
+        await sql`
+            INSERT INTO role_permissions (role_id, perm_key)
+            VALUES (${role_id}, ${finalPermKey})
+            ON CONFLICT (role_id, perm_key) DO NOTHING
+          `;
+      }
+      for (const { role_id, perm_key } of actionGrants) {
+        const newKey = `action:${finalPath}:${perm_key.split(':')[2] ?? ''}`;
+        await sql`
+            INSERT INTO role_permissions (role_id, perm_key)
+            VALUES (${role_id}, ${newKey})
+            ON CONFLICT (role_id, perm_key) DO NOTHING
+          `;
+      }
     }
 
     return { code: 200, message: '更新成功', data: toPermissionResource(rows[0]) };

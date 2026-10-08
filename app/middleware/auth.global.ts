@@ -18,12 +18,12 @@ export default defineNuxtRouteMiddleware((to) => {
   if (import.meta.server) return;
 
   // 4. 登录态以身份为准（getInfo 服务端验证结果），不再是本地 cookie 有无的猜测
-  const { isLoggedIn, requireLogin } = useAuth();
+  const { isLoggedIn, login } = useAuth();
   if (!isLoggedIn.value) {
     console.log('未登录，跳转到登录页', to.fullPath);
-    requireLogin(to.fullPath);
-    // 若 requireLogin 内部没 await navigateTo，这里补一个中止
-    return;
+    // 未登录直接跳认证中心（带登录成功后的回跳路径），无需确认弹窗
+    login(to.fullPath);
+    return false;
   }
 
   ElMessage.success('经过鉴权，您有权限访问该页面');

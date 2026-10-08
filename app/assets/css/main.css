@@ -29,12 +29,40 @@ html.dark {
   color: var(--el-text-color-primary);
 }
 
-.image-placeholder {
-  width: 50px;
-  height: 50px;
+/* ===== 图片加载失败占位（全局） ===== */
+/* el- 前缀类必须搭配 el-image 使用：
+   用法：el-image 上加 .el-image-fallback 类，无需写 #error 插槽。
+   复用 el-image 内置 .el-image__error 元素，隐藏默认「加载失败」文案，
+   伪元素注入「无图」；占位撑满容器，min-height 兜底。 */
+.el-image-fallback .el-image__error {
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  background: var(--el-fill-color);
+  color: transparent; /* 隐藏默认文案 */
+  position: relative;
+  font-size: 12px;
+}
+
+.el-image-fallback .el-image__error::after {
+  content: '无图';
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--el-text-color-secondary);
+}
+
+/* 非 el-image 场景的占位 div（v-else 条件渲染），仅管视觉样式；
+   默认撑满父容器，尺寸约束由使用方通过父容器或局部覆盖 */
+.image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
   background: var(--el-fill-color);
   color: var(--el-text-color-secondary);
   font-size: 12px;

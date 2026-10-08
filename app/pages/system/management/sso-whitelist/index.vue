@@ -164,6 +164,15 @@ const tableData = computed(() =>
 /** 筛选后条数 */
 const totalCount = computed(() => tableData.value.length);
 
+/** 回调地址下拉候选：汇总库中所有客户端已登记的地址（去重排序），供多选复用 */
+const redirectUriOptions = computed<{ label: string; value: string }[]>(() => {
+  const set = new Set<string>();
+  for (const client of rawClients.value) {
+    for (const uri of client.redirectUris) set.add(uri);
+  }
+  return [...set].sort().map((uri) => ({ label: uri, value: uri }));
+});
+
 /* ==================== 数据加载 ==================== */
 
 /** 拉取全量客户端列表（刷新按钮 / CRUD 成功后调用） */
@@ -221,12 +230,13 @@ const dialogTitle = computed(() =>
 
 /**
  * 弹窗表单配置：
- * - 新增：client_id 可填（必填+格式校验）；client_secret 必填
- * - 编辑：client_id 禁用（身份键不可改）；client_secret 留空 = 不修改
- * - redirect_uris 为 textarea，每行一个回调地址
+ * - 新增：完整录入 client_id / client_secret / client_name / 回调白名单 / 状态
+ * - 编辑：仅回调白名单可改（从库中已有地址勾选），其余字段只读展示
  */
 const formSchema = computed<FormSchema>(() => {
   const isEdit = dialogMeta.value.mode === 'edit';
+  // 编辑态：除回调白名单外全部只读展示（client_secret 不回显，仅展示占位提示）
+  const disabledProp = isEdit ? { disabled: true } : undefined;
   const fields: FieldConfig[] = [
     {
       key: 'clientId',
@@ -234,36 +244,40 @@ const formSchema = computed<FormSchema>(() => {
       label: 'client_id',
       placeholder: '应用唯一标识，如 my-app',
       rules: isEdit ? undefined : { required: true, pattern: CLIENT_ID_PATTERN, message: '字母/数字开头，仅含字母/数字/-/_，长度 2-64' },
-      props: isEdit ? { disabled: true } : undefined,
+      props: disabledProp,
     },
     {
       key: 'clientName',
       type: 'input',
       label: '应用名称',
       placeholder: '请输入应用名称',
-      rules: { required: true },
+      rules: isEdit ? undefined : { required: true },
+      props: disabledProp,
     },
     {
       key: 'clientSecret',
       type: 'textarea',
       label: 'client_secret',
-      placeholder: isEdit ? '留空则保持原密钥不变' : '客户端密钥（与认证中心校验一致）',
+      placeholder: isEdit ? '不可修改' : '客户端密钥（与认证中心校验一致）',
       rules: isEdit ? undefined : { required: true },
-      props: { rows: 3, showPassword: true },
+      props: isEdit ? { disabled: true, rows: 2 } : { rows: 3 },
     },
     {
+      // 编辑态仅此字段可改：从库中已有地址勾选（不含 allow-create，新增地址走新增客户端流程）
       key: 'redirectUris',
-      type: 'textarea',
+      type: 'multiselect',
       label: '回调地址白名单',
-      placeholder: '每行一个回调地址，需 http/https 绝对地址\n如 https://example.com/callback',
-      rules: { required: true },
-      props: { rows: 5 },
+      placeholder: isEdit ? '从已有地址中勾选' : '下拉选择已有地址，或输入新地址后回车创建',
+      rules: { required: true, trigger: 'change' },
+      options: redirectUriOptions.value,
+      props: isEdit ? undefined : { filterable: true, allowCreate: true, defaultFirstOption: true },
     },
     {
       key: 'enabled',
       type: 'radio',
       label: '状态',
       defaultValue: 1,
+      props: isEdit ? { disabled: true } : undefined,
       options: [
         { label: '启用', value: 1 },
         { label: '停用', value: 0 },
@@ -282,7 +296,7 @@ function handleCreate(): void {
 }
 
 /**
- * 打开编辑弹窗（回填行数据；回调地址合成为每行一条；client_secret 不回显，留空 = 不修改）
+ * 打开编辑弹窗（回填行数据；回调地址回填数组供多选；client_secret 不回显，留空 = 不修改）
  * @param row 行数据（OauthClient）
  */
 function handleEdit(row: OauthClient): void {
@@ -291,45 +305,36 @@ function handleEdit(row: OauthClient): void {
     clientId: row.clientId,
     clientName: row.clientName,
     clientSecret: '',
-    redirectUris: row.redirectUris.join('\n'),
+    redirectUris: [...row.redirectUris],
     enabled: row.enabled ? 1 : 0,
   });
 }
 
-/** 校验回调地址文本（每行一条）是否均为 http(s) URL，返回第一条非法项 */
-function findInvalidUri(text: string): string | null {
-  const uris = text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-  for (const uri of uris) {
-    try {
-      const url = new URL(uri);
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') return uri;
-    } catch {
-      return uri;
-    }
+/** 校验单个回调地址是否为 http(s) 绝对 URL */
+function isValidUri(uri: string): boolean {
+  try {
+    const url = new URL(uri);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
   }
-  return null;
 }
 
 /**
  * 接收 FormDialog 校验通过后的表单数据，调用真实接口执行新增/编辑
- * @param data 表单数据（redirectUris 为每行一条的 textarea 原文）
+ * @param data 表单数据（redirectUris 为多选下拉的字符串数组，含新创建项）
  */
 async function handleFormSubmit(data: Record<string, any>): Promise<void> {
   if (submitting.value) return;
 
-  const urisText = String(data.redirectUris ?? '');
-  const redirectUris = urisText
-    .split('\n')
-    .map((line) => line.trim())
+  const redirectUris = (Array.isArray(data.redirectUris) ? data.redirectUris : [])
+    .map((uri: unknown) => String(uri ?? '').trim())
     .filter(Boolean);
   if (redirectUris.length === 0) {
     ElMessage.error('回调地址至少填写一条');
     return;
   }
-  const invalidUri = findInvalidUri(urisText);
+  const invalidUri = redirectUris.find((uri: string) => !isValidUri(uri));
   if (invalidUri) {
     ElMessage.error(`回调地址格式无效（需 http/https 绝对地址）：${invalidUri}`);
     return;
@@ -341,17 +346,13 @@ async function handleFormSubmit(data: Record<string, any>): Promise<void> {
   const requestFetch = useRequestFetch();
   submitting.value = true;
   try {
+    // 编辑只改回调白名单（其余字段服务端忽略，表单也已只读）
     const res = isEdit
       ? await requestFetch<{ code: number; message?: string }>(
           `/api/admin/oauth-clients/${encodeURIComponent(dialogMeta.value.editingId)}`,
           {
             method: 'PUT',
-            body: {
-              clientName: String(data.clientName ?? '').trim(),
-              clientSecret,
-              redirectUris,
-              enabled: Number(data.enabled) === 1,
-            },
+            body: { redirectUris },
           },
         )
       : await requestFetch<{ code: number; message?: string }>('/api/admin/oauth-clients', {

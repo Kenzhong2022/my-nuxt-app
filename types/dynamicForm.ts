@@ -20,7 +20,7 @@ export interface FieldRule {
 
 export interface FieldConfig {
   key: string;
-  type: 'input' | 'select' | 'radio' | 'textarea' | 'switch' | 'number' | 'button';
+  type: 'input' | 'select' | 'radio' | 'textarea' | 'switch' | 'number' | 'button' | 'multiselect';
   label: string;
   placeholder?: string;
   defaultValue?: any;

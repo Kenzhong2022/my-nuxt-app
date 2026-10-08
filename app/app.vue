@@ -10,17 +10,21 @@
       :gap-x="240"
       :gap-y="160"
     />
-    <NuxtLayout>
-      <KeepAlive>
-        <NuxtPage />
-      </KeepAlive>
-    </NuxtLayout>
+    <!-- Element Plus 全局中文：分页 Go to→前往、Total→共、size→条/页，以及 date-picker 等全部组件文案 -->
+    <el-config-provider :locale="zhCn">
+      <NuxtLayout>
+        <KeepAlive>
+          <NuxtPage />
+        </KeepAlive>
+      </NuxtLayout>
+    </el-config-provider>
     <PageTransition :isFullScreen="isFullScreenTransition" :loading="loading" />
   </div>
 </template>
 <script setup>
 import { useRouter, useNuxtApp } from 'nuxt/app';
 import { ref } from 'vue';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 const router = useRouter();
 const nuxtApp = useNuxtApp();
 const isFullScreenTransition = ref(true);

@@ -116,6 +116,7 @@ import { Delete, Edit, Plus, Refresh, Sort } from '@element-plus/icons-vue';
 import type { FormSchema, FieldConfig, FieldOption } from '~~/types/dynamicForm';
 import type { PermissionResource } from '~~/types/permission';
 import type { SearchFormItem } from '@/components/BaseTable.vue';
+import { useUserInfoStore } from '~~/app/stores/userInfo';
 import FormDialog from '@/components/FormDialog.vue';
 import BaseTable from '@/components/BaseTable.vue';
 
@@ -386,10 +387,11 @@ function buildMenuTree(): MenuItem[] {
   return permissionStore.allPermissions.map(resToMenu);
 }
 
-/** 重新拉取全量目录并重建表格（刷新按钮 / CRUD 成功后调用） */
+/** 重新拉取全量目录并重建表格（刷新按钮 / CRUD 成功后调用）；
+ *  同时重拉 getRouters 刷新侧边栏菜单（path/键变更后布局菜单需跟随） */
 async function reloadMenus(): Promise<void> {
   const permissionStore = usePermissionStore();
-  await permissionStore.fetchAllPermissions();
+  await Promise.all([permissionStore.fetchAllPermissions(), useUserInfoStore().getRouters()]);
   rawMenus.value = buildMenuTree();
   tableKey.value += 1;
   detectUnconfiguredPages();
@@ -571,9 +573,9 @@ function collectParentOptions(type: MenuType): FieldOption[] {
 /** 弹窗表单配置：随「菜单类型」radio 联动
  * - 上级菜单：编辑时禁用回显；新增时下拉选择（选项随类型过滤，按钮只能挂页面下）
  * - 目录：名称 + 路由地址 + 图标
- * - 菜单：名称 + 路由地址 + 图标（权限标识 page:{路由地址} 自动生成，只读展示）
+ * - 菜单：名称 + 路由地址 + 图标（权限标识 page:{路由地址} 自动生成，只读展示，随路由地址实时刷新）
  * - 按钮：名称 + 操作类型（权限标识 action:{上级页面path}:{操作类型} 自动生成，只读展示）
- * 编辑态：路由地址 / 操作类型是权限身份键（改则破坏 role_permissions 外键），禁用不可改
+ * 编辑态：路由地址可改（后端级联更新 perm_key 与按钮/角色授权引用）；操作类型是按钮身份键，禁用不可改
  */
 const formSchema = computed<FormSchema>(() => {
   const type = dialogMeta.currentType;
@@ -614,7 +616,7 @@ const formSchema = computed<FormSchema>(() => {
     { key: 'label', type: 'input', label: labelName, placeholder: `请输入${labelName}`, rules: { required: true } },
   );
 
-  // 目录/菜单需要路由地址与图标；按钮无路由概念（编辑态路由地址为身份键，禁用）
+  // 目录/菜单需要路由地址与图标；按钮无路由概念（路由地址可编辑，权限标识随之自动刷新）
   if (type !== 'action') {
     fields.push({
       key: 'path',
@@ -622,7 +624,6 @@ const formSchema = computed<FormSchema>(() => {
       label: '路由地址',
       placeholder: '如 /system/user',
       rules: { required: true },
-      props: isEdit ? { disabled: true } : undefined,
     });
   }
   // 按钮需选择操作类型（进 perm_key 末段；编辑态为身份键，禁用）
@@ -879,14 +880,17 @@ async function handleFormSubmit(data: Record<string, any>): Promise<void> {
       }
       ElMessage.success('新增成功');
     } else {
-      // 编辑：type/path/code 为身份键不可改，仅提交名称/图标/排序/状态（按钮样式保留原值）
+      // 编辑：type/code 不可改；路由地址可改（后端级联更新 perm_key 与引用），仅提交名称/图标/排序/状态
       const body: Record<string, any> = {
         label: String(data.label ?? '').trim(),
         icon: iconValue,
         sortOrder,
       };
       if (type === 'action') body.status = statusValue;
-      else body.menuVisible = statusValue === 1;
+      else {
+        body.path = normalizeMenuPath(String(data.path ?? ''));
+        body.menuVisible = statusValue === 1;
+      }
       const res = await requestFetch<{ code: number; message?: string }>(
         `/api/admin/permissions/${dialogMeta.editingId}`,
         { method: 'PUT', body },

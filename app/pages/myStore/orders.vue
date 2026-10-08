@@ -145,6 +145,8 @@ import type { OrderListResult, OrderStatus, StoreOrder } from "~~/types/order";
 // 使用 store 布局；订单页不需要搜索栏
 definePageMeta({
   layout: "store",
+  name: "orders",
+  title: "我的订单",
   showSearch: false,
 });
 

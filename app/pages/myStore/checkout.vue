@@ -153,6 +153,8 @@ import type { OrderCreateResult } from "~~/types/order";
 // 使用 store 布局（与购物车一致，不需要搜索栏）
 definePageMeta({
   layout: "store",
+  name: "checkout",
+  title: "订单结算",
   showSearch: false,
 });
 
