@@ -47,6 +47,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 用 matched 的路径模式匹配，兼容 /myStore/:id() 这类动态路由
   const isAllowed = to.matched.some((record) => allowed.has(record.path.replace(/\/+/g, '/')));
   if (!isAllowed) {
+    // 记录被拦截页面，供 403 页诊断展示（useState 客户端导航间共享，referrer 拿不到路由来源）
+    useState<string>('blocked-path', () => '').value = to.fullPath;
     return navigateTo('/403', { replace: true });
   }
 });
