@@ -23,8 +23,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 游客或超管不启用页面级管控
   if (!userInfoStore.isLoaded || userInfoStore.isAdmin) return;
 
-  // /403 自身放行，避免重定向循环
-  if (to.path === '/403') return;
+  // /403 自身放行，避免重定向循环；/CallBack 是 OAuth 回调页（携带 code 兑换 token），
+  // 进入该页时 token 尚未兑换、身份必然还是游客，不属于权限管控范围
+  if (to.path === '/403' || to.path === '/CallBack') return;
   // 未匹配到任何页面路由（真 404）交给错误页处理
   if (to.matched.length === 0) return;
 
